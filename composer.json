@@ -1,0 +1,28 @@
+{
+	"name": "opentraits/crud",
+	"type": "library",
+	"description": "PHP CRUD class traits",
+	"keywords": ["crud"],
+	"homepage": "https://github.com/oscarotero/opentraits-crud",
+	"license": "AGPL-3.0",
+	"authors": [
+		{
+			"name": "Oscar Otero",
+			"email": "oom@oscarotero.com",
+			"homepage": "http://oscarotero.com",
+			"role": "Developer"
+		}
+	],
+	"support": {
+		"email": "oom@oscarotero.com",
+		"issues": "https://github.com/oscarotero/opentraits-crud/issues"
+	},
+	"require": {
+		"php": ">=5.4"
+	},
+	"autoload": {
+		"psr-0": {
+			"OpenTraits": ""
+		}
+	}
+}
