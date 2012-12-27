@@ -70,11 +70,11 @@ $items = Item::select($query, [':id_start' => 10, ':id_end' => 24]);
 $Item = Item::selectById('34');
 $Item->delete();
 
-//Validate or convert data before save using the method prepareData:
+//Validate or convert data before saving using the method prepareToSave:
 class Item {
 	use OpenTraits\Crud\Mysql;
 
-	public function prepareData (array $data) {
+	public function prepareToSave (array $data) {
 		if ($data['no-save']) {
 			$this->setError('This item cannot be saved!');
 			return false;
