@@ -41,43 +41,23 @@ trait Mysql {
 	 */
 	public static function setDb (\PDO $Db, $table = null, array $fields = null) {
 		static::$Db = $Db;
-		static::$table = $table;
-		static::$fields = $fields;
-	}
 
-
-	/**
-	 * static function to return all available fields of this model
-	 * 
-	 * @return array The database fields names of this model
-	 */
-	public static function getFields () {
-		if (static::$fields === null) {
-			$table = static::getTable();
-			return static::$fields = static::$Db->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0)->fetchAll();
-		}
-
-		return static::$fields;
-	}
-
-
-	/**
-	 * static function to return the table name of this model
-	 * 
-	 * @return string The table name
-	 */
-	public static function getTable () {
-		if (static::$table === null) {
+		if ($table === null) {
 			$class = get_called_class();
 
 			if (strpos($class, '\\') === false) {
-				return static::$table = strtolower($class);
+				$table = strtolower($class);
+			} else {
+				$table = strtolower(substr(strrchr($class, '\\'), 1));
 			}
-
-			return static::$table = strtolower(substr(strrchr(get_called_class(), '\\'), 1));
 		}
 
-		return static::$table;
+		if ($fields === null) {
+			$fields = static::$Db->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0)->fetchAll();
+		}
+
+		static::$table = $table;
+		static::$fields = $fields;
 	}
 
 
@@ -116,7 +96,7 @@ trait Mysql {
 	 * @return string The portion of mysql code with the fields names
 	 */
 	public static function getQueryFields ($name = null) {
-		$table = static::getTable();
+		$table = static::$table;
 		$fields = array();
 		$class = get_called_class();
 
@@ -124,7 +104,7 @@ trait Mysql {
 			$name = (($pos = strrpos($class, '\\')) === false) ? $class : substr($class, $pos + 1);
 		}
 
-		foreach (static::getFields() as $field) {
+		foreach (static::$fields as $field) {
 			$fields[] = "`$table`.`$field` as `$class::$field::$name`";
 		}
 
@@ -137,7 +117,7 @@ trait Mysql {
 	 * and ensure all parameteres are initialized
 	 */
 	public function __construct () {
-		foreach (static::getFields() as $field) {
+		foreach (static::$fields as $field) {
 			if (!isset($this->$field)) {
 				$this->$field = null;
 			}
@@ -187,13 +167,15 @@ trait Mysql {
 	 * @return array The result of the query or false if there was an error
 	 */
 	public static function select ($query = '', array $marks = null) {
+		$table = static::$table;
+
 		if (is_array($query)) {
 			$query = self::generateSelectQuery($query, [
-				'SELECT' => [static::getTable().'.*'],
-				'FROM' => [static::getTable()],
+				'SELECT' => ["$table.*"],
+				'FROM' => [$table],
 			]);
 		} else {
-			$query = 'SELECT * FROM `'.static::getTable().'` '.$query;
+			$query = "SELECT * FROM `$table` $query";
 		}
 
 		$Query = static::$Db->prepare($query);
@@ -267,7 +249,7 @@ trait Mysql {
 	 * @param array $data The new data
 	 */
 	public function edit (array $data) {
-		$fields = static::getFields();
+		$fields = static::$fields;
 
 		foreach ($data as $field => $value) {
 			if (!in_array($field, $fields)) {
@@ -283,7 +265,7 @@ trait Mysql {
 	 * Deletes the properties of the model (but not in the database)
 	 */
 	public function clean () {
-		foreach (static::getFields() as $field) {
+		foreach (static::$fields as $field) {
 			$this->$field = null;
 		}
 	}
@@ -383,7 +365,7 @@ trait Mysql {
 	public function getData () {
 		$data = array();
 
-		foreach (static::getFields() as $field) {
+		foreach (static::$fields as $field) {
 			$data[$field] = isset($this->$field) ? $this->$field : null;
 		}
 

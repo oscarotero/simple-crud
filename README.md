@@ -71,7 +71,7 @@ $Item = Item::selectById('34');
 $Item->delete();
 
 //Validate or convert data before save using the method prepareData:
-class ValidateItem {
+class Item {
 	use OpenTraits\Crud\Mysql;
 
 	public function prepareData (array $data) {
