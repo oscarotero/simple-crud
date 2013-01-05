@@ -1,5 +1,6 @@
 <?php
 ini_set('display_errors', 'On');
+ini_set('display_startup_errors', 'On');
 
 function autoload ($className) {
 	$className = ltrim($className, '\\');
@@ -21,12 +22,21 @@ function autoload ($className) {
 
 spl_autoload_register('autoload');
 
-class Item {
+class table {
 	use OpenTraits\Crud\Mysql;
+	use OpenTraits\Crud\Relations;
+}
+
+Table::setConnection(new PDO('mysql:dbname=items;host=localhost', 'root', 'root'));
+
+class Item extends Table {
+	static public $table = 'item';
+	static public $fields;
+	static public $relation_field;
 
 	public function prepareToSave (array $data) {
 		if ($data['id'] && ($data['id'] % 2)) {
-			$this->setError('The id is odd');
+			echo 'The id is odd';
 			return false;
 		}
 
@@ -34,29 +44,38 @@ class Item {
 	}
 }
 
-Item::setDb(new PDO('mysql:dbname=items;host=localhost', 'root', 'root'));
+class Comment extends Table {
+	static public $table = 'comment';
+	static public $fields;
+	static public $relation_field;
+}
+
+$Comment = Comment::create([
+	'text' => 'Ola'
+]);
 
 $Item = Item::create([
 	'title' => 'Random title: '.uniqid()
 ]);
 
+$Comment->relate($Item);
+$Comment->save();
+
 $Item->save();
 
 $Item->edit(['text' => 'lorem ipsum']);
 
-if (!$Item->save()) {
-	echo $Item->getError();
-}
+$Item->save();
 
 $Item2 = Item::selectById($Item->id);
 
 $someItems = Item::select(array(
-	'WHERE' => [
+	'where' => [
 		'id > 5',
 		'id < 10'
 	]
 ));
 
 foreach ($someItems as $Item) {
-	echo $Item->id;
+	echo $Item->id.'<br>';
 }

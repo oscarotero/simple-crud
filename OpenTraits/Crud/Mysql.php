@@ -6,10 +6,13 @@
  * Example:
  * 
  * class Items {
- * 	use OpenTraits\Crud\Mysql;
+ *  use OpenTraits\Crud\Mysql;
+ * 
+ *  static $table = 'items';
+ *  static $fields = null;
  * }
  * 
- * Items::setDb($Pdo);
+ * Items::setConnection($Pdo);
  * 
  * $Item = Items::create(array(
  * 	'name' => 'Item name',
@@ -23,41 +26,32 @@
 namespace OpenTraits\Crud;
 
 trait Mysql {
-	protected static $Db;
-	protected static $table;
-	protected static $fields;
-
-	protected $_error = null;
-
+	public static $connection;
+	public static $error = null;
 
 
 	/**
-	 * Static function to configure the model.
-	 * Define the database, the table name and the available fields
+	 * Set the database connection.
 	 * 
 	 * @param PDO $Db The database object
-	 * @param string $table The table name used in this model (if it not defined, use the class name)
-	 * @param array $fields The name of all fields of the table. If it's not defined, execute a DESCRIBE query
 	 */
-	public static function setDb (\PDO $Db, $table = null, array $fields = null) {
-		static::$Db = $Db;
+	public static function setConnection (\PDO $Connection) {
+		static::$connection = $Connection;
+	}
 
-		if ($table === null) {
-			$class = get_called_class();
 
-			if (strpos($class, '\\') === false) {
-				$table = strtolower($class);
-			} else {
-				$table = strtolower(substr(strrchr($class, '\\'), 1));
-			}
+	/**
+	 * Returns the names of the fields in the database
+	 * 
+	 * @return array The fields name
+	 */
+	public static function getFields () {
+		if (empty(static::$fields)) {
+			$table = static::$table;
+			static::$fields = static::$connection->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0)->fetchAll();
 		}
 
-		if ($fields === null) {
-			$fields = static::$Db->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0)->fetchAll();
-		}
-
-		static::$table = $table;
-		static::$fields = $fields;
+		return static::$fields;
 	}
 
 
@@ -66,16 +60,27 @@ trait Mysql {
 	 * 
 	 * @return string The generated query
 	 */
-	static private function generateSelectQuery (array $query, array $defaults = array()) {
-		$query = array_replace($defaults, $query);
+	static private function generateSelectQuery (array $query) {
+		$string = 'SELECT '.implode(', ', (array)$query['select']);
+		$string .= ' FROM '.implode(', ', (array)$query['from']);
 
-		$command = ['SELECT' => ', ', 'FROM' => ', ', 'LEFT JOIN' => ', ', 'INNER JOIN' => ', ', 'WHERE' => ' AND ', 'GROUP BY' => ', ', 'ORDER BY' => ', ', 'LIMIT' => ', '];
-		$string = '';
-
-		foreach ($command as $command => $glue) {
-			if (isset($query[$command])) {
-				$string .= " $command ".implode($glue, (array)$query[$command]);
-			}
+		if (!empty($query['left-join'])) {
+			$string .= ' LEFT JOIN '.implode(', ', (array)$query['left-join']);
+		}
+		if (!empty($query['inner-join'])) {
+			$string .= ' INNER JOIN '.implode(', ', (array)$query['inner-join']);
+		}
+		if (!empty($query['where'])) {
+			$string .= ' WHERE ('.implode(' AND ', (array)$query['where']).')';
+		}
+		if (!empty($query['group-by'])) {
+			$string .= ' GROUP BY '.implode(', ', (array)$query['group-by']);
+		}
+		if (!empty($query['order-by'])) {
+			$string .= ' ORDER BY '.implode(', ', (array)$query['order-by']);
+		}
+		if (!empty($query['limit'])) {
+			$string .= ' LIMIT '.implode(', ', (array)$query['limit']);
 		}
 
 		return trim($string);
@@ -102,9 +107,10 @@ trait Mysql {
 
 		if ($name === null) {
 			$name = (($pos = strrpos($class, '\\')) === false) ? $class : substr($class, $pos + 1);
+			$name = lcfirst($name);
 		}
 
-		foreach (static::$fields as $field) {
+		foreach (static::getFields() as $field) {
 			$fields[] = "`$table`.`$field` as `$class::$field::$name`";
 		}
 
@@ -113,24 +119,23 @@ trait Mysql {
 
 
 	/**
-	 * Constructor class that executes automatically the resolveFields method
-	 * and ensure all parameteres are initialized
+	 * Constructor
 	 */
 	public function __construct () {
-		foreach (static::$fields as $field) {
+		$this->init();
+	}
+
+
+	/**
+	 * Initialize the values, resolve fields.
+	 */
+	public function init () {
+		foreach (static::getFields() as $field) {
 			if (!isset($this->$field)) {
 				$this->$field = null;
 			}
 		}
 
-		$this->resolveFields();
-	}
-
-
-	/**
-	 * Resolve the fields included using the getQueryFields method
-	 */
-	public function resolveFields () {
 		$fields = array();
 
 		foreach ($this as $key => $value) {
@@ -153,35 +158,59 @@ trait Mysql {
 	}
 
 
+	public static function query ($query, array $marks = null) {
+		$statement = static::$connection->prepare($query);
+
+		if ($statement === false) {
+			static::$error = static::$connection->errorInfo();
+
+			return false;
+		}
+
+		if ($statement->execute($marks) === false) {
+			static::$error = $statement->errorInfo();
+
+			return false;
+		}
+
+		return $statement;
+	}
+
+
 	/**
 	 * Execute a selection and returns an array with the models result
 	 * 
-	 * Examples:
-	 * $AllItems = Item::select();
-	 * $LatestItems = Items::select('SORT BY date DESC LIMIT 5');
-	 * $BlueItems = Items::select('WHERE color = :color', array(':color' => 'blue'));
+	 * @param array $query The query for the selection
+	 * @param array $marks Optional marks used in the query
+	 * 
+	 * @return array The result of the query or false if there was an error
+	 */
+	public static function select (array $query = array(), array $marks = null) {
+		$table = static::$table;
+
+		$query = static::generateSelectQuery(array_replace([
+			'select' => ["$table.*"],
+			'from' => [$table]
+		], $query));
+
+		return static::selectByQuery($query, $marks);
+	}
+
+
+	/**
+	 * Execute a selection using a query string and returns an array with the models result
 	 * 
 	 * @param string $query The query for the selection
 	 * @param array $marks Optional marks used in the query
 	 * 
 	 * @return array The result of the query or false if there was an error
 	 */
-	public static function select ($query = '', array $marks = null) {
-		$table = static::$table;
-
-		if (is_array($query)) {
-			$query = self::generateSelectQuery($query, [
-				'SELECT' => ["$table.*"],
-				'FROM' => [$table],
-			]);
-		} else {
-			$query = "SELECT * FROM `$table` $query";
+	public static function selectByQuery ($query, array $marks = null) {
+		if ($statement = static::query($query, $marks)) {
+			return $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
 		}
 
-		$Query = static::$Db->prepare($query);
-		$Query->execute($marks);
-
-		return $Query->fetchAll(\PDO::FETCH_CLASS, get_called_class());
+		return false;
 	}
 
 
@@ -191,18 +220,14 @@ trait Mysql {
 	 * Example:
 	 * $Item = Item::selectOne('WHERE title = :title', array(':title' => 'My item title'))
 	 * 
-	 * @param string $query The query for the selection. Note that "LIMIT 1" will be automatically appended
+	 * @param array $query The query for the selection. Note that "LIMIT 1" will be automatically added
 	 * @param array $marks Optional marks used in the query
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
-	public static function selectOne ($query = '', array $marks = null) {
-		if (is_array($query)) {
-			if (!isset($query['LIMIT'])) {
-				$query['LIMIT'] = 1;
-			}
-		} else if (stripos($query, ' LIMIT ') === false) {
-			$query .= ' LIMIT 1';
+	public static function selectOne (array $query = array(), array $marks = null) {
+		if (!isset($query['limit'])) {
+			$query['limit'] = 1;
 		}
 
 		return current(static::select($query, $marks));
@@ -220,7 +245,7 @@ trait Mysql {
 	 * @return object The result of the query or false if there was an error
 	 */
 	public static function selectById ($id) {
-		return static::selectOne('WHERE id = :id', array(':id' => $id));
+		return static::selectOne(['where' => 'id = :id'], [':id' => $id]);
 	}
 
 
@@ -249,7 +274,7 @@ trait Mysql {
 	 * @param array $data The new data
 	 */
 	public function edit (array $data) {
-		$fields = static::$fields;
+		$fields = static::getFields();
 
 		foreach ($data as $field => $value) {
 			if (!in_array($field, $fields)) {
@@ -265,7 +290,7 @@ trait Mysql {
 	 * Deletes the properties of the model (but not in the database)
 	 */
 	public function clean () {
-		foreach (static::$fields as $field) {
+		foreach (static::getFields() as $field) {
 			$this->$field = null;
 		}
 	}
@@ -296,15 +321,13 @@ trait Mysql {
 			$fields = implode(', ', array_keys($data));
 			$marks = implode(', ', array_fill(0, count($data), '?'));
 
-			$Query = static::$Db->prepare("INSERT INTO `$table` ($fields) VALUES ($marks)");
+			if (static::query("INSERT INTO `$table` ($fields) VALUES ($marks)", array_values($data))) {
+				$this->id = static::$connection->lastInsertId();
 
-			if ($Query->execute(array_values($data)) === false) {
-				return false;
+				return true;
 			}
-			
-			$this->id = static::$Db->lastInsertId();
 
-			return true;
+			return false;
 		}
 
 		//Update
@@ -317,9 +340,7 @@ trait Mysql {
 
 		$set = implode(', ', $set);
 
-		$Query = static::$Db->prepare("UPDATE `$table` SET $set WHERE id = $id LIMIT 1");
-
-		return $Query->execute(array_values($data));
+		return static::query("UPDATE `$table` SET $set WHERE id = $id LIMIT 1", array_values($data)) ? true : false;
 	}
 
 
@@ -333,7 +354,7 @@ trait Mysql {
 			$table = static::$table;
 			$id = intval($this->id);
 
-			if (static::$Db->exec("DELETE FROM `$table` WHERE id = $id LIMIT 1") !== false) {
+			if (static::$query("DELETE FROM `$table` WHERE id = $id LIMIT 1") !== false) {
 				$this->id = null;
 
 				return true;
@@ -365,7 +386,7 @@ trait Mysql {
 	public function getData () {
 		$data = array();
 
-		foreach (static::$fields as $field) {
+		foreach (static::getFields() as $field) {
 			$data[$field] = isset($this->$field) ? $this->$field : null;
 		}
 
@@ -374,22 +395,12 @@ trait Mysql {
 
 
 	/**
-	 * Set an error to this row
+	 * Get the latest error
 	 * 
-	 * @param string $error The error message
-	 */
-	public function setError ($message) {
-		$this->_error = $message;
-	}
-
-
-	/**
-	 * Get the error of this row
-	 * 
-	 * @param string $error The error message
+	 * @param mixed $error The error message
 	 */
 	public function getError () {
-		return $this->_error;
+		return static::$error;
 	}
 }
 ?>

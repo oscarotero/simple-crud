@@ -23,11 +23,14 @@ Provide CRUD functions with mysql database. Example:
 
 class Item {
 	use OpenTraits\Crud\Mysql;
+
+	public static $table = 'item'; //The mysql table name
+	public static $fields = null; //if $fields is empty, it executes a mysql DESCRIBE command to get its names
 }
 
-//Configure the database and (optionally) define the table name and fields name.
+//Set the database connection as a PDO object
 
-Item::setDb($Pdo, 'items', ['id', 'title', 'text']);
+Item::setConnection($Pdo);
 
 //Create a new item
 
@@ -47,24 +50,21 @@ $Item->save();
 $Item = Item::selectById(34);
 
 //Select one item from database by custom query:
-$Item = Item::selectOne('WHERE title LIKE :title', [':title' => 'My first item']);
+$Item = Item::selectOne(['where' => 'title LIKE :title'], [':title' => 'My first item']);
 
-//Select all items
-$items = Item::select();
-
-//Select some items
-$items = Item::select('WHERE id != :id', [':id' => 45]);
-
-//Using array as queries:
+//Select various items
 $query = [
-	'WHERE' => [
+	'where' => [
 		'id > :id_start',
 		'id < :id_end'
 	],
-	'SORT BY' => 'title',
-	'LIMIT' => 2
+	'sort-by' => 'title',
+	'limit' => 2
 ];
 $items = Item::select($query, [':id_start' => 10, ':id_end' => 24]);
+
+//Execute a custom query:
+$items = Item::selectByQuery('SELECT * FROM items WHERE title LIKE :title LIMIT 10', [':title' => '%php%']);
 
 //Delete the item
 $Item = Item::selectById('34');
@@ -73,6 +73,9 @@ $Item->delete();
 //Validate or convert data before saving using the method prepareToSave:
 class Item {
 	use OpenTraits\Crud\Mysql;
+
+	public static $table = 'item';
+	public static $fields = null;
 
 	public function prepareToSave (array $data) {
 		if ($data['no-save']) {
@@ -97,5 +100,74 @@ $Item = Item::create([
 
 if (!$Item->save()) {
 	echo $Item->getError(); //This item cannot be saved!
+}
+```
+
+OpenTraits\Crud\Relations
+-------------------------
+
+Provide a simple way to relate/unrelate mysql tables. Each table has a relation_field static variable that define the field name used to join two tables.
+By now, only supports direct relations, (one-to-one, many-to-one, one-to-many) but not "many-to-many". Example:
+
+```php
+class Items {
+	use OpenTraits\Crud\Mysql;
+	use OpenTraits\Crud\Relations;
+
+	static $table = 'items';
+	static $fields = null;
+	static $relation_field = 'items_id';
+}
+class Comments {
+	use OpenTraits\Crud\Mysql;
+	use OpenTraits\Crud\Relations;
+
+	static $table = 'comments';
+	static $fields = null;
+	static $relation_field = 'comments_id';
+}
+
+$Item = Items::selectById(4);
+
+$Comment = Comments::create([
+	'text' => 'This is a comment'
+]);
+
+$Comment->relate($Item);
+
+echo $Comment->items_id; //returns 4
+
+$Comment->save();
+```
+
+OpenTraits\Crud\Cache
+---------------------
+
+Simple cache system. Provides a magic method to execute other methods and save the result in undefined properties. Example:
+
+```php
+class Items {
+	use OpenTraits\Crud\Mysql;
+	use OpenTraits\Crud\Cache;
+
+	static $table = 'comments';
+	static $fields = null;
+
+	public function getComments () {
+		return Comments::select(['where' => 'items_id = :id'], [':id' => $this->id]);
+	}
+}
+
+class Comments {
+	use OpenTraits\Crud\Mysql;
+
+	static $table = 'comments';
+	static $fields = null;
+}
+
+$Item = Items::selectById(23);
+
+foreach ($Item->comments as $comment) { //Execute the method getComments and save the result in the property "comments"
+	echo $comment->text;
 }
 ```
