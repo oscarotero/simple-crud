@@ -33,16 +33,20 @@ trait Relations {
 	 * @param array $fields The name of all fields of the table. If it's not defined, execute a DESCRIBE query
 	 */
 	public function relate ($Item) {
-		$field = $Item::$relation_field;
+		if (isset($Item::$relation_field)) {
+			$field = $Item::$relation_field;
 
-		if (property_exists($this, $field)) {
-			$this->$field = $Item->id;
+			if (property_exists($this, $field)) {
+				$this->$field = $Item->id;
+			}
 		}
 
-		$field = static::$relation_field;
+		if (isset(static::$relation_field)) {
+			$field = static::$relation_field;
 
-		if (property_exists($Item, $field)) {
-			$Item->$field = $this->id;
+			if (property_exists($Item, $field)) {
+				$Item->$field = $this->id;
+			}
 		}
 	}
 
