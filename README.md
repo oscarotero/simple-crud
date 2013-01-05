@@ -79,7 +79,7 @@ class Item {
 
 	public function prepareToSave (array $data) {
 		if ($data['no-save']) {
-			$this->setError('This item cannot be saved!');
+			die('This item cannot be saved!');
 			return false;
 		}
 
@@ -98,9 +98,7 @@ $Item = Item::create([
 	'no-save' => true
 ]);
 
-if (!$Item->save()) {
-	echo $Item->getError(); //This item cannot be saved!
-}
+$Item->save(); //die('This item cannot be saved!')
 ```
 
 OpenTraits\Crud\Relations
@@ -170,4 +168,37 @@ $Item = Items::selectById(23);
 foreach ($Item->comments as $comment) { //Execute the method getComments and save the result in the property "comments"
 	echo $comment->text;
 }
+```
+
+OpenTraits\Crud\Uploads
+-----------------------
+
+Save uploads files and returns the filename. It can save files uploaded by the user ($_FILES) or from url
+
+```php
+class Items {
+	use OpenTraits\Crud\Mysql;
+	use OpenTraits\Crud\Uploads;
+
+	static $table = 'comments';
+	static $fields = null;
+	static $uploadsPath = '/httpdocs/uploads/';
+	static $uploadsUrl = '/uploads/';
+
+	public function prepareToSave (array $data) {
+		if ($data['image']) {
+			$data['image'] = static::saveFile($data['image'], 'image');
+		}
+
+		return $data;
+	}
+}
+
+$Item = Items::selectById(23);
+
+$Item->image = 'http://lorempixum.com/400/500';
+$Item->save();
+
+$Item->image = $_FILES['image'];
+$Item->save();
 ```
