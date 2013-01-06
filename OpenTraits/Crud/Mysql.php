@@ -73,6 +73,9 @@ trait Mysql {
 		if (!empty($query['where'])) {
 			$string .= ' WHERE ('.implode(' AND ', (array)$query['where']).')';
 		}
+		if (!empty($query['union'])) {
+			$string .= ' UNION '.static::generateSelectQuery($query['union']);
+		}
 		if (!empty($query['group-by'])) {
 			$string .= ' GROUP BY '.implode(', ', (array)$query['group-by']);
 		}
