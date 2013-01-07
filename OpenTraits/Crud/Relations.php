@@ -25,43 +25,67 @@ namespace OpenTraits\Crud;
 
 trait Relations {
 	/**
-	 * Static function to configure the model.
-	 * Define the database, the table name and the available fields
+	 * Relate two objects
 	 * 
-	 * @param PDO $Db The database object
-	 * @param string $table The table name used in this model (if it not defined, use the class name)
-	 * @param array $fields The name of all fields of the table. If it's not defined, execute a DESCRIBE query
+	 * @param Object $Item The item to relate
+	 * @param boolean $save Set true to execute the save method just before relate
 	 */
-	public function relate ($Item) {
-		if (isset($Item::$relation_field)) {
+	public function relate ($Item, $save = false) {
+		if (!empty($Item::$relation_field)) {
 			$field = $Item::$relation_field;
 
-			if (property_exists($this, $field)) {
+			if (property_exists($this, $field) && ($this->$field !== $Item->id)) {
 				$this->$field = $Item->id;
+
+				if ($save === true) {
+					$this->save();
+				}
 			}
 		}
 
-		if (isset(static::$relation_field)) {
+		if (!empty(static::$relation_field)) {
 			$field = static::$relation_field;
 
-			if (property_exists($Item, $field)) {
+			if (property_exists($Item, $field) && ($Item->$field !== $this->id)) {
 				$Item->$field = $this->id;
+
+				if ($save === true) {
+					$Item->save();
+				}
 			}
 		}
 	}
 
 
-	public function unrelate ($Item) {
-		$field = $Item::$relation_field;
+	/**
+	 * Unrelate two objects
+	 * 
+	 * @param Object $Item The item to unrelate
+	 * @param boolean $save Set true to execute the save method just before unrelate
+	 */
+	public function unrelate ($Item, $save = false) {
+		if (!empty($Item::$relation_field)) {
+			$field = $Item::$relation_field;
 
-		if (property_exists($this, $field)) {
-			$this->$field = 0;
+			if (property_exists($this, $field) && ($this->$field !== 0)) {
+				$this->$field = 0;
+
+				if ($save === true) {
+					$this->save();
+				}
+			}
 		}
 
-		$field = static::$relation_field;
+		if (!empty(static::$relation_field)) {
+			$field = static::$relation_field;
 
-		if (property_exists($Item, $field)) {
-			$Item->$field = 0;
+			if (property_exists($Item, $field) && ($Item->$field !== 0)) {
+				$Item->$field = 0;
+
+				if ($save === true) {
+					$Item->save();
+				}
+			}
 		}
 	}
 }
