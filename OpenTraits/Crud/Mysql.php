@@ -357,7 +357,7 @@ trait Mysql {
 			$table = static::$table;
 			$id = intval($this->id);
 
-			if (static::$query("DELETE FROM `$table` WHERE id = $id LIMIT 1") !== false) {
+			if (static::query("DELETE FROM `$table` WHERE id = $id LIMIT 1") !== false) {
 				$this->id = null;
 
 				return true;
