@@ -74,7 +74,13 @@ trait Mysql {
 			$string .= ' WHERE ('.implode(' AND ', (array)$query['where']).')';
 		}
 		if (!empty($query['union'])) {
-			$string .= ' UNION '.static::generateSelectQuery($query['union']);
+			if (!isset($query['union'][0])) {
+				$query['union'] = [$query['union']];
+			}
+
+			foreach ($query['union'] as $value) {
+				$string .= ' UNION '.(is_array($value) ? static::generateSelectQuery($value) : $value);
+			}
 		}
 		if (!empty($query['group-by'])) {
 			$string .= ' GROUP BY '.implode(', ', (array)$query['group-by']);
