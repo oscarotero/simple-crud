@@ -82,6 +82,15 @@ trait Mysql {
 				$string .= ' UNION '.(is_array($value) ? static::generateSelectQuery($value) : $value);
 			}
 		}
+		if (!empty($query['union-all'])) {
+			if (!isset($query['union-all'][0])) {
+				$query['union-all'] = [$query['union-all']];
+			}
+
+			foreach ($query['union-all'] as $value) {
+				$string .= ' UNION ALL '.(is_array($value) ? static::generateSelectQuery($value) : $value);
+			}
+		}
 		if (!empty($query['group-by'])) {
 			$string .= ' GROUP BY '.implode(', ', (array)$query['group-by']);
 		}
