@@ -65,7 +65,15 @@ trait Mysql {
 		$string .= ' FROM '.implode(', ', (array)$query['from']);
 
 		if (!empty($query['left-join'])) {
-			$string .= ' LEFT JOIN '.implode(', ', (array)$query['left-join']);
+			$query['left-join'] = (array)$query['left-join'];
+
+			if (!isset($query['left-join'][0])) {
+				$query['left-join'] = [$query['left-join']];
+			}
+
+			foreach ($query['left-join'] as $value) {
+				$string .= ' LEFT JOIN '.(is_array($value) ? static::generateSelectQuery($value) : $value);
+			}
 		}
 		if (!empty($query['inner-join'])) {
 			$string .= ' INNER JOIN '.implode(', ', (array)$query['inner-join']);
