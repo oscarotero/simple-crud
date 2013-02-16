@@ -27,7 +27,6 @@ namespace OpenTraits\Crud;
 
 trait Mysql {
 	public static $connection;
-	public static $error = null;
 
 
 	/**
@@ -48,68 +47,11 @@ trait Mysql {
 	public static function getFields () {
 		if (empty(static::$fields)) {
 			$table = static::$table;
+
 			static::$fields = static::$connection->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0)->fetchAll();
 		}
 
 		return static::$fields;
-	}
-
-
-	/**
-	 * static function to convert a select query from array to string
-	 * 
-	 * @return string The generated query
-	 */
-	static private function generateSelectQuery (array $query) {
-		$string = 'SELECT '.implode(', ', (array)$query['select']);
-		$string .= ' FROM '.implode(', ', (array)$query['from']);
-
-		if (!empty($query['left-join'])) {
-			$query['left-join'] = (array)$query['left-join'];
-
-			if (!isset($query['left-join'][0])) {
-				$query['left-join'] = [$query['left-join']];
-			}
-
-			foreach ($query['left-join'] as $value) {
-				$string .= ' LEFT JOIN '.(is_array($value) ? static::generateSelectQuery($value) : $value);
-			}
-		}
-		if (!empty($query['inner-join'])) {
-			$string .= ' INNER JOIN '.implode(', ', (array)$query['inner-join']);
-		}
-		if (!empty($query['where'])) {
-			$string .= ' WHERE ('.implode(' AND ', (array)$query['where']).')';
-		}
-		if (!empty($query['union'])) {
-			if (!isset($query['union'][0])) {
-				$query['union'] = [$query['union']];
-			}
-
-			foreach ($query['union'] as $value) {
-				$string .= ' UNION '.(is_array($value) ? static::generateSelectQuery($value) : $value);
-			}
-		}
-		if (!empty($query['union-all'])) {
-			if (!isset($query['union-all'][0])) {
-				$query['union-all'] = [$query['union-all']];
-			}
-
-			foreach ($query['union-all'] as $value) {
-				$string .= ' UNION ALL '.(is_array($value) ? static::generateSelectQuery($value) : $value);
-			}
-		}
-		if (!empty($query['group-by'])) {
-			$string .= ' GROUP BY '.implode(', ', (array)$query['group-by']);
-		}
-		if (!empty($query['order-by'])) {
-			$string .= ' ORDER BY '.implode(', ', (array)$query['order-by']);
-		}
-		if (!empty($query['limit'])) {
-			$string .= ' LIMIT '.implode(', ', (array)$query['limit']);
-		}
-
-		return trim($string);
 	}
 
 
@@ -119,7 +61,7 @@ trait Mysql {
 	 * 
 	 * Example:
 	 * $fieldsQuery = User::getQueryFields();
-	 * $posts = Post::select("SELECT posts.*, $fieldsQuery FROM posts, users WHERE posts.author = users.id");
+	 * $posts = Post::fetchAll("SELECT posts.*, $fieldsQuery FROM posts, users WHERE posts.author = users.id");
 	 * $posts[0]->User //The user model inside the post
 	 * 
 	 * @param string $name The name of the parameter used to the sub-model. If it's not defined, uses the model class name (without the namespace)
@@ -184,18 +126,16 @@ trait Mysql {
 	}
 
 
-	public static function query ($query, array $marks = null) {
+	public static function execute ($query, array $marks = null) {
 		$statement = static::$connection->prepare($query);
 
 		if ($statement === false) {
-			static::$error = static::$connection->errorInfo();
-
+			throw new \Exception('MySQL error: '.implode(' / ', static::$connection->errorInfo()));
 			return false;
 		}
 
 		if ($statement->execute($marks) === false) {
-			static::$error = $statement->errorInfo();
-
+			throw new \Exception('MySQL statement error: '.implode(' / ', $statement->errorInfo()));
 			return false;
 		}
 
@@ -204,59 +144,38 @@ trait Mysql {
 
 
 	/**
-	 * Execute a selection and returns an array with the models result
+	 * Fetch all results of a mysql selection
 	 * 
-	 * @param array $query The query for the selection
+	 * @param string/PDOStatement $query The query for the selection
 	 * @param array $marks Optional marks used in the query
 	 * 
 	 * @return array The result of the query or false if there was an error
 	 */
-	public static function select (array $query = array(), array $marks = null) {
-		$table = static::$table;
-
-		$query = static::generateSelectQuery(array_replace([
-			'select' => ["$table.*"],
-			'from' => [$table]
-		], $query));
-
-		return static::selectByQuery($query, $marks);
-	}
-
-
-	/**
-	 * Execute a selection using a query string and returns an array with the models result
-	 * 
-	 * @param string $query The query for the selection
-	 * @param array $marks Optional marks used in the query
-	 * 
-	 * @return array The result of the query or false if there was an error
-	 */
-	public static function selectByQuery ($query, array $marks = null) {
-		if ($statement = static::query($query, $marks)) {
-			return $statement->fetchAll(\PDO::FETCH_CLASS, get_called_class());
+	public static function fetchAll ($query, array $marks = null) {
+		if (!($query instanceof \PDOStatement)) {
+			$query = static::execute($query, $marks);
 		}
 
-		return false;
+		return $query->fetchAll(\PDO::FETCH_CLASS, get_called_class());
 	}
 
 
 	/**
-	 * Execute a selection of just one element.
+	 * Fetch the first result of a mysql selection
 	 * 
-	 * Example:
-	 * $Item = Item::selectOne('WHERE title = :title', array(':title' => 'My item title'))
-	 * 
-	 * @param array $query The query for the selection. Note that "LIMIT 1" will be automatically added
+	 * @param string/PDOStatement $query The query for the selection. Note that "LIMIT 1" will be automatically added
 	 * @param array $marks Optional marks used in the query
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
-	public static function selectOne (array $query = array(), array $marks = null) {
-		if (!isset($query['limit'])) {
-			$query['limit'] = 1;
+	public static function fetch ($query, array $marks = null) {
+		if (!($query instanceof \PDOStatement)) {
+			$query = static::execute($query, $marks);
 		}
 
-		return current(static::select($query, $marks));
+		$query->setFetchMode(\PDO::FETCH_CLASS, get_called_class());
+
+		return $query->fetch();
 	}
 
 
@@ -271,7 +190,25 @@ trait Mysql {
 	 * @return object The result of the query or false if there was an error
 	 */
 	public static function selectById ($id) {
-		return static::selectOne(['where' => 'id = :id'], [':id' => $id]);
+		return static::selectOne('id = :id', [':id' => $id]);
+	}
+
+
+	/**
+	 * Select a row using custom conditions
+	 * 
+	 * Example:
+	 * $Item = Item::selectOne('title = :title', [':title' => 'Titulo']);
+	 * 
+	 * @param string $where The "where" syntax.
+	 * @param array $marks Optional marks used in the query
+	 * 
+	 * @return object The result of the query or false if there was an error
+	 */
+	public static function selectOne ($where, $marks = null) {
+		$table = static::$table;
+
+		return static::fetch("SELECT * FROM `$table` WHERE $where LIMIT 1", $marks);
 	}
 
 
@@ -347,7 +284,7 @@ trait Mysql {
 			$fields = implode(', ', array_keys($data));
 			$marks = implode(', ', array_fill(0, count($data), '?'));
 
-			if (static::query("INSERT INTO `$table` ($fields) VALUES ($marks)", array_values($data))) {
+			if (static::execute("INSERT INTO `$table` ($fields) VALUES ($marks)", array_values($data))) {
 				$this->id = static::$connection->lastInsertId();
 
 				return true;
@@ -366,7 +303,7 @@ trait Mysql {
 
 		$set = implode(', ', $set);
 
-		return static::query("UPDATE `$table` SET $set WHERE id = $id LIMIT 1", array_values($data)) ? true : false;
+		return static::execute("UPDATE `$table` SET $set WHERE id = $id LIMIT 1", array_values($data)) ? true : false;
 	}
 
 
@@ -380,7 +317,7 @@ trait Mysql {
 			$table = static::$table;
 			$id = intval($this->id);
 
-			if (static::query("DELETE FROM `$table` WHERE id = $id LIMIT 1") !== false) {
+			if (static::execute("DELETE FROM `$table` WHERE id = $id LIMIT 1") !== false) {
 				$this->id = null;
 
 				return true;
@@ -417,16 +354,6 @@ trait Mysql {
 		}
 
 		return $data;
-	}
-
-
-	/**
-	 * Get the latest error
-	 * 
-	 * @param mixed $error The error message
-	 */
-	public function getError () {
-		return static::$error;
 	}
 }
 ?>

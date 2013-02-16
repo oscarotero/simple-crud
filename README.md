@@ -49,22 +49,11 @@ $Item->save();
 //Select an item from database by id
 $Item = Item::selectById(34);
 
-//Select one item from database by custom query:
-$Item = Item::selectOne(['where' => 'title LIKE :title'], [':title' => 'My first item']);
+//Fetch all results:
+$items = Item::fetchAll('SELECT * FROM items WHERE title LIKE :title LIMIT 10', [':title' => '%php%']);
 
-//Select various items
-$query = [
-	'where' => [
-		'id > :id_start',
-		'id < :id_end'
-	],
-	'sort-by' => 'title',
-	'limit' => 2
-];
-$items = Item::select($query, [':id_start' => 10, ':id_end' => 24]);
-
-//Execute a custom query:
-$items = Item::selectByQuery('SELECT * FROM items WHERE title LIKE :title LIMIT 10', [':title' => '%php%']);
+//Fetch first result:
+$items = Item::fetch('SELECT * FROM items WHERE title LIKE :title LIMIT 1', [':title' => '%php%']);
 
 //Delete the item
 $Item = Item::selectById('34');
