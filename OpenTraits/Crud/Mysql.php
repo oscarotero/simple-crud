@@ -27,6 +27,7 @@ namespace OpenTraits\Crud;
 
 trait Mysql {
 	public static $connection;
+	public static $debug = false;
 
 
 	/**
@@ -125,7 +126,16 @@ trait Mysql {
 		}
 	}
 
-
+	/**
+	 * Execute a query and returns the statement object with the result
+	 * 
+	 * @param  string $query The Mysql query to execute
+	 * @param  array $marks The marks passed to the statement
+	 *
+	 * @throws Exception On error preparing or executing the statement
+	 * 
+	 * @return PDOStatement The result
+	 */
 	public static function execute ($query, array $marks = null) {
 		$statement = static::$connection->prepare($query);
 
@@ -139,8 +149,28 @@ trait Mysql {
 			return false;
 		}
 
+		if (is_array(static::$debug)) {
+			static::debug($statement, $marks);
+		}
+
 		return $statement;
 	}
+
+
+	/**
+	 * Save the current statement for debuggin purposes
+	 * 
+	 * @param  PDOStatement $statement The query statement
+	 * @param  array $marks The marks passed to the statement
+	 */
+	public static function debug ($statement, array $marks = null) {
+		static::$debug[] = [
+			'statement' => $statement,
+			'marks' => $marks,
+			'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20)
+		];
+	}
+
 
 
 	/**
@@ -156,7 +186,9 @@ trait Mysql {
 			$query = static::execute($query, $marks);
 		}
 
-		return $query->fetchAll(\PDO::FETCH_CLASS, get_called_class());
+		$result = $query->fetchAll(\PDO::FETCH_CLASS, get_called_class());
+
+		return new Results($result);
 	}
 
 
@@ -185,12 +217,26 @@ trait Mysql {
 	 * Example:
 	 * $Item = Item::selectById(45);
 	 * 
-	 * @param int $id The row id.
+	 * @param int/array $id The id value
+	 * @param string $name The name of the id field. By default "id"
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
-	public static function selectById ($id) {
-		return static::selectOne('id = :id', [':id' => $id]);
+	public static function selectById ($id, $name = 'id') {
+		if (empty($id)) {
+			return false;
+		}
+
+		$table = static::$table;
+
+		if (is_array($id)) {
+			$limit = count($id);
+			$in = substr(str_repeat(', ?', $limit), 2);
+
+			return static::fetchAll("SELECT * FROM `$table` WHERE $name IN ($in) LIMIT $limit", $id);
+		}
+
+		return static::fetch("SELECT * FROM `$table` WHERE $name = :id LIMIT 1", [':id' => $id]);
 	}
 
 
