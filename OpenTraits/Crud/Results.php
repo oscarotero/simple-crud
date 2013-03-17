@@ -105,8 +105,6 @@ class Results implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable 
 
 
 	private static function joinItems ($name, $Items1, $Items2) {
-		
-
 		$Item1 = $Items1->rewind();
 		$Item2 = $Items2->rewind();
 

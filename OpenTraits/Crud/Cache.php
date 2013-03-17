@@ -30,7 +30,7 @@ trait Cache {
 			return $this->$name = $this->$method();
 		}
 
-		throw new \Exception("The method $method is not defined");
+		return $this->$name = null;
 	}
 
 
