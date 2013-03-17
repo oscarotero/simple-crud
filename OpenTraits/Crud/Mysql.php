@@ -224,7 +224,7 @@ trait Mysql {
 	 */
 	public static function selectById ($id, $name = 'id') {
 		if (empty($id)) {
-			return false;
+			return is_array($id) ? new Results : false;
 		}
 
 		$table = static::$table;

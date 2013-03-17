@@ -83,6 +83,10 @@ class Results implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable 
 		return array_keys($ids);
 	}
 
+	public function isEmpty () {
+		return empty($this->items);
+	}
+
 	public function setToAll ($name, $property) {
 		foreach ($this->items as &$item) {
 			$item->$name = $property;
@@ -90,6 +94,10 @@ class Results implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable 
 	}
 
 	public function join ($name, $items) {
+		if ($this->isEmpty() || empty($items) || $items->isEmpty()) {
+			return true;
+		}
+
 		$result = ($items instanceof Results) ? $items : new Results([$items]);
 
 		return self::joinItems($name, $this, $result);
@@ -97,9 +105,7 @@ class Results implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable 
 
 
 	private static function joinItems ($name, $Items1, $Items2) {
-		if (empty($Items1) || empty($Items2)) {
-			return true;
-		}
+		
 
 		$Item1 = $Items1->rewind();
 		$Item2 = $Items2->rewind();
