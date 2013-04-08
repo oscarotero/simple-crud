@@ -3,7 +3,7 @@
 	"type": "library",
 	"description": "PHP mysql CRUD class",
 	"keywords": ["crud", "mysql"],
-	"homepage": "https://github.com/oscarotero/opentraits-crud",
+	"homepage": "https://github.com/oscarotero/simplecrud",
 	"license": "AGPL-3.0",
 	"authors": [
 		{
@@ -15,7 +15,7 @@
 	],
 	"support": {
 		"email": "oom@oscarotero.com",
-		"issues": "https://github.com/oscarotero/opentraits-crud/issues"
+		"issues": "https://github.com/oscarotero/simplecrud/issues"
 	},
 	"require": {
 		"php": ">=5.4"
