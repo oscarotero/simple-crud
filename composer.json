@@ -1,8 +1,8 @@
 {
-	"name": "opentraits/crud",
+	"name": "SimpleCrud/SimpleCrud",
 	"type": "library",
-	"description": "PHP CRUD class traits",
-	"keywords": ["crud"],
+	"description": "PHP mysql CRUD class",
+	"keywords": ["crud", "mysql"],
 	"homepage": "https://github.com/oscarotero/opentraits-crud",
 	"license": "AGPL-3.0",
 	"authors": [
@@ -22,7 +22,7 @@
 	},
 	"autoload": {
 		"psr-0": {
-			"OpenTraits": ""
+			"SimpleCrud": ""
 		}
 	}
 }

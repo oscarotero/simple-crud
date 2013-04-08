@@ -1,10 +1,7 @@
-OpenTraits\Crud
-===============
+SimpleCrud
+==========
 
-OpenTraits is a set of generical and universal PHP traits to give some features to your classes without depending of a specific framework.
-It uses the php 5.4 traits feature because this allows to combine different traits in just one class.
-
-This set of traits provides some CRUD functions (Create, Read, Update, Delete).
+Simple PHP library to provide some CRUD functions (Create, Read, Update, Delete) in MySql databases.
 
 Requirements
 ------------
@@ -12,66 +9,69 @@ Requirements
 * PHP 5.4 or newer
 * Any PSR-0 compatible autoloader
 
-OpenTraits\Crud\Mysql
----------------------
 
-Provide CRUD functions with mysql database. Example:
+Usage
+-----
+
+Configure the database connection and create a class for each table in the database:
 
 ```php
 
-//Let's create our custom class:
+use SimpleCrud\Item;
 
-class Item {
-	use OpenTraits\Crud\Mysql;
+Item::setConnection($PDO);
 
-	public static $table = 'item'; //The mysql table name
+class Post extends Item {
+	public static $table = 'posts'; //The table name
+	public static $relation_field = 'posts_id'; //The field used to relate with other tables
 	public static $fields = null; //if $fields is empty, it executes a mysql DESCRIBE command to get its names
 }
 
-//Set the database connection as a PDO object
+class Comments extends Item {
+	public static $table = 'comments';
+	public static $relation_field = 'comments_id';
+	public static $fields = null;
+}
+```
 
-Item::setConnection($Pdo);
+Using the library:
 
-//Create a new item
+```php
 
-$Item = Item::create([
-	'title' => 'My first item',
-	'text' => 'This is a demo of crud'
+//Create a new post
+
+$Post = Post::create([
+	'title' => 'My first post',
+	'text' => 'This is the text of the post'
 ]);
 
 //Get/Set values
-echo $Item->title; //My first item
-$Item->description = 'New description';
+echo $Post->title; //My first item
+$Post->description = 'New description';
 
 //Save (insert/update) the item in the database
-$Item->save();
+$Post->save();
 
 //Select an item from database by id
-$Item = Item::selectById(34);
+$Post = Post::selectById(34);
 
 //Fetch all results:
-$items = Item::fetchAll('SELECT * FROM items WHERE title LIKE :title LIMIT 10', [':title' => '%php%']);
+$Post = Post::fetchAll('SELECT * FROM post WHERE title LIKE :title LIMIT 10', [':title' => '%php%']);
 
 //Fetch first result:
-$items = Item::fetch('SELECT * FROM items WHERE title LIKE :title LIMIT 1', [':title' => '%php%']);
+$Post = Post::fetch('SELECT * FROM post WHERE title LIKE :title LIMIT 1', [':title' => '%php%']);
 
 //Delete the item
-$Item = Item::selectById('34');
-$Item->delete();
+$Post = Post::selectById('34');
+$Post->delete();
 
 //Validate or convert data before saving using the method prepareToSave:
-class Item {
-	use OpenTraits\Crud\Mysql;
-
-	public static $table = 'item';
+class Post {
+	public static $table = 'posts';
+	public static $relation_field = 'posts_id';
 	public static $fields = null;
-
+	
 	public function prepareToSave (array $data) {
-		if ($data['no-save']) {
-			die('This item cannot be saved!');
-			return false;
-		}
-
 		if (!$data['datetime']) {
 			$data['datetime'] = date('Y-m-d H:i:s');
 		}
@@ -79,115 +79,59 @@ class Item {
 		return $data;
 	}
 }
-
-Item::setDb($Pdo, 'items', ['id', 'title', 'text', 'no-save', 'datetime']);
-
-$Item = Item::create([
-	'title' => 'Title',
-	'no-save' => true
-]);
-
-$Item->save(); //die('This item cannot be saved!')
 ```
 
-OpenTraits\Crud\Relations
--------------------------
+Relations
+---------
 
-Provide a simple way to relate/unrelate mysql tables. Each table has a relation_field static variable that define the field name used to join two tables.
-By now, only supports direct relations, (one-to-one, many-to-one, one-to-many) but not "many-to-many". Example:
+SimpleCrud provides a simple way to relate/unrelate mysql tables. Each table has a relation_field static variable that define the field name used to join two tables.
+Only direct relations are supported, (one-to-many) but not "many-to-many". Example:
 
 ```php
-class Items {
-	use OpenTraits\Crud\Mysql;
-	use OpenTraits\Crud\Relations;
-
-	static $table = 'items';
-	static $fields = null;
-	static $relation_field = 'items_id';
-}
-class Comments {
-	use OpenTraits\Crud\Mysql;
-	use OpenTraits\Crud\Relations;
-
-	static $table = 'comments';
-	static $fields = null;
-	static $relation_field = 'comments_id';
-}
-
-$Item = Items::selectById(4);
+$Post = Post::selectById(4);
 
 $Comment = Comments::create([
 	'text' => 'This is a comment'
 ]);
 
-$Comment->relate($Item);
-
-echo $Comment->items_id; //returns 4
-
+$Comment->join('post', $Post);
 $Comment->save();
 ```
 
-OpenTraits\Crud\Cache
----------------------
+Lazy properties
+---------------
 
-Simple cache system. Provides a magic method to execute other methods and save the result in undefined properties. Example:
+You can define method starting by "get" to return properties in lazy mode:
 
 ```php
-class Items {
-	use OpenTraits\Crud\Mysql;
-	use OpenTraits\Crud\Cache;
-
-	static $table = 'comments';
-	static $fields = null;
-
+class Post {
+	public static $table = 'posts';
+	public static $relation_field = 'posts_id';
+	public static $fields = null;
+	
 	public function getComments () {
-		return Comments::select(['where' => 'items_id = :id'], [':id' => $this->id]);
+		return Comments::select('posts_id = :id', [':id' => $this->id]);
 	}
 }
 
-class Comments {
-	use OpenTraits\Crud\Mysql;
+$Post = Post::selectById(34); //Select a post by id
 
-	static $table = 'comments';
-	static $fields = null;
-}
+$comments = $Post->comments; //Execute getComments and return the result
 
-$Item = Items::selectById(23);
-
-foreach ($Item->comments as $comment) { //Execute the method getComments and save the result in the property "comments"
-	echo $comment->text;
-}
+$Post->comments; //Don't execute getComments again. The result has been saved in this property.
 ```
 
-OpenTraits\Crud\Uploads
------------------------
+Join properties
+---------------
 
-Save uploads files and returns the filename. It can save files uploaded by the user ($_FILES) or from url
+You can join more than one table on select to optimize the number of mysql queries:
 
 ```php
-class Items {
-	use OpenTraits\Crud\Mysql;
-	use OpenTraits\Crud\Uploads;
+$fields = Users::getQueryFields('author');
 
-	static $table = 'comments';
-	static $fields = null;
-	static $uploadsPath = '/httpdocs/uploads/';
-	static $uploadsUrl = '/uploads/';
+$query = "SELECT posts.*, $fields FROM posts LEFT JOIN users ON posts.users_id = users.id WHERE posts.id = :id";
 
-	public function prepareToSave (array $data) {
-		if ($data['image']) {
-			$data['image'] = static::saveFile($data['image'], 'image');
-		}
+$result = Posts::fetch($query, [':id' => 23]);
 
-		return $data;
-	}
-}
-
-$Item = Items::selectById(23);
-
-$Item->image = 'http://lorempixum.com/400/500';
-$Item->save();
-
-$Item->image = $_FILES['image'];
-$Item->save();
+echo $result->author->id; //Returns the author id (table users)
 ```

@@ -1,12 +1,12 @@
 <?php
 /**
- * OpenTraits\Crud\Uploads
+ * SimpleCrud\Uploads
  * 
  * Provides basic upload operations (save files from user upload or url).
  * Example:
  * 
- * class Items {
- * 	use OpenTraits\Crud\Uploads;
+ * class Item extends SimpleCrud\Item {
+ * 	use SimpleCrud\Uploads;
  * 
  *  static $uploadsPath = 'www/uploadsfolder/';
  *  static $uploadsUrl = '/uploadsfolder/';
@@ -16,7 +16,7 @@
  * 
  * $Item::saveFile('http://domain.com/picture.jpg', 'pictures');
  */
-namespace OpenTraits\Crud;
+namespace SimpleCrud;
 
 trait Uploads {
 	public static $uploadsPath;

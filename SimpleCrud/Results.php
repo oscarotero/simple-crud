@@ -1,10 +1,10 @@
 <?php
 /**
- * OpenTraits\Crud\Results
+ * SimpleCrud\Results
  * 
  * Simple class to store arrays of results
  */
-namespace OpenTraits\Crud;
+namespace SimpleCrud;
 
 class Results implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 	private $items = array();
@@ -104,7 +104,7 @@ class Results implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable 
 	}
 
 
-	private static function joinItems ($name, $Items1, $Items2) {
+	private static function joinItems ($name, Results $Items1, Results $Items2) {
 		$Item1 = $Items1->rewind();
 		$Item2 = $Items2->rewind();
 

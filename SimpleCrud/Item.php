@@ -1,13 +1,11 @@
 <?php
 /**
- * OpenTraits\Crud\Mysql
+ * SimpleCrud\Item
  * 
  * Provides a simple model with basic database operations.
  * Example:
  * 
- * class Items {
- *  use OpenTraits\Crud\Mysql;
- * 
+ * class Items extends SimpleCrud\Item {
  *  static $table = 'items';
  *  static $fields = null;
  * }
@@ -23,9 +21,9 @@
  * $Item->name = 'New name for the item';
  * $Item->save();
  */
-namespace OpenTraits\Crud;
+namespace SimpleCrud;
 
-trait Mysql {
+class Item {
 	public static $connection;
 	public static $debug = false;
 
@@ -95,16 +93,28 @@ trait Mysql {
 	}
 
 
+
+	/**
+	 * Magic method to execute 'get' functions and save the result in a property.
+	 * 
+	 * @param string $name The property name
+	 */
+	public function __get ($name) {
+		$method = "get$name";
+
+		if (method_exists($this, $method)) {
+			return $this->$name = $this->$method();
+		}
+
+		return $this->$name = null;
+	}
+
+
+
 	/**
 	 * Initialize the values, resolve fields.
 	 */
 	public function init () {
-		foreach (static::getFields() as $field) {
-			if (!isset($this->$field)) {
-				$this->$field = null;
-			}
-		}
-
 		$fields = array();
 
 		foreach ($this as $key => $value) {
@@ -125,6 +135,8 @@ trait Mysql {
 			$this->$name->__construct();
 		}
 	}
+
+
 
 	/**
 	 * Execute a query and returns the statement object with the result
@@ -163,7 +175,7 @@ trait Mysql {
 	 * @param  PDOStatement $statement The query statement
 	 * @param  array $marks The marks passed to the statement
 	 */
-	public static function debug ($statement, array $marks = null) {
+	public static function debug (\PDOStatement $statement, array $marks = null) {
 		static::$debug[] = [
 			'statement' => $statement,
 			'marks' => $marks,
@@ -241,20 +253,33 @@ trait Mysql {
 
 
 	/**
-	 * Select a row using custom conditions
+	 * Select one or various rows using custom conditions
 	 * 
 	 * Example:
 	 * $Item = Item::selectOne('title = :title', [':title' => 'Titulo']);
 	 * 
 	 * @param string $where The "where" syntax.
 	 * @param array $marks Optional marks used in the query
+	 * @param int/array $limit Limit of the selection. Use an array for ranges
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
-	public static function selectOne ($where, $marks = null) {
+	public static function select ($where = null, $marks = null, $limit = null) {
 		$table = static::$table;
 
-		return static::fetch("SELECT * FROM `$table` WHERE $where LIMIT 1", $marks);
+		if ($where) {
+			$where = " WHERE $where";
+		}
+
+		if ($limit) {
+			$limit = ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
+		}
+
+		if ($limit === 1 || (is_array($limit) && ($limit[1] === 1))) {
+			return static::fetch("SELECT * FROM `$table`".$where.$limit, $marks);
+		}
+
+		return static::fetch("SELECT * FROM `$table`".$where.$limit, $marks);
 	}
 
 
@@ -401,5 +426,30 @@ trait Mysql {
 
 		return $data;
 	}
+
+
+	/**
+	 * Join two objects modifing the relation field
+	 * 
+	 * @param string $name The name used to store the item inside
+	 * @param Opentraits\Crud\Item $Item The item to relate
+	 *
+	 * @throws Exception If the items are not related
+	 *
+	 * @return boolean True if the relation has been executed
+	 */
+	public function join ($name, Item $Item) {
+		if (!empty($Item::$relation_field)) {
+			$field = $Item::$relation_field;
+
+			if (in_array($field, static::getFields())) {
+				$this->$field = $Item->id;
+				$this->$name = $Item;
+
+				return true;
+			}
+		}
+
+		throw new \Exception('The items '.static::$table.' and '.$Item::$table.' cannot be related');
+	}
 }
-?>
