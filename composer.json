@@ -1,5 +1,5 @@
 {
-	"name": "SimpleCrud/SimpleCrud",
+	"name": "simple-crud/simple-crud",
 	"type": "library",
 	"description": "PHP mysql CRUD class",
 	"keywords": ["crud", "mysql"],
