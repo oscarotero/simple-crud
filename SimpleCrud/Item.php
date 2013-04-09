@@ -321,16 +321,6 @@ class Item {
 
 
 	/**
-	 * Deletes the properties of the model (but not in the database)
-	 */
-	public function clean () {
-		foreach (static::getFields() as $field) {
-			$this->$field = null;
-		}
-	}
-
-
-	/**
 	 * Saves the object data into the database. If the object has the property "id", makes an UPDATE, otherwise makes an INSERT
 	 * 
 	 * @return boolean True if the row has been saved, false if doesn't
