@@ -239,16 +239,14 @@ class Item {
 			return is_array($id) ? new Results : false;
 		}
 
-		$table = static::$table;
-
 		if (is_array($id)) {
 			$limit = count($id);
 			$in = substr(str_repeat(', ?', $limit), 2);
 
-			return static::fetchAll("SELECT * FROM `$table` WHERE $name IN ($in) LIMIT $limit", $id);
+			return static::select("$name IN ($in)", null, $limit);
 		}
 
-		return static::fetch("SELECT * FROM `$table` WHERE $name = :id LIMIT 1", [':id' => $id]);
+		return static::select("$name = :id", [':id' => $id], 1);
 	}
 
 
@@ -271,15 +269,21 @@ class Item {
 			$where = " WHERE $where";
 		}
 
-		if ($limit) {
-			$limit = ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
+		if (empty($limit)) {
+			return static::fetchAll("SELECT * FROM `$table`$where", $marks);
 		}
 
-		if ($limit === 1 || (is_array($limit) && ($limit[1] === 1))) {
-			return static::fetch("SELECT * FROM `$table`".$where.$limit, $marks);
+		if ($limit === 1) {
+			return static::fetch("SELECT * FROM `$table`$where LIMIT 1", $marks);
 		}
 
-		return static::fetch("SELECT * FROM `$table`".$where.$limit, $marks);
+		if (is_array($limit)) {
+			if ($limit[1] === 1) {
+				return static::fetch("SELECT * FROM `$table`$where LIMIT ".implode(', ', $limit), $marks);
+			}
+
+			return static::fetchAll("SELECT * FROM `$table`$where LIMIT ".implode(', ', $limit), $marks);
+		}
 	}
 
 
