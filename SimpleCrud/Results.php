@@ -94,13 +94,13 @@ class Results implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable 
 	}
 
 	public function join ($name, $items) {
-		if ($this->isEmpty() || empty($items) || $items->isEmpty()) {
+		$items = ($items instanceof Results) ? $items : new Results([$items]);
+
+		if ($this->isEmpty() || $items->isEmpty()) {
 			return true;
 		}
 
-		$result = ($items instanceof Results) ? $items : new Results([$items]);
-
-		return self::joinItems($name, $this, $result);
+		return self::joinItems($name, $this, $items);
 	}
 
 
