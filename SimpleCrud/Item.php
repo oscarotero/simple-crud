@@ -243,7 +243,7 @@ class Item {
 			$limit = count($id);
 			$in = substr(str_repeat(', ?', $limit), 2);
 
-			return static::select("$name IN ($in)", null, $limit);
+			return static::select("$name IN ($in)", array_values($id), $limit);
 		}
 
 		return static::select("$name = :id", [':id' => $id], 1);
@@ -284,6 +284,8 @@ class Item {
 
 			return static::fetchAll("SELECT * FROM `$table`$where LIMIT ".implode(', ', $limit), $marks);
 		}
+
+		return static::fetchAll("SELECT * FROM `$table`$where LIMIT $limit", $marks);
 	}
 
 
