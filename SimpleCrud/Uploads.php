@@ -119,11 +119,7 @@ trait Uploads {
 		if (!empty($file) && strpos($file, '://')) {
 			if ($filename === null) {
 				$filename = pathinfo($file, PATHINFO_BASENAME);
-			} else if (!pathinfo($filename, PATHINFO_EXTENSION) && ($extension = pathinfo($file, PATHINFO_EXTENSION))) {
-				if (strpos($extension, '?') !== false) {
-					$extension = explode('?', $extension)[0];
-				}
-
+			} else if (!pathinfo($filename, PATHINFO_EXTENSION) && ($extension = pathinfo(parse_url($file, PHP_URL_PATH), PATHINFO_EXTENSION))) {
 				$filename .= ".$extension";
 			}
 
