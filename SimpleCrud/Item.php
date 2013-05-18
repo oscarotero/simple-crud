@@ -243,10 +243,10 @@ class Item {
 			$limit = count($id);
 			$in = substr(str_repeat(', ?', $limit), 2);
 
-			return static::select("$name IN ($in)", array_values($id), $limit);
+			return static::select("$name IN ($in)", array_values($id), null, $limit);
 		}
 
-		return static::select("$name = :id", [':id' => $id], 1);
+		return static::select("$name = :id", [':id' => $id], null, 1);
 	}
 
 
