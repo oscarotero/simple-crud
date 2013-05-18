@@ -258,15 +258,20 @@ class Item {
 	 * 
 	 * @param string $where The "where" syntax.
 	 * @param array $marks Optional marks used in the query
+	 * @param string $orderBy Optional parameter to sort the rows
 	 * @param int/array $limit Limit of the selection. Use an array for ranges
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
-	public static function select ($where = null, $marks = null, $limit = null) {
+	public static function select ($where = null, $marks = null, $orderBy = null, $limit = null) {
 		$table = static::$table;
 
 		if ($where) {
 			$where = " WHERE $where";
+		}
+
+		if ($orderBy) {
+			$where .= " ORDER BY $orderBy";
 		}
 
 		if (empty($limit)) {
