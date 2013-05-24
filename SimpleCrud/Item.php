@@ -353,7 +353,7 @@ class Item {
 
 		//Insert
 		if (empty($this->id)) {
-			$fields = implode(', ', array_keys($data));
+			$fields = '`'.implode('`, `', array_keys($data)).'`';
 			$marks = implode(', ', array_fill(0, count($data), '?'));
 
 			if (static::execute("INSERT INTO `$table` ($fields) VALUES ($marks)", array_values($data))) {
