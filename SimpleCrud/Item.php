@@ -224,17 +224,36 @@ class Item {
 
 
 	/**
-	 * Shortcut to select a row by id
-	 * 
-	 * Example:
-	 * $Item = Item::selectById(45);
+	 * Select one or more rows using a index key
 	 * 
 	 * @param int/array $id The id value
 	 * @param string $name The name of the id field. By default "id"
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
-	public static function selectById ($id, $name = 'id') {
+	public static function selectBy ($id, $name = 'id') {
+		if ($id instanceof Item) {
+			$Item = $id;
+
+			if (!empty($Item::$relation_field)) {
+				$field = $Item::$relation_field;
+
+				if (in_array($field, static::getFields())) {
+					return static::selectAll("$field = :id", [':id' => $Item->id]);
+				}
+			}
+
+			if (!empty(static::$relation_field)) {
+				$field = static::$relation_field;
+
+				if (in_array($field, $Item->getFields())) {
+					return static::selectOne('id = :id', [':id' => $Item->$field]);
+				}
+			}
+
+			throw new \Exception('The items '.static::$table.' and '.$Item::$table.' are no related');
+		}
+
 		if (empty($id)) {
 			return is_array($id) ? new Results : false;
 		}
@@ -243,10 +262,42 @@ class Item {
 			$limit = count($id);
 			$in = substr(str_repeat(', ?', $limit), 2);
 
-			return static::select("$name IN ($in)", array_values($id), null, $limit);
+			return static::selectAll("$name IN ($in)", array_values($id), null, $limit);
 		}
 
-		return static::select("$name = :id", [':id' => $id], null, 1);
+		return static::selectOne("$name = :id", [':id' => $id]);
+	}
+
+
+	/**
+	 * Select all rows using custom conditions
+	 * 
+	 * Example:
+	 * $Item = Item::selectOne('title = :title', [':title' => 'Titulo']);
+	 * 
+	 * @param string $where The "where" syntax.
+	 * @param array $marks Optional marks used in the query
+	 * @param string $orderBy Optional parameter to sort the rows
+	 * @param int/array $limit Limit of the selection. Use an array for ranges
+	 * 
+	 * @return object The result of the query or false if there was an error
+	 */
+	public static function selectAll ($where = '', $marks = null, $orderBy = null, $limit = null) {
+		$table = static::$table;
+
+		if ($where) {
+			$where = " WHERE $where";
+		}
+
+		if ($orderBy) {
+			$where .= " ORDER BY $orderBy";
+		}
+
+		if ($limit) {
+			$where .= " LIMIT $limit";
+		}
+
+		return static::fetchAll("SELECT * FROM `$table`$where", $marks);
 	}
 
 
@@ -259,11 +310,10 @@ class Item {
 	 * @param string $where The "where" syntax.
 	 * @param array $marks Optional marks used in the query
 	 * @param string $orderBy Optional parameter to sort the rows
-	 * @param int/array $limit Limit of the selection. Use an array for ranges
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
-	public static function select ($where = null, $marks = null, $orderBy = null, $limit = null) {
+	public static function selectOne ($where = '', $marks = null, $orderBy = null) {
 		$table = static::$table;
 
 		if ($where) {
@@ -274,23 +324,7 @@ class Item {
 			$where .= " ORDER BY $orderBy";
 		}
 
-		if (empty($limit)) {
-			return static::fetchAll("SELECT * FROM `$table`$where", $marks);
-		}
-
-		if ($limit === 1) {
-			return static::fetch("SELECT * FROM `$table`$where LIMIT 1", $marks);
-		}
-
-		if (is_array($limit)) {
-			if ($limit[1] === 1) {
-				return static::fetch("SELECT * FROM `$table`$where LIMIT ".implode(', ', $limit), $marks);
-			}
-
-			return static::fetchAll("SELECT * FROM `$table`$where LIMIT ".implode(', ', $limit), $marks);
-		}
-
-		return static::fetchAll("SELECT * FROM `$table`$where LIMIT $limit", $marks);
+		return static::fetch("SELECT * FROM `$table`$where LIMIT 1", $marks);
 	}
 
 
@@ -353,7 +387,7 @@ class Item {
 
 		//Insert
 		if (empty($this->id)) {
-			$fields = implode(', ', array_keys($data));
+			$fields = '`'.implode('`, `', array_keys($data)).'`';
 			$marks = implode(', ', array_fill(0, count($data), '?'));
 
 			if (static::execute("INSERT INTO `$table` ($fields) VALUES ($marks)", array_values($data))) {

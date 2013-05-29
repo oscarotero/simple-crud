@@ -52,8 +52,27 @@ $Post->description = 'New description';
 //Save (insert/update) the item in the database
 $Post->save();
 
+//Select one item
+$Post = Post::selectOne('id = :id', [':id' => 45]);
+
+//Select all items
+$Posts = Post::selectAll();
+
+//Select some items
+$Posts = Post::selectAll('active = 1');
+
 //Select an item from database by id
-$Post = Post::selectById(34);
+$Post = Post::selectBy(34);
+
+//Select various items (using an array of ids)
+$Posts = Post::selectBy([34, 35, 67]);
+
+//Select an item from database usin a custom key (for example: slug)
+$Post = Post::selectBy('my-first-post', 'slug');
+
+//Select items related with other items
+$Post = Post::selectBy(35);
+$Comments = Comments::selectBy($Post); //Return all comments related with this post
 
 //Fetch all results:
 $Post = Post::fetchAll('SELECT * FROM post WHERE title LIKE :title LIMIT 10', [':title' => '%php%']);
@@ -62,7 +81,7 @@ $Post = Post::fetchAll('SELECT * FROM post WHERE title LIKE :title LIMIT 10', ['
 $Post = Post::fetch('SELECT * FROM post WHERE title LIKE :title LIMIT 1', [':title' => '%php%']);
 
 //Delete the item
-$Post = Post::selectById('34');
+$Post = Post::selectBy(34);
 $Post->delete();
 
 //Validate or convert data before saving using the method prepareToSave:
@@ -98,6 +117,15 @@ $Comment->join('post', $Post);
 $Comment->save();
 ```
 
+You can select also the related items:
+
+```php
+$Post = Post::selectById(4);
+
+$Comments = Comments::selectBy($Post);
+```
+
+
 Lazy properties
 ---------------
 
@@ -110,11 +138,11 @@ class Post {
 	public static $fields = null;
 	
 	public function getComments () {
-		return Comments::select('posts_id = :id', [':id' => $this->id]);
+		return Comments::selectBy($this);
 	}
 }
 
-$Post = Post::selectById(34); //Select a post by id
+$Post = Post::selectBy(34); //Select a post by id
 
 $comments = $Post->comments; //Execute getComments and return the result
 
