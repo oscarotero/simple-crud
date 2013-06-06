@@ -175,19 +175,27 @@ Select an element by id or another index key:
 
 Select by id:
 
-```php $post = Posts::selectBy(23); ```
+```php
+$post = Posts::selectBy(23);
+```
 
 Select various ids:
 
-```php $posts = Posts::selectBy([45, 46, 47, 48]); ```
+```php
+$posts = Posts::selectBy([45, 46, 47, 48]);
+```
 
 Select by another index key name (for example, "slug"):
 
-```php $posts = Posts::selectBy('my-first-post', 'slug'); ```
+```php
+$posts = Posts::selectBy('my-first-post', 'slug');
+```
 
 Select items related with other items:
 
-```php $comments = Comments::selectBy(Posts::selectBy(34)); ```
+```php
+$comments = Comments::selectBy(Posts::selectBy(34));
+```
 
 
 Item::selectOne
@@ -197,15 +205,21 @@ Select the first item:
 
 Add a "where" condition:
 
-```php $post = Posts::selectOne('id < 34'); ```
+```php
+$post = Posts::selectOne('id < 34');
+```
 
 Add a "where" condition and marks:
 
-```php $post = Posts::selectOne('id < :id', [':id' => 34]); ```
+```php
+$post = Posts::selectOne('id < :id', [':id' => 34]);
+```
 
 Add a "where" condition, marks and "order by":
 
-```php $post = Posts::selectOne('id < :id', [':id' => 34], 'id DESC'); ```
+```php
+$post = Posts::selectOne('id < :id', [':id' => 34], 'id DESC');
+```
 
 
 Item::selectAll
@@ -215,19 +229,27 @@ It's the same than Item::selectOne but returns all found rows, instead of just t
 
 Add a "where" condition:
 
-```php $posts = Posts::selectAll('id < 34'); ```
+```php
+$posts = Posts::selectAll('id < 34');
+```
 
 Add a "where" condition and marks:
 
-```php $posts = Posts::selectAll('id < :id', [':id' => 34]); ```
+```php
+$posts = Posts::selectAll('id < :id', [':id' => 34]);
+```
 
 Add a "where" condition, marks and "order by":
 
-```php $posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC'); ```
+```php
+$posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC');
+```
 
 Add a "where" condition, marks, "order by" and limit:
 
-```php $posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC', 3); ```
+```php
+$posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC', 3);
+```
 
 
 Item::fetch
@@ -237,11 +259,15 @@ Returns the first item found. The main difference with Item::selectOne is that y
 
 Passing a query:
 
-```php $post = Posts::fetch('SELECT * FROM posts WHERE id = 34 LIMIT 1'); ```
+```php
+$post = Posts::fetch('SELECT * FROM posts WHERE id = 34 LIMIT 1');
+```
 
 Passing a query and the marks:
 
-```php $post = Posts::fetch('SELECT * FROM posts WHERE id = :id LIMIT 1', [':id' => 34]); ```
+```php
+$post = Posts::fetch('SELECT * FROM posts WHERE id = :id LIMIT 1', [':id' => 34]);
+```
 
 
 Item::fetchAll
@@ -251,11 +277,15 @@ It's like Item::fetch but returns the all items found.
 
 Passing a query:
 
-```php $posts = Posts::fetchAll('SELECT * FROM posts WHERE id > 34 LIMIT 10,20'); ```
+```php
+$posts = Posts::fetchAll('SELECT * FROM posts WHERE id > 34 LIMIT 10,20');
+```
 
 Passing a query and the marks:
 
-```php $posts = Posts::fetchAll('SELECT * FROM posts WHERE id > :id LIMIT 10,20', [':id' => 34]); ```
+```php
+$posts = Posts::fetchAll('SELECT * FROM posts WHERE id > :id LIMIT 10,20', [':id' => 34]);
+```
 
 
 Item::set
