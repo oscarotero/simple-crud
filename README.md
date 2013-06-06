@@ -163,3 +163,187 @@ $result = Posts::fetch($query, [':id' => 23]);
 
 echo $result->author->id; //Returns the author id (table users)
 ```
+
+
+API
+===
+
+Item::selectBy
+--------------
+
+Select an element by id or another index key:
+
+Select by id:
+
+```php $post = Posts::selectBy(23); ```
+
+Select various ids:
+
+```php $posts = Posts::selectBy([45, 46, 47, 48]); ```
+
+Select by another index key name (for example, "slug"):
+
+```php $posts = Posts::selectBy('my-first-post', 'slug'); ```
+
+Select items related with other items:
+
+```php $comments = Comments::selectBy(Posts::selectBy(34)); ```
+
+
+Item::selectOne
+---------------
+
+Select the first item:
+
+Add a "where" condition:
+
+```php $post = Posts::selectOne('id < 34'); ```
+
+Add a "where" condition and marks:
+
+```php $post = Posts::selectOne('id < :id', [':id' => 34]); ```
+
+Add a "where" condition, marks and "order by":
+
+```php $post = Posts::selectOne('id < :id', [':id' => 34], 'id DESC'); ```
+
+
+Item::selectAll
+---------------
+
+It's the same than Item::selectOne but returns all found rows, instead of just the first one:
+
+Add a "where" condition:
+
+```php $posts = Posts::selectAll('id < 34'); ```
+
+Add a "where" condition and marks:
+
+```php $posts = Posts::selectAll('id < :id', [':id' => 34]); ```
+
+Add a "where" condition, marks and "order by":
+
+```php $posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC'); ```
+
+Add a "where" condition, marks, "order by" and limit:
+
+```php $posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC', 3); ```
+
+
+Item::fetch
+-----------
+
+Returns the first item found. The main difference with Item::selectOne is that you must write the full SQL query. It's a good solution for complicated queries:
+
+Passing a query:
+
+```php $post = Posts::fetch('SELECT * FROM posts WHERE id = 34 LIMIT 1'); ```
+
+Passing a query and the marks:
+
+```php $post = Posts::fetch('SELECT * FROM posts WHERE id = :id LIMIT 1', [':id' => 34]); ```
+
+
+Item::fetchAll
+--------------
+
+It's like Item::fetch but returns the all items found.
+
+Passing a query:
+
+```php $posts = Posts::fetchAll('SELECT * FROM posts WHERE id > 34 LIMIT 10,20'); ```
+
+Passing a query and the marks:
+
+```php $posts = Posts::fetchAll('SELECT * FROM posts WHERE id > :id LIMIT 10,20', [':id' => 34]); ```
+
+
+Item::set
+---------
+
+Set new values to one or various fields. If the field does not exists in database throws an exception:
+
+Edit a field:
+
+```php
+$post->set('title', 'New title name');
+
+//This is the samen than:
+$post->title = 'New title name';
+```
+
+Edit various fields:
+
+```php
+$post->set([
+	'title' => 'New title name',
+	'body' => 'New body content'
+]);
+```
+
+Item::get
+---------
+
+Return one or all values of a row. Only returns fields that exist in the database:
+
+Get one value
+
+```php
+$title = $post->get('title');
+
+//This is the samen than:
+$title = $post->title;
+```
+
+Get all values (return an array)
+
+```php
+$data = $post->get();
+
+$title = $data['title'];
+```
+
+Item::save
+----------
+
+Insert or update the value in database (if the field "id" has any value, update, if not insert)
+
+```php
+$post->title = 'New title';
+
+$post->save();
+```
+
+Item::delete
+------------
+
+Deletes this row from the database:
+
+```php
+$post = Posts::selectBy(34);
+
+$post->delete();
+```
+
+Item::create
+------------
+
+Creates a new instance (without save it in the database):
+
+Create an empty item:
+
+```php
+$post = Posts::create();
+```
+
+Create an item with values:
+
+```php
+$post = Posts::create([
+	'title' => 'New title',
+	'body' => 'Post body'
+]);
+
+//Insert the new item in the database
+$post->save();
+```
