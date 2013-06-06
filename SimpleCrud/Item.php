@@ -64,10 +64,11 @@ class Item {
 	 * $posts[0]->User //The user model inside the post
 	 * 
 	 * @param string $name The name of the parameter used to the sub-model. If it's not defined, uses the model class name (without the namespace)
+	 * @param array $filter The names of the fields to return. If it's not defined, returns all
 	 * 
 	 * @return string The portion of mysql code with the fields names
 	 */
-	public static function getQueryFields ($name = null) {
+	public static function getQueryFields ($name = null, array $filter = null) {
 		$table = static::$table;
 		$fields = array();
 		$class = get_called_class();
@@ -77,8 +78,16 @@ class Item {
 			$name = lcfirst($name);
 		}
 
-		foreach (static::getFields() as $field) {
-			$fields[] = "`$table`.`$field` as `$class::$field::$name`";
+		if ($filter === null) {
+			foreach (static::getFields() as $field) {
+				$fields[] = "`$table`.`$field` as `$class::$field::$name`";
+			}
+		} else {
+			foreach (static::getFields() as $field) {
+				if (in_array($field, $filter)) {
+					$fields[] = "`$table`.`$field` as `$class::$field::$name`";
+				}
+			}
 		}
 
 		return implode(', ', $fields);
