@@ -339,7 +339,7 @@ class Item {
 		$Item = new static();
 
 		if ($data !== null) {
-			$Item->edit($data);
+			$Item->set($data);
 		}
 
 		return $Item;
@@ -350,12 +350,23 @@ class Item {
 	 * Edit the data of the object using an array (but doesn't save it into the database)
 	 * It's the same than edit the properties of the object but check if the property name is in the fields list
 	 * 
-	 * @param array $data The new data
+	 * @param array $data The new data (field => value)
+	 * 
+	 * @param array $field The field name
+	 * @param array $value The new value
 	 */
-	public function edit (array $data) {
+	public function set ($field, $value = null) {
 		$fields = static::getFields();
 
-		foreach ($data as $field => $value) {
+		if (is_array($field)) {
+			foreach ($field as $field => $value) {
+				if (!in_array($field, $fields)) {
+					throw new \Exception("The field '$field' does not exists");
+				}
+
+				$this->$field = $value;
+			}
+		} else {
 			if (!in_array($field, $fields)) {
 				throw new \Exception("The field '$field' does not exists");
 			}
@@ -366,12 +377,32 @@ class Item {
 
 
 	/**
+	 * Returns one or all data of the row
+	 * 
+	 * @return mixed The data of the row
+	 */
+	public function get ($field = null) {
+		if ($field !== null) {
+			return (in_array($field, static::getFields()) && isset($this->$field)) ? $this->$field : null;
+		}
+
+		$data = array();
+
+		foreach (static::getFields() as $field) {
+			$data[$field] = isset($this->$field) ? $this->$field : null;
+		}
+
+		return $data;
+	}
+
+
+	/**
 	 * Saves the object data into the database. If the object has the property "id", makes an UPDATE, otherwise makes an INSERT
 	 * 
 	 * @return boolean True if the row has been saved, false if doesn't
 	 */
 	public function save () {
-		if (($data = $this->prepareToSave($this->getData())) === false) {
+		if (($data = $this->prepareToSave($this->get())) === false) {
 			return false;
 		}
 
@@ -443,22 +474,6 @@ class Item {
 	 * @return array The transformed data. If returns false, the data will be not saved.
 	 */
 	public function prepareToSave (array $data) {
-		return $data;
-	}
-
-
-	/**
-	 * Returns the fields data of the row
-	 * 
-	 * @return array The data of the row
-	 */
-	public function getData () {
-		$data = array();
-
-		foreach (static::getFields() as $field) {
-			$data[$field] = isset($this->$field) ? $this->$field : null;
-		}
-
 		return $data;
 	}
 
