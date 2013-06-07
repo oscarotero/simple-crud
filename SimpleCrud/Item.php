@@ -273,7 +273,7 @@ class Item {
 			if (!empty($Item::$relation_field) && ($field = $Item::$relation_field) && in_array($field, static::getFields())) {
 				$id = $id->getKeys();
 				$name = $field;
-			} else if (!empty(self::$relation_field) && ($field = self::$relation_field) && in_array($field, $Item::getFields())) {
+			} else if (!empty(static::$relation_field) && ($field = static::$relation_field) && in_array($field, $Item::getFields())) {
 				$id = $id->getKeys($field);
 			} else {
 				throw new \Exception('The items '.static::$table.' and '.$Item::$table.' are no related');
