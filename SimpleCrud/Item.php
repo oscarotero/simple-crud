@@ -113,6 +113,8 @@ class Item {
 
 		if (method_exists($this, $method)) {
 			$this->$method($value);
+		} else {
+			$this->$name = $value;
 		}
 	}
 
