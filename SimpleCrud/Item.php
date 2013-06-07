@@ -119,6 +119,21 @@ class Item {
 	}
 
 
+	/**
+	 * Magic method to execute 'set' functions.
+	 * 
+	 * @param string $name The property name
+	 * @param string $value The value of the property
+	 */
+	public function __set ($name, $value) {
+		$method = "set$name";
+
+		if (method_exists($this, $method)) {
+			$this->$method($value);
+		}
+	}
+
+
 
 	/**
 	 * Initialize the values, resolve fields.

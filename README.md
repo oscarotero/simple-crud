@@ -129,7 +129,7 @@ $Comments = Comments::selectBy($Post);
 Lazy properties
 ---------------
 
-You can define method starting by "get" to return properties in lazy mode:
+With the magic method "__get()", you can define methods starting by "get" to return properties in lazy mode:
 
 ```php
 class Post {
@@ -148,6 +148,34 @@ $comments = $Post->comments; //Execute getComments and return the result
 
 $Post->comments; //Don't execute getComments again. The result has been saved in this property.
 ```
+
+
+Custom setters
+--------------
+
+With the magic method "__set()", you can define methods starting by "set" to create custom setters (for example, to convert values)
+
+```php
+class Post {
+	public static $table = 'posts';
+	public static $relation_field = 'posts_id';
+	public static $fields = null;
+	
+	public function setDatetimePubdate (Datetime $Datetime) {
+		$this->pubdate = $Datetime->format('Y-m-d H:i:s');
+	}
+}
+
+$Post = Post::selectBy(34); //Select a post by id
+
+$Post->pubdate = '2014-06-27 23:45:12'; //Set a value directly
+
+$Post->datetimePubdate = new DateTime('2000-01-01', new DateTimeZone('Pacific/Nauru'));
+
+echo $Post->pubdate; //2000-01-01 00:12:00
+```
+
+
 
 Join properties
 ---------------
