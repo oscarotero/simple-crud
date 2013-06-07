@@ -3,23 +3,6 @@
  * SimpleCrud\Item
  * 
  * Provides a simple model with basic database operations.
- * Example:
- * 
- * class Items extends SimpleCrud\Item {
- *  static $table = 'items';
- *  static $fields = null;
- * }
- * 
- * Items::setConnection($Pdo);
- * 
- * $Item = Items::create(array(
- * 	'name' => 'Item name',
- * 	'description' => 'Item description'
- * ));
- * 
- * $Item->save();
- * $Item->name = 'New name for the item';
- * $Item->save();
  */
 namespace SimpleCrud;
 
@@ -224,7 +207,7 @@ class Item {
 
 		$result = $query->fetchAll(\PDO::FETCH_CLASS, get_called_class());
 
-		return new Results($result);
+		return new ItemCollection($result);
 	}
 
 
@@ -278,8 +261,25 @@ class Item {
 			throw new \Exception('The items '.static::$table.' and '.$Item::$table.' are no related');
 		}
 
+		if ($id instanceof ItemCollection) {
+			if ($id->isEmpty()) {
+				return new ItemCollection;
+			}
+
+			$Item = $id->rewind();
+
+			if (!empty($Item::$relation_field) && ($field = $Item::$relation_field) && in_array($field, static::getFields())) {
+				$id = $id->getKeys();
+				$name = $field;
+			} else if (!empty(self::$relation_field) && ($field = self::$relation_field) && in_array($field, $Item::getFields())) {
+				$id = $id->getKeys($field);
+			} else {
+				throw new \Exception('The items '.static::$table.' and '.$Item::$table.' are no related');
+			}
+		}
+
 		if (empty($id)) {
-			return is_array($id) ? new Results : false;
+			return is_array($id) ? new ItemCollection : false;
 		}
 
 		if (is_array($id)) {

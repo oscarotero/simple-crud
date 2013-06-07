@@ -7,18 +7,21 @@ Requirements
 ------------
 
 * PHP 5.4 or newer
-* Any PSR-0 compatible autoloader
 
 
 Usage
 -----
 
-Configure the database connection and create a class for each table in the database:
+SimpleCrud has two main classes: Item and ItemCollection. Item represent a database table and stores a row in database and ItemCollection is like an array of items (stores the result of database query).
+Each database table you want to use must have an own class extending Item and configurated with the database connection, real table name, etc.
+
+Let's configure the database connection and create a class for each table in the database:
 
 ```php
 
 use SimpleCrud\Item;
 
+//Set the database connection to Item, so all tables extending Item share the same configuration.
 Item::setConnection($PDO);
 
 class Post extends Item {
@@ -195,6 +198,7 @@ echo $result->author->id; //Returns the author id (table users)
 
 API
 ===
+
 
 Item::selectBy
 --------------
@@ -405,3 +409,61 @@ $post = Posts::create([
 //Insert the new item in the database
 $post->save();
 ```
+
+
+ItemCollection::getKeys
+-----------------------
+
+Returns an array with the value of all items for a specific key (by default: "id")
+
+```php
+$posts = Posts::selectAll();
+
+$ids = posts->getKeys();
+
+$titles = posts->getKeys('title');
+```
+
+ItemCollection::isEmpty
+-----------------------
+
+Returns true if the collection is empty (has no items) and false if has at least one item:
+
+```php
+$posts = Posts::selectAll('visible = 1');
+
+if (posts->isEmpty()) {
+	echo 'There is no visible posts';
+}
+```
+
+ItemCollection::setToAll
+------------------------
+
+Set a specific property to all items
+
+```php
+$posts = Posts::selectAll('visible = 1');
+
+$posts->setToAll('visible', 0);
+```
+
+ItemCollection::join
+--------------------
+
+Join an item collection with another item collection according with the relation_field.
+
+```php
+$posts = Posts::selectAll('visible = 1'); //Select all visible post
+
+$postsComments = Comments::selectBy($posts); //Select all comments related with the posts
+
+$posts->join('comments', $postsComments); //Join the comments with the posts under the name "comments"
+
+foreach ($posts as $post) {
+	if ($post->comments->isEmpty()) {
+		echo 'this post has no comments';
+	}
+}
+```
+
