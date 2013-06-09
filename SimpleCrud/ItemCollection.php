@@ -69,18 +69,30 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 		return $this->items;
 	}
 
-	public function getKeys ($id = 'id') {
-		$ids = array();
+	public function getKeys ($id = 'id', $name = null) {
+		$values = array();
+
+		if ($name !== null) {
+			foreach ($this->items as $item) {
+				$key = $item->$id;
+
+				if (!empty($key)) {
+					$values[$key] = $item->$name;
+				}
+			}
+
+			return $values;
+		}
 
 		foreach ($this->items as $item) {
-			$value = $item->$id;
+			$key = $item->$id;
 
-			if (!empty($value)) {
-				$ids[$value] = null;
+			if (!empty($key)) {
+				$values[$key] = null;
 			}
 		}
 
-		return array_keys($ids);
+		return array_keys($values);
 	}
 
 	public function isEmpty () {
