@@ -248,6 +248,10 @@ class Item {
 				$field = $Item::$relation_field;
 
 				if (in_array($field, static::getFields())) {
+					if (!isset($Item->id)) {
+						throw new \Exception('The item '.$Item::$table.' must have defined the property "id" to select the related items in '.static::$table);
+					}
+
 					return static::selectAll("$field = :id", [':id' => $Item->id]);
 				}
 			}
@@ -256,6 +260,10 @@ class Item {
 				$field = static::$relation_field;
 
 				if (in_array($field, $Item->getFields())) {
+					if (!isset($Item->$field)) {
+						throw new \Exception('The item '.$Item::$table.' must have defined the property "'.$field.'" to select the related items in '.static::$table);
+					}
+
 					return static::selectOne('id = :id', [':id' => $Item->$field]);
 				}
 			}
