@@ -30,7 +30,12 @@ class Item {
 		if (empty(static::$fields)) {
 			$table = static::$table;
 
-			static::$fields = static::$connection->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0)->fetchAll();
+			if (!($statement = static::$connection->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0))) {
+				throw new \Exception('MySQL error: '.implode(' / ', static::$connection->errorInfo()));
+				return false;
+			}
+
+			return static::$fields = $statement->fetchAll();
 		}
 
 		return static::$fields;
