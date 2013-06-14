@@ -175,6 +175,8 @@ class Item {
 			return false;
 		}
 
+		$statement->setFetchMode(\PDO::FETCH_CLASS, get_called_class());
+
 		if (is_array(static::$debug)) {
 			static::debug($statement, $marks);
 		}
@@ -212,9 +214,7 @@ class Item {
 			$query = static::execute($query, $marks);
 		}
 
-		$result = $query->fetchAll(\PDO::FETCH_CLASS, get_called_class());
-
-		return new ItemCollection($result);
+		return new ItemCollection($query->fetchAll());
 	}
 
 
@@ -230,8 +230,6 @@ class Item {
 		if (!($query instanceof \PDOStatement)) {
 			$query = static::execute($query, $marks);
 		}
-
-		$query->setFetchMode(\PDO::FETCH_CLASS, get_called_class());
 
 		return $query->fetch();
 	}
