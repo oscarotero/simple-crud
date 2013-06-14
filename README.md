@@ -301,6 +301,17 @@ Passing a query and the marks:
 $post = Posts::fetch('SELECT * FROM posts WHERE id = :id LIMIT 1', [':id' => 34]);
 ```
 
+Fetch all values one by one:
+
+```php
+$posts_statement = Posts::getStatement('SELECT * FROM posts WHERE id > :id', [':id' => 34]);
+
+while ($post = $posts_statement->fetch()) {
+	echo $post->id;
+}
+
+```
+
 
 Item::fetchAll
 --------------

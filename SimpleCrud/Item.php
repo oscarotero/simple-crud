@@ -162,7 +162,7 @@ class Item {
 	 * 
 	 * @return PDOStatement The result
 	 */
-	public static function execute ($query, array $marks = null) {
+	public static function getStatement ($query, array $marks = null) {
 		$statement = static::$connection->prepare($query);
 
 		if ($statement === false) {
@@ -211,7 +211,7 @@ class Item {
 	 */
 	public static function fetchAll ($query, array $marks = null) {
 		if (!($query instanceof \PDOStatement)) {
-			$query = static::execute($query, $marks);
+			$query = static::getStatement($query, $marks);
 		}
 
 		return new ItemCollection($query->fetchAll());
@@ -228,7 +228,7 @@ class Item {
 	 */
 	public static function fetch ($query, array $marks = null) {
 		if (!($query instanceof \PDOStatement)) {
-			$query = static::execute($query, $marks);
+			$query = static::getStatement($query, $marks);
 		}
 
 		return $query->fetch();
