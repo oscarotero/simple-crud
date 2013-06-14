@@ -162,7 +162,7 @@ class Item {
 	 * 
 	 * @return PDOStatement The result
 	 */
-	public static function getStatement ($query, array $marks = null) {
+	public static function execute ($query, array $marks = null) {
 		$statement = static::$connection->prepare($query);
 
 		if ($statement === false) {
@@ -175,13 +175,33 @@ class Item {
 			return false;
 		}
 
-		$statement->setFetchMode(\PDO::FETCH_CLASS, get_called_class());
-
 		if (is_array(static::$debug)) {
 			static::debug($statement, $marks);
 		}
 
 		return $statement;
+	}
+
+
+
+	/**
+	 * Execute a query and returns the statement object with the result
+	 * 
+	 * @param  string $query The Mysql query to execute
+	 * @param  array $marks The marks passed to the statement
+	 *
+	 * @throws Exception On error preparing or executing the statement
+	 * 
+	 * @return PDOStatement The result
+	 */
+	public static function getStatement ($query, array $marks = null) {
+		if (($statement = static::execute($query, $marks))) {
+			$statement->setFetchMode(\PDO::FETCH_CLASS, get_called_class());
+			
+			return $statement;
+		}
+
+		return false;
 	}
 
 
