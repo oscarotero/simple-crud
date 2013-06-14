@@ -301,17 +301,6 @@ Passing a query and the marks:
 $post = Posts::fetch('SELECT * FROM posts WHERE id = :id LIMIT 1', [':id' => 34]);
 ```
 
-Fetch all values one by one:
-
-```php
-$posts_statement = Posts::getStatement('SELECT * FROM posts WHERE id > :id', [':id' => 34]);
-
-while ($post = $posts_statement->fetch()) {
-	echo $post->id;
-}
-
-```
-
 
 Item::fetchAll
 --------------
@@ -328,6 +317,20 @@ Passing a query and the marks:
 
 ```php
 $posts = Posts::fetchAll('SELECT * FROM posts WHERE id > :id LIMIT 10,20', [':id' => 34]);
+```
+
+
+Item::getStatement
+------------------
+
+Prepares a query and execute it, returning a PDO statement object with the result.
+
+```php
+$posts_statement = Posts::getStatement('SELECT * FROM posts WHERE id > :id', [':id' => 34]);
+
+while ($post = $posts_statement->fetch()) {
+	echo $post->id;
+}
 ```
 
 
