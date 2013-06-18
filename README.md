@@ -12,13 +12,16 @@ Requirements
 Usage
 -----
 
-SimpleCrud has two main classes: Item and ItemCollection. Item represent a database table and stores a row in database and ItemCollection is like an array of items (stores the result of database query).
+SimpleCrud has two main classes: Item and ItemCollection.
+
+* Item represents a table of the database and each row of this table.
+* ItemCollection is like an array of items (stores the result of a query).
+
 Each database table you want to use must have an own class extending Item and configurated with the database connection, real table name, etc.
 
 Let's configure the database connection and create a class for each table in the database:
 
 ```php
-
 use SimpleCrud\Item;
 
 //Set the database connection to Item, so all tables extending Item share the same configuration.
@@ -26,13 +29,13 @@ Item::setConnection($PDO);
 
 class Post extends Item {
 	public static $table = 'posts'; //The table name
-	public static $relation_field = 'posts_id'; //The field used to relate with other tables
-	public static $fields = null; //if $fields is empty, it executes a mysql DESCRIBE command to get its names
+	public static $foreign_key = 'posts_id'; //The field used in other tables to relate with this table
+	public static $fields = null; //Array of all fields you can use in this table. If it's empty, it executes a mysql DESCRIBE command to get its names
 }
 
 class Comments extends Item {
 	public static $table = 'comments';
-	public static $relation_field = 'comments_id';
+	public static $foreign_key = 'comments_id';
 	public static $fields = null;
 }
 ```
@@ -90,7 +93,7 @@ $Post->delete();
 //Validate or convert data before saving using the method prepareToSave:
 class Post {
 	public static $table = 'posts';
-	public static $relation_field = 'posts_id';
+	public static $foreign_key = 'posts_id';
 	public static $fields = null;
 	
 	public function prepareToSave (array $data) {
@@ -106,7 +109,7 @@ class Post {
 Relations
 ---------
 
-SimpleCrud provides a simple way to relate/unrelate mysql tables. Each table has a relation_field static variable that define the field name used to join two tables.
+SimpleCrud provides a simple way to relate/unrelate mysql tables. Each table has a foreign_key static variable that define the field name used to join two tables.
 Only direct relations are supported, (one-to-many) but not "many-to-many". Example:
 
 ```php
@@ -137,7 +140,7 @@ With the magic method "__get()", you can define methods starting by "get" to ret
 ```php
 class Post {
 	public static $table = 'posts';
-	public static $relation_field = 'posts_id';
+	public static $foreign_key = 'posts_id';
 	public static $fields = null;
 	
 	public function getComments () {
@@ -161,7 +164,7 @@ With the magic method "__set()", you can define methods starting by "set" to cre
 ```php
 class Post {
 	public static $table = 'posts';
-	public static $relation_field = 'posts_id';
+	public static $foreign_key = 'posts_id';
 	public static $fields = null;
 	
 	public function setDatetimePubdate (Datetime $Datetime) {
@@ -186,13 +189,17 @@ Join properties
 You can join more than one table on select to optimize the number of mysql queries:
 
 ```php
-$fields = Users::getQueryFields('author');
+$fields = Users::getSqlFields(); //Generates a string like: `users`.`id` as `users.id`, `users`.`name` as `users.name`, ...
 
 $query = "SELECT posts.*, $fields FROM posts LEFT JOIN users ON posts.users_id = users.id WHERE posts.id = :id";
 
 $result = Posts::fetch($query, [':id' => 23]);
 
-echo $result->author->id; //Returns the author id (table users)
+echo $result->{'users.id'}; //Return the id of the user
+
+Users::createIn($result); //Generate the Users instance automaticaly
+
+echo $result->user->id; //Return the id of the user
 ```
 
 
@@ -465,7 +472,7 @@ $posts->setToAll('visible', 0);
 ItemCollection::join
 --------------------
 
-Join an item collection with another item collection according with the relation_field.
+Join an item collection with another item collection according with the foreign_key.
 
 ```php
 $posts = Posts::selectAll('visible = 1'); //Select all visible post
@@ -480,4 +487,3 @@ foreach ($posts as $post) {
 	}
 }
 ```
-

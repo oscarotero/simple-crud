@@ -120,7 +120,7 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 		$Item1 = $Items1->rewind();
 		$Item2 = $Items2->rewind();
 
-		if (!empty($Item1::$relation_field) && ($field = $Item1::$relation_field) && in_array($field, $Item2::getFields())) {
+		if (!empty($Item1::$foreign_key) && ($field = $Item1::$foreign_key) && in_array($field, $Item2::getFields())) {
 			foreach ($Items1 as $Item) {
 				if (!isset($Item->$name)) {
 					$Item->$name = new ItemCollection();
@@ -138,7 +138,7 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 			return true;
 		}
 
-		if (!empty($Item2::$relation_field) && ($field = $Item2::$relation_field) && property_exists($Item1, $field)) {
+		if (!empty($Item2::$foreign_key) && ($field = $Item2::$foreign_key) && property_exists($Item1, $field)) {
 			foreach ($Items1 as $Item) {
 				$id = $Item->$field;
 
@@ -153,4 +153,3 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 		return false;
 	}
 }
-?>

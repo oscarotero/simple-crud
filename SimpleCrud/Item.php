@@ -81,14 +81,93 @@ class Item {
 		return implode(', ', $fields);
 	}
 
+	public static function getSqlFields (array $filter = null) {
+		$table = static::$table;
+		$prefix = "$table.";
+		$fields = array();
 
-	/**
-	 * Constructor
-	 */
-	public function __construct () {
-		$this->init();
+		if ($filter === null) {
+			foreach (static::getFields() as $field) {
+				$fields[] = "`$table`.`$field` as `$prefix$field`";
+			}
+		} else {
+			foreach (static::getFields() as $field) {
+				if (in_array($field, $filter)) {
+					$fields[] = "`$table`.`$field` as `$prefix$field`";
+				}
+			}
+		}
+
+		return implode(', ', $fields);
 	}
 
+
+	public static function createIn ($Item, $name = null) {
+		$table = static::$table;
+		$prefix = "$table.";
+
+		if (!$name) {
+			$name = $table;
+		}
+
+		$prefixLength = strlen($prefix);
+		$Class = new \ReflectionClass(get_called_class());
+		$Constructor = $Class->getConstructor();
+
+		if ($Item instanceof Item) {
+			$ItemInstance = $Class->newInstanceWithoutConstructor();
+
+			foreach ($Item as $key => $value) {
+				if (strpos($key, $prefix) === 0) {
+					$propName = substr($key, $prefixLength);
+					$ItemInstance->$propName = $value;
+					unset($Item->$key);
+				}
+			}
+
+			if ($Constructor !== null) {
+				$Constructor->invoke($ItemInstance);
+			}
+
+			$Item->$name = $ItemInstance;
+
+			return null;
+
+		}
+
+		if ($Item instanceof ItemCollection) {
+			if ($Item->isEmpty()) {
+				return null;
+			}
+
+			$keys = array();
+
+			foreach ($Item->rewind() as $key => $value) {
+				if (strpos($key, $prefix) === 0) {
+					$keys[substr($key, $prefixLength)] = $key;
+				}
+			}
+
+			if (!$keys) {
+				return null;
+			}
+
+			foreach ($Item as $I) {
+				$ItemInstance = $Class->newInstanceWithoutConstructor();
+
+				foreach ($keys as $key => $field) {
+					$ItemInstance->$key = $I->$field;
+					unset($I->$field);
+				}
+
+				if ($Constructor !== null) {
+					$Constructor->invoke($ItemInstance);
+				}
+
+				$I->$name = $ItemInstance;
+			}
+		}
+	}
 
 
 	/**
@@ -120,33 +199,6 @@ class Item {
 			$this->$method($value);
 		} else {
 			$this->$name = $value;
-		}
-	}
-
-
-
-	/**
-	 * Initialize the values, resolve fields.
-	 */
-	public function init () {
-		$fields = array();
-
-		foreach ($this as $key => $value) {
-			if (strpos($key, '::') !== false) {
-				list($class, $field, $name) = explode('::', $key, 3);
-
-				if (!isset($this->$name)) {
-					$fields[] = $name;
-					$this->$name = (new \ReflectionClass($class))->newInstanceWithoutConstructor();
-				}
-
-				$this->$name->$field = $value;
-				unset($this->$key);
-			}
-		}
-
-		foreach ($fields as $name) {
-			$this->$name->__construct();
 		}
 	}
 
@@ -267,8 +319,8 @@ class Item {
 		if ($id instanceof Item) {
 			$Item = $id;
 
-			if (!empty($Item::$relation_field)) {
-				$field = $Item::$relation_field;
+			if (!empty($Item::$foreign_key)) {
+				$field = $Item::$foreign_key;
 
 				if (in_array($field, static::getFields())) {
 					if (!isset($Item->id)) {
@@ -279,8 +331,8 @@ class Item {
 				}
 			}
 
-			if (!empty(static::$relation_field)) {
-				$field = static::$relation_field;
+			if (!empty(static::$foreign_key)) {
+				$field = static::$foreign_key;
 
 				if (in_array($field, $Item->getFields())) {
 					if (!isset($Item->$field)) {
@@ -301,10 +353,10 @@ class Item {
 
 			$Item = $id->rewind();
 
-			if (!empty($Item::$relation_field) && ($field = $Item::$relation_field) && in_array($field, static::getFields())) {
+			if (!empty($Item::$foreign_key) && ($field = $Item::$foreign_key) && in_array($field, static::getFields())) {
 				$id = $id->getKeys();
 				$name = $field;
-			} else if (!empty(static::$relation_field) && ($field = static::$relation_field) && in_array($field, $Item::getFields())) {
+			} else if (!empty(static::$foreign_key) && ($field = static::$foreign_key) && in_array($field, $Item::getFields())) {
 				$id = $id->getKeys($field);
 			} else {
 				throw new \Exception('The items '.static::$table.' and '.$Item::$table.' are no related');
@@ -335,7 +387,7 @@ class Item {
 	 * @param string $where The "where" syntax.
 	 * @param array $marks Optional marks used in the query
 	 * @param string $orderBy Optional parameter to sort the rows
-	 * @param int/array $limit Limit of the selection. Use an array for ranges
+	 * @param int/string $limit Limit of the selection. Use an array for ranges
 	 * 
 	 * @return object The result of the query or false if there was an error
 	 */
@@ -382,6 +434,48 @@ class Item {
 		}
 
 		return static::fetch("SELECT * FROM `$table`$where LIMIT 1", $marks);
+	}
+
+
+	/**
+	 * Makes a SELECT COUNT
+	 * 
+	 * @param string $where The "where" syntax.
+	 * @param array $marks Optional marks used in the query
+	 * @param int/string $limit Limit of the selection. Use an array for ranges
+	 * 
+	 * @return integer
+	 */
+	public static function count ($where = '', $marks = null, $limit = null) {
+		$table = static::$table;
+
+		if ($where) {
+			$where = " WHERE $where";
+		}
+
+		if ($limit) {
+			$where .= " LIMIT $limit";
+		}
+
+		if (($statement = static::execute("SELECT COUNT(*) FROM `$table` $where", $marks)) && ($result = $statement->fetch(\PDO::FETCH_NUM))) {
+			return (int)$result[0];
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * Makes a SELECT COUNT
+	 * 
+	 * @param string $where The "where" syntax.
+	 * @param array $marks Optional marks used in the query
+	 * @param int/string $limit Limit of the selection. Use an array for ranges
+	 * 
+	 * @return integer
+	 */
+	public static function exists ($id, $name = 'id') {
+		return (static::count("$name = :id", [':id' => $id], 1) === 1);
 	}
 
 
@@ -546,8 +640,8 @@ class Item {
 	 * @return boolean True if the relation has been executed
 	 */
 	public function join ($name, Item $Item) {
-		if (!empty($Item::$relation_field)) {
-			$field = $Item::$relation_field;
+		if (!empty($Item::$foreign_key)) {
+			$field = $Item::$foreign_key;
 
 			if (in_array($field, static::getFields())) {
 				$this->$field = $Item->id;
