@@ -136,7 +136,7 @@ class Item {
 
 		if ($joins) {
 			foreach ($joins as $join) {
-				$join = static::ITEMS_NAMESPACE.$join;
+				$join = static::ITEMS_NAMESPACE.ucfirst($join);
 
 				if (($relation = static::getRelation($join))) {
 					list($type, $foreign_key) = $relation;
@@ -503,7 +503,7 @@ class Item {
 			return $this->$name = $this->$method();
 		}
 
-		$foreignClass = static::ITEMS_NAMESPACE.$name;
+		$foreignClass = static::ITEMS_NAMESPACE.ucfirst($name);
 
 		if (class_exists($foreignClass) && static::getRelation($foreignClass)) {
 			return $this->$name = $foreignClass::selectBy($this);
@@ -514,7 +514,7 @@ class Item {
 
 	public function load ($joinItem) {
 		foreach ((array)$joinItem as $name) {
-			$foreignClass = static::ITEMS_NAMESPACE.$name;
+			$foreignClass = static::ITEMS_NAMESPACE.ucfirst($name);
 
 			if (class_exists($foreignClass) && static::getRelation($foreignClass)) {
 				return $this->$name = $foreignClass::selectBy($this);
@@ -538,7 +538,7 @@ class Item {
 					return $this->$name->$property = $value;
 				}
 
-				$foreignClass = static::ITEMS_NAMESPACE.$name;
+				$foreignClass = static::ITEMS_NAMESPACE.ucfirst($name);
 
 				if (class_exists($foreignClass)) {
 					return $this->$name = $foreignClass::create([$property => $value]);

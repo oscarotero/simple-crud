@@ -104,7 +104,7 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 				$subJoinItems = null;
 			}
 
-			$class = $item::ITEMS_NAMESPACE.$joinItems;
+			$class = $item::ITEMS_NAMESPACE.ucfirst($joinItems);
 
 			$this->set($class::selectBy($this, $subJoinItems));
 		}
