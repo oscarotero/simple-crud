@@ -19,8 +19,8 @@
 namespace SimpleCrud;
 
 trait Uploads {
-	public static $uploadsPath;
-	public static $uploadsUrl;
+	protected static $uploadsPath;
+	protected static $uploadsUrl;
 
 
 	/**
