@@ -9,11 +9,9 @@ namespace SimpleCrud;
 class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 	private $items = array();
 
-	public function __construct (array $items = null) {
+	public function __construct ($items = null) {
 		if ($items !== null) {
-			foreach ($items as $item) {
-				$this[] = $item;
-			}
+			$this->add($items);
 		}
 	}
 
@@ -69,15 +67,15 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 		return $this->items;
 	}
 
-	public function getKeys ($id = 'id', $name = null) {
-		$values = array();
+	public function get ($name = null, $key = null) {
+		$values = [];
 
-		if ($name !== null) {
+		if ($key !== null) {
 			foreach ($this->items as $item) {
-				$key = $item->$id;
+				$k = $item->$key;
 
-				if (!empty($key)) {
-					$values[$key] = $item->$name;
+				if (!empty($k)) {
+					$values[$k] = $item->$name;
 				}
 			}
 
@@ -85,71 +83,99 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 		}
 
 		foreach ($this->items as $item) {
-			$key = $item->$id;
+			$value = $item->$name;
 
-			if (!empty($key)) {
-				$values[$key] = null;
+			if (!empty($value)) {
+				$values[] = $value;
 			}
 		}
 
-		return array_keys($values);
+		return $values;
 	}
 
-	public function isEmpty () {
-		return empty($this->items);
+	public function load ($joinItems) {
+		if (!($item = $this->rewind())) {
+			return null;
+		}
+
+		foreach ((array)$joinItems as $joinItems => $subJoinItems) {
+			if (is_int($joinItems)) {
+				$joinItems = $subJoinItems;
+				$subJoinItems = null;
+			}
+
+			$class = $item::ITEMS_NAMESPACE.$joinItems;
+
+			$this->set($class::selectBy($this, $subJoinItems));
+		}
 	}
 
-	public function setToAll ($name, $value) {
+	public function set ($name, $value = null) {
+		if ($name instanceof ItemCollection) {
+			if (!($item = $this->rewind()) || !($joinItem = $name->rewind())) {
+				return null;
+			}
+			
+			if (!($relation = $item::getRelation($joinItem))) {
+				throw new \Exception('The items '.$item::TABLE.' and '.$joinItem::TABLE.' cannot be related');
+			}
+			
+			$prefix = lcfirst(substr(get_class($joinItem), strlen($item::ITEMS_NAMESPACE)));
+			list($type, $foreign_key) = $relation;
+
+			switch ($type) {
+				case Item::RELATION_HAS_MANY:
+					foreach ($name as $item) {
+						$id = $item->$foreign_key;
+
+						if (isset($this->items[$id]->$prefix)) {
+							$this->items[$id]->$prefix = new ItemCollection([$item]);
+						} else {
+							$v = $this->items[$id]->$prefix;
+							$v[] = $item;
+						}
+					}
+					return null;
+
+				case Item::RELATION_HAS_ONE:
+					foreach ($this->items as $item) {
+						$id = $item->$foreign_key;
+						if (isset($name[$id])) {
+							$item->$prefix = $name[$id];
+						}
+					}
+					return null;
+			}
+		}
+
 		foreach ($this->items as &$item) {
 			$item->$name = $value;
 		}
 	}
 
-	public function join ($name, $items) {
-		$items = ($items instanceof ItemCollection) ? $items : new ItemCollection([$items]);
-
-		if ($this->isEmpty() || $items->isEmpty()) {
-			return true;
+	public function add ($items) {
+		if (is_array($items) || ($items instanceof ItemCollection)) {
+			foreach ($items as $item) {
+				$this[] = $item;
+			}
+		} else if (isset($items)) {
+			$this[] = $items;
 		}
-
-		return self::joinItems($name, $this, $items);
 	}
 
+	public function filter ($name, $value, $first = false) {
+		$result = [];
 
-	private static function joinItems ($name, ItemCollection $Items1, ItemCollection $Items2) {
-		$Item1 = $Items1->rewind();
-		$Item2 = $Items2->rewind();
-
-		if (!empty($Item1::$foreign_key) && ($field = $Item1::$foreign_key) && in_array($field, $Item2::getFields())) {
-			foreach ($Items1 as $Item) {
-				if (!isset($Item->$name)) {
-					$Item->$name = new ItemCollection();
+		foreach ($this->items as $item) {
+			if ($item->$name === $value) {
+				if ($first === true) {
+					return $item;
 				}
+
+				$result[] = $item;
 			}
-
-			foreach ($Items2 as $Item) {
-				$id = $Item->$field;
-
-				if (isset($Items1[$id])) {
-					$Items1[$id]->$name->offsetSet(null, $Item);
-				}
-			}
-
-			return true;
 		}
 
-		if (!empty($Item2::$foreign_key) && ($field = $Item2::$foreign_key) && property_exists($Item1, $field)) {
-			foreach ($Items1 as $Item) {
-				$id = $Item->$field;
-
-				if (isset($Items2[$id])) {
-					$Item->$name = $Items2[$id];
-				}
-			}
-
-			return true;
-		}
-
-		return false;
+		return $first ? null : new ItemCollection($result);
 	}
 }

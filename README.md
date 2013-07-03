@@ -7,6 +7,7 @@ Requirements
 ------------
 
 * PHP 5.4 or newer
+* Tested only with mySql with InnoDB
 
 
 Usage
@@ -17,8 +18,6 @@ SimpleCrud has two main classes: Item and ItemCollection.
 * Item represents a table of the database and each row of this table.
 * ItemCollection is like an array of items (stores the result of a query).
 
-Each database table you want to use must have an own class extending Item and configurated with the database connection, real table name, etc.
-
 Let's configure the database connection and create a class for each table in the database:
 
 ```php
@@ -27,16 +26,33 @@ use SimpleCrud\Item;
 //Set the database connection to Item, so all tables extending Item share the same configuration.
 Item::setConnection($PDO);
 
-class Post extends Item {
-	public static $table = 'posts'; //The table name
-	public static $foreign_key = 'posts_id'; //The field used in other tables to relate with this table
-	public static $fields = null; //Array of all fields you can use in this table. If it's empty, it executes a mysql DESCRIBE command to get its names
+class Posts extends Item {
+	const TABLE = 'posts'; //The table name
+	const FOREIGN_KEY = 'posts_id'; //The field used in other tables to relate with this table
+
+	//And all database fields you want to use
+	public $id;
+	public $title;
+	public $text;
+	public $users_id;
 }
 
 class Comments extends Item {
-	public static $table = 'comments';
-	public static $foreign_key = 'comments_id';
-	public static $fields = null;
+	const TABLE = 'comments';
+	const FOREIGN_KEY = 'comments_id';
+	
+	public $id;
+	public $text;
+	public $posts_id;
+	public $users_id;
+}
+
+class Users extends Item {
+	const TABLE = 'users';
+	const FOREIGN_KEY = 'users_id';
+	
+	public $id;
+	public $name;
 }
 ```
 
@@ -46,59 +62,64 @@ Using the library:
 
 //Create a new post
 
-$Post = Post::create([
+$post = Posts::create([
 	'title' => 'My first post',
 	'text' => 'This is the text of the post'
 ]);
 
-//Get/Set values
-echo $Post->title; //My first item
-$Post->description = 'New description';
+//Get/set values
+echo $post->title; //My first item
+$post->description = 'New description';
 
 //Save (insert/update) the item in the database
-$Post->save();
+$post->save();
 
-//Select one item
-$Post = Post::selectOne('id = :id', [':id' => 45]);
+//selectBy make selects by id or other keys:
 
-//Select all items
-$Posts = Post::selectAll();
+$post = Posts::selectBy(45); //Select by id
+$posts = Posts::selectBy([45, 34, 98]); //Select various posts
+$users = Users::selectBy($posts); //Select all users related with these posts (the authors)
+$posts = Posts::selectBy(45, ['users']); //Select the post id=45 and join the user
 
-//Select some items
-$Posts = Post::selectAll('active = 1');
+//You can also make select in lazy mode:
+$post = Posts::selectBy(45);
+$comments = $post->comments; //Automatically select all related comments of this post
 
-//Select an item from database by id
-$Post = Post::selectBy(34);
 
-//Select various items (using an array of ids)
-$Posts = Post::selectBy([34, 35, 67]);
+//Making more advanced select:
+$post = Posts::select("date < :date", [':date' => date('Y-m-d H:i:s')], 'id DESC', 10);
+//SELECT * FROM posts WHERE date < :date ORDER BY id DESC LIMIT 10
 
-//Select an item from database usin a custom key (for example: slug)
-$Post = Post::selectBy('my-first-post', 'slug');
+$post = Posts::select("id = :id", [':id' => 45], null, true);
+//SELECT * FROM posts WHERE id = :id LIMIT 1
+// (*) the difference between limit = 1 and limit = true is that true returns the fetched item and 1 returns an itemCollection with 1 element
 
-//Select items related with other items
-$Post = Post::selectBy(35);
-$Comments = Comments::selectBy($Post); //Return all comments related with this post
+//Delete
+$post->delete();
+```
 
-//Fetch all results:
-$Post = Post::fetchAll('SELECT * FROM post WHERE title LIKE :title LIMIT 10', [':title' => '%php%']);
+Validation and callbacks
+------------------------
 
-//Fetch first result:
-$Post = Post::fetch('SELECT * FROM post WHERE title LIKE :title LIMIT 1', [':title' => '%php%']);
+You can define a method to prepare the data before insert/update. If no data is returned, the query won't be executed.
 
-//Delete the item
-$Post = Post::selectBy(34);
-$Post->delete();
+```php
+class Posts extends Item {
+	const TABLE = 'posts';
+	const FOREIGN_KEY = 'posts_id';
 
-//Validate or convert data before saving using the method prepareToSave:
-class Post {
-	public static $table = 'posts';
-	public static $foreign_key = 'posts_id';
-	public static $fields = null;
-	
-	public function prepareToSave (array $data) {
-		if (!$data['datetime']) {
-			$data['datetime'] = date('Y-m-d H:i:s');
+	public $id;
+	public $title;
+	public $pubDate;
+	public $latestUpdate;
+	public $text;
+	public $users_id;
+
+	public function prepareData (array $data, $new) {
+		$data['latestUpdate'] = date('Y-m-d H:i:s');
+
+		if ($new) { //is a insert
+			$data['pubDate'] = $data['latestUpdate'];
 		}
 
 		return $data;
@@ -106,384 +127,104 @@ class Post {
 }
 ```
 
+There are also three callbacks that will be executed on execute a change in database (onInsert, onUpdate and onDelete).
+These methods will be invoked in a database transaction just before commit the changes so you can cancel the commit throwing an exception:
+
+```php
+class Notifications extends Item {
+	const TABLE = 'notifications';
+	const FOREIGN_KEY = 'notifications_id';
+
+	public $id;
+	public $posts_id;
+	public $text;
+}
+
+class Posts extends Item {
+	const TABLE = 'posts';
+	const FOREIGN_KEY = 'posts_id';
+
+	public $id;
+	public $title;
+	public $pubDate;
+	public $latestUpdate;
+	public $text;
+	public $users_id;
+
+	public function onInsert (array $data) {
+		$notification = Notifications::create([
+			'text' => 'New post created',
+			$this //Relate the notification with this post
+		]);
+
+		$notification->save();
+	}
+
+	public function onUpdate (array $data) {
+		$notification = Notifications::create([
+			'text' => 'A post has been updated',
+			$this
+		]);
+
+		$notification->save();
+	}
+}
+```
+
+
 Relations
 ---------
 
-SimpleCrud provides a simple way to relate/unrelate mysql tables. Each table has a foreign_key static variable that define the field name used to join two tables.
-Only direct relations are supported, (one-to-many) but not "many-to-many". Example:
+SimpleCrud provides a simple way to relate/unrelate mysql tables. Each table has a FOREIGN_KEY constant that define the field name used to join two tables.
+Only direct relations are supported, (one-to-many and many-to-one) but not "many-to-many". Example:
 
 ```php
-$Post = Post::selectById(4);
+$Post = Post::selectBy(4);
 
-$Comment = Comments::create([
-	'text' => 'This is a comment'
+$User = Users::create([
+	'name' => 'Fred'
 ]);
 
-$Comment->join('post', $Post);
-$Comment->save();
+$Post->set($User); //This change the field "users_id" of the post with the id of the user
+
+$Post->save();
 ```
 
-You can select also the related items:
+Load the related data of a row:
 
 ```php
-$Post = Post::selectById(4);
+$Post = Post::selectBy(4);
 
-$Comments = Comments::selectBy($Post);
+$Post->comments; //Load the comments
+$Post->users; //Load the user
 ```
 
 
 Lazy properties
 ---------------
 
-With the magic method "__get()", you can define methods starting by "get" to return properties in lazy mode:
+With the magic method "__get()", you can define methods starting by "get" to return properties in lazy mode. Useful to refine the relations:
 
 ```php
-class Post {
-	public static $table = 'posts';
-	public static $foreign_key = 'posts_id';
-	public static $fields = null;
-	
+class Posts extends Item {
+	const TABLE = 'posts';
+	const FOREIGN_KEY = 'posts_id';
+
+	public $id;
+	public $title;
+	public $pubDate;
+	public $latestUpdate;
+	public $text;
+	public $users_id;
+
 	public function getComments () {
-		return Comments::selectBy($this);
+		return Comments::select("posts_id = :id AND active = 1", [':id' => $this->id]);
 	}
 }
 
-$Post = Post::selectBy(34); //Select a post by id
+$Post = Post::selectBy(34);
 
 $comments = $Post->comments; //Execute getComments and return the result
-
-$Post->comments; //Don't execute getComments again. The result has been saved in this property.
 ```
 
-
-Custom setters
---------------
-
-With the magic method "__set()", you can define methods starting by "set" to create custom setters (for example, to convert values)
-
-```php
-class Post {
-	public static $table = 'posts';
-	public static $foreign_key = 'posts_id';
-	public static $fields = null;
-	
-	public function setDatetimePubdate (Datetime $Datetime) {
-		$this->pubdate = $Datetime->format('Y-m-d H:i:s');
-	}
-}
-
-$Post = Post::selectBy(34); //Select a post by id
-
-$Post->pubdate = '2014-06-27 23:45:12'; //Set a value directly
-
-$Post->datetimePubdate = new DateTime('2000-01-01', new DateTimeZone('Pacific/Nauru'));
-
-echo $Post->pubdate; //2000-01-01 00:12:00
-```
-
-
-
-Join properties
----------------
-
-You can join more than one table on select to optimize the number of mysql queries:
-
-```php
-$fields = Users::getSqlFields(); //Generates a string like: `users`.`id` as `users.id`, `users`.`name` as `users.name`, ...
-
-$query = "SELECT posts.*, $fields FROM posts LEFT JOIN users ON posts.users_id = users.id WHERE posts.id = :id";
-
-$result = Posts::fetch($query, [':id' => 23]);
-
-echo $result->{'users.id'}; //Return the id of the user
-
-Users::createIn($result); //Generate the Users instance automaticaly
-
-echo $result->user->id; //Return the id of the user
-```
-
-
-API
-===
-
-
-Item::selectBy
---------------
-
-Select an element by id or another index key:
-
-Select by id:
-
-```php
-$post = Posts::selectBy(23);
-```
-
-Select various ids:
-
-```php
-$posts = Posts::selectBy([45, 46, 47, 48]);
-```
-
-Select by another index key name (for example, "slug"):
-
-```php
-$posts = Posts::selectBy('my-first-post', 'slug');
-```
-
-Select items related with other items:
-
-```php
-$comments = Comments::selectBy(Posts::selectBy(34));
-```
-
-
-Item::selectOne
----------------
-
-Select the first item:
-
-Add a "where" condition:
-
-```php
-$post = Posts::selectOne('id < 34');
-```
-
-Add a "where" condition and marks:
-
-```php
-$post = Posts::selectOne('id < :id', [':id' => 34]);
-```
-
-Add a "where" condition, marks and "order by":
-
-```php
-$post = Posts::selectOne('id < :id', [':id' => 34], 'id DESC');
-```
-
-
-Item::selectAll
----------------
-
-It's the same than Item::selectOne but returns all found rows, instead of just the first one:
-
-Add a "where" condition:
-
-```php
-$posts = Posts::selectAll('id < 34');
-```
-
-Add a "where" condition and marks:
-
-```php
-$posts = Posts::selectAll('id < :id', [':id' => 34]);
-```
-
-Add a "where" condition, marks and "order by":
-
-```php
-$posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC');
-```
-
-Add a "where" condition, marks, "order by" and limit:
-
-```php
-$posts = Posts::selectAll('id < :id', [':id' => 34], 'id DESC', 3);
-```
-
-
-Item::fetch
------------
-
-Returns the first item found. The main difference with Item::selectOne is that you must write the full SQL query. It's a good solution for complicated queries:
-
-Passing a query:
-
-```php
-$post = Posts::fetch('SELECT * FROM posts WHERE id = 34 LIMIT 1');
-```
-
-Passing a query and the marks:
-
-```php
-$post = Posts::fetch('SELECT * FROM posts WHERE id = :id LIMIT 1', [':id' => 34]);
-```
-
-
-Item::fetchAll
---------------
-
-It's like Item::fetch but returns the all items found.
-
-Passing a query:
-
-```php
-$posts = Posts::fetchAll('SELECT * FROM posts WHERE id > 34 LIMIT 10,20');
-```
-
-Passing a query and the marks:
-
-```php
-$posts = Posts::fetchAll('SELECT * FROM posts WHERE id > :id LIMIT 10,20', [':id' => 34]);
-```
-
-
-Item::getStatement
-------------------
-
-Prepares a query and execute it, returning a PDO statement object with the result.
-
-```php
-$posts_statement = Posts::getStatement('SELECT * FROM posts WHERE id > :id', [':id' => 34]);
-
-while ($post = $posts_statement->fetch()) {
-	echo $post->id;
-}
-```
-
-
-Item::set
----------
-
-Set new values to one or various fields. If the field does not exists in database throws an exception:
-
-Edit a field:
-
-```php
-$post->set('title', 'New title name');
-
-//This is the samen than:
-$post->title = 'New title name';
-```
-
-Edit various fields:
-
-```php
-$post->set([
-	'title' => 'New title name',
-	'body' => 'New body content'
-]);
-```
-
-Item::get
----------
-
-Return one or all values of a row. Only returns fields that exist in the database:
-
-Get one value
-
-```php
-$title = $post->get('title');
-
-//This is the samen than:
-$title = $post->title;
-```
-
-Get all values (return an array)
-
-```php
-$data = $post->get();
-
-$title = $data['title'];
-```
-
-Item::save
-----------
-
-Insert or update the value in database (if the field "id" has any value, update, if not insert)
-
-```php
-$post->title = 'New title';
-
-$post->save();
-```
-
-Item::delete
-------------
-
-Deletes this row from the database:
-
-```php
-$post = Posts::selectBy(34);
-
-$post->delete();
-```
-
-Item::create
-------------
-
-Creates a new instance (without save it in the database):
-
-Create an empty item:
-
-```php
-$post = Posts::create();
-```
-
-Create an item with values:
-
-```php
-$post = Posts::create([
-	'title' => 'New title',
-	'body' => 'Post body'
-]);
-
-//Insert the new item in the database
-$post->save();
-```
-
-
-ItemCollection::getKeys
------------------------
-
-Returns an array with the value of all items for a specific key (by default: "id")
-
-```php
-$posts = Posts::selectAll();
-
-$ids = posts->getKeys();
-
-$titles = posts->getKeys('title');
-```
-
-ItemCollection::isEmpty
------------------------
-
-Returns true if the collection is empty (has no items) and false if has at least one item:
-
-```php
-$posts = Posts::selectAll('visible = 1');
-
-if (posts->isEmpty()) {
-	echo 'There is no visible posts';
-}
-```
-
-ItemCollection::setToAll
-------------------------
-
-Set a specific property to all items
-
-```php
-$posts = Posts::selectAll('visible = 1');
-
-$posts->setToAll('visible', 0);
-```
-
-ItemCollection::join
---------------------
-
-Join an item collection with another item collection according with the foreign_key.
-
-```php
-$posts = Posts::selectAll('visible = 1'); //Select all visible post
-
-$postsComments = Comments::selectBy($posts); //Select all comments related with the posts
-
-$posts->join('comments', $postsComments); //Join the comments with the posts under the name "comments"
-
-foreach ($posts as $post) {
-	if ($post->comments->isEmpty()) {
-		echo 'this post has no comments';
-	}
-}
-```
+And many more...

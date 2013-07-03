@@ -7,8 +7,13 @@
 namespace SimpleCrud;
 
 class Item {
-	public static $connection;
-	public static $debug = false;
+	const RELATION_HAS_ONE = 1;
+	const RELATION_HAS_MANY = 2;
+	const ONUPDATE_PASS_DIFF_VALUES = false;
+
+	protected static $__connection;
+	protected static $__inTransaction = false;
+	protected static $__debug = false;
 
 
 	/**
@@ -17,156 +22,472 @@ class Item {
 	 * @param PDO $Db The database object
 	 */
 	public static function setConnection (\PDO $Connection) {
-		static::$connection = $Connection;
+		static::$__connection = $Connection;
 	}
 
 
 	/**
-	 * Returns the names of the fields in the database
+	 * Enable, disable, get debugs
+	 *
+	 * @param bool Enable or disable. Null to get the debug result
 	 * 
-	 * @return array The fields name
+	 * @return array or null
 	 */
-	public static function getFields () {
-		if (empty(static::$fields)) {
-			$table = static::$table;
+	public static function debug ($enabled = null) {
+		$debug = static::$__debug;
 
-			if (!($statement = static::$connection->query("DESCRIBE `$table`", \PDO::FETCH_COLUMN, 0))) {
-				throw new \Exception('MySQL error: '.implode(' / ', static::$connection->errorInfo()));
-				return false;
-			}
-
-			return static::$fields = $statement->fetchAll();
+		if ($enabled === true) {
+			static::$__debug = is_array(static::$__debug) ? static::$__debug : [];
+		} else if ($enabled === false) {
+			static::$__debug = false;
 		}
 
-		return static::$fields;
+		return $debug;
 	}
 
 
 	/**
-	 * returns the fields ready to use in a mysql query
-	 * This function is useful to "import" a model inside another, you just have to include the fields names of the model.
+	 * Returns the list of all fields in SQL format
 	 * 
-	 * Example:
-	 * $fieldsQuery = User::getQueryFields();
-	 * $posts = Post::fetchAll("SELECT posts.*, $fieldsQuery FROM posts, users WHERE posts.author = users.id");
-	 * $posts[0]->User //The user model inside the post
+	 * @param array $filter
 	 * 
-	 * @param string $name The name of the parameter used to the sub-model. If it's not defined, uses the model class name (without the namespace)
-	 * @param array $filter The names of the fields to return. If it's not defined, returns all
-	 * 
-	 * @return string The portion of mysql code with the fields names
+	 * @return string
 	 */
-	public static function getQueryFields ($name = null, array $filter = null) {
-		$table = static::$table;
-		$fields = array();
-		$class = get_called_class();
-
-		if ($name === null) {
-			$name = (($pos = strrpos($class, '\\')) === false) ? $class : substr($class, $pos + 1);
-			$name = lcfirst($name);
-		}
-
-		if ($filter === null) {
-			foreach (static::getFields() as $field) {
-				$fields[] = "`$table`.`$field` as `$class::$field::$name`";
-			}
-		} else {
-			foreach (static::getFields() as $field) {
-				if (in_array($field, $filter)) {
-					$fields[] = "`$table`.`$field` as `$class::$field::$name`";
-				}
-			}
-		}
-
-		return implode(', ', $fields);
-	}
-
 	public static function getSqlFields (array $filter = null) {
-		$table = static::$table;
-		$prefix = "$table.";
-		$fields = array();
+		$table = static::TABLE;
+		$class = get_called_class();
+		$prefix = lcfirst(substr($class, strlen(static::ITEMS_NAMESPACE)));
+		$fields = getItemVars($class);
 
-		if ($filter === null) {
-			foreach (static::getFields() as $field) {
-				$fields[] = "`$table`.`$field` as `$prefix$field`";
-			}
-		} else {
-			foreach (static::getFields() as $field) {
-				if (in_array($field, $filter)) {
-					$fields[] = "`$table`.`$field` as `$prefix$field`";
-				}
-			}
+		if ($filter !== null) {
+			$fields = array_intersect($fields, $filter);
 		}
 
-		return implode(', ', $fields);
+		$result = [];
+
+		foreach ($fields as $field) {
+			$result[] = "`$table`.`$field` as `$prefix.$field`";
+		}
+
+		return implode(', ', $result);
 	}
 
 
-	public static function createIn ($Item, $name = null) {
-		$table = static::$table;
-		$prefix = "$table.";
+	/**
+	 * Creates a empty object or, optionally, fill with some data
+	 * 
+	 * @param array $data Data to fill the item.
+	 * 
+	 * @return object The instantiated objec
+	 */
+	public static function create (array $data = null) {
+		$item = new static();
 
-		if (!$name) {
-			$name = $table;
+		if ($data !== null) {
+			$item->set($data);
 		}
 
-		$prefixLength = strlen($prefix);
-		$Class = new \ReflectionClass(get_called_class());
-		$Constructor = $Class->getConstructor();
+		return $item;
+	}
 
-		if ($Item instanceof Item) {
-			$ItemInstance = $Class->newInstanceWithoutConstructor();
 
-			foreach ($Item as $key => $value) {
-				if (strpos($key, $prefix) === 0) {
-					$propName = substr($key, $prefixLength);
-					$ItemInstance->$propName = $value;
-					unset($Item->$key);
-				}
+	/**
+	 * Execute a query and returns the statement object with the result
+	 * 
+	 * @param  string $query The Mysql query to execute
+	 * @param  array $marks The marks passed to the statement
+	 *
+	 * @return PDOStatement The result
+	 */
+	public static function selectQuery ($query, array $marks = null, $fetchOne = false) {
+		if (($statement = static::execute($query, $marks))) {
+			$statement->setFetchMode(\PDO::FETCH_CLASS, get_called_class());
+
+			if ($fetchOne === true) {
+				return $statement->fetch();
 			}
 
-			if ($Constructor !== null) {
-				$Constructor->invoke($ItemInstance);
-			}
-
-			$Item->$name = $ItemInstance;
-
-			return null;
-
+			return new ItemCollection($statement->fetchAll());
 		}
 
-		if ($Item instanceof ItemCollection) {
-			if ($Item->isEmpty()) {
-				return null;
-			}
+		return false;
+	}
 
-			$keys = array();
 
-			foreach ($Item->rewind() as $key => $value) {
-				if (strpos($key, $prefix) === 0) {
-					$keys[substr($key, $prefixLength)] = $key;
+	/**
+	 * Makes a selection in the database
+	 * 
+	 * @param string $where The "where" syntax.
+	 * @param array $marks Optional marks used in the query
+	 * @param string $orderBy Optional parameter to sort the rows
+	 * @param int/array $limit Limit of the selection. Use an array for ranges. Use true to return only the first result
+	 * @param array $joins Adiccional items joined
+	 * 
+	 * @return object The result of the query or false if there was an error
+	 */
+	public static function select ($where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null) {
+		if ($limit === 0) {
+			return new ItemCollection;
+		}
+
+		$table = static::TABLE;
+		$query = '';
+		$fields = "`$table`.*";
+
+		if ($joins) {
+			foreach ($joins as $join) {
+				$join = static::ITEMS_NAMESPACE.$join;
+
+				if (($relation = static::getRelation($join))) {
+					list($type, $foreign_key) = $relation;
+
+					if ($type === self::RELATION_HAS_ONE) {
+						$rel_table = $join::TABLE;
+						$fields .= ', '.$join::getSqlFields();
+
+						$query .= " LEFT JOIN `$rel_table` ON (`$rel_table`.`id` = `$table`.`$foreign_key`)";
+
+						continue;
+					}
 				}
-			}
 
-			if (!$keys) {
-				return null;
-			}
-
-			foreach ($Item as $I) {
-				$ItemInstance = $Class->newInstanceWithoutConstructor();
-
-				foreach ($keys as $key => $field) {
-					$ItemInstance->$key = $I->$field;
-					unset($I->$field);
-				}
-
-				if ($Constructor !== null) {
-					$Constructor->invoke($ItemInstance);
-				}
-
-				$I->$name = $ItemInstance;
+				throw new \Exception('The items '.static::TABLE.' and '.$join::TABLE.' cannot be related');
 			}
 		}
+
+		$query = "SELECT $fields FROM `$table`$query";
+
+		if ($where) {
+			$query .= " WHERE $where";
+		}
+
+		if ($orderBy) {
+			$query .= " ORDER BY $orderBy";
+		}
+
+		if ($limit === true) {
+			$query .= ' LIMIT 1';
+		} elseif ($limit) {
+			$query .= ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
+		}
+
+		return static::selectQuery($query, $marks, $limit);
+	}
+
+
+	/**
+	 * Select one or more rows using an index key
+	 * 
+	 * @param Item $id A item related
+	 * 
+	 * @param Collection $id A item collection related
+	 * 
+	 * @param int/array $id The id value
+	 * @param string $name The name of the id field. By default "id"
+	 * @param array $join Adiccional items joined
+	 * 
+	 * @return object The result of the query or false if there was an error
+	 */
+	public static function selectBy ($id, array $join = null) {
+		if ($id instanceof Item) {
+			if (!($relation = static::getRelation($id))) {
+				throw new \Exception('The items '.static::TABLE.' and '.$id::TABLE.' are no related');
+			}
+
+			list($type, $foreign_key) = $relation;
+			$table = static::TABLE;
+
+			switch ($type) {
+				case self::RELATION_HAS_ONE:
+					if (isset($id->id)) {
+						return static::select("`$table`.`$foreign_key` = :id", [':id' => $id->id], null, null, $join);
+					}
+
+					return null;
+
+				case self::RELATION_HAS_MANY:
+					if (isset($id->$foreign_key)) {
+						return static::select("`$table`.`id` = :id", [':id' => $id->$foreign_key], null, true, $join);
+					}
+
+					return null;
+			}
+		}
+
+		if ($id instanceof ItemCollection) {
+			if (!($item = $id->rewind())) {
+				return new ItemCollection;
+			}
+
+			if (!($relation = static::getRelation($item))) {
+				throw new \Exception('The items '.static::TABLE.' and '.$item::TABLE.' are no related');
+			}
+
+			list($type, $foreign_key) = $relation;
+			$table = static::TABLE;
+
+			switch ($type) {
+				case self::RELATION_HAS_ONE:
+					$ids = $id->get('id');
+
+					if ($ids) {
+						return static::select("`$table`.`$foreign_key` IN (:id)", [':id' => $ids], null, count($ids), $join);
+					}
+
+					return new ItemCollection;
+
+				case self::RELATION_HAS_MANY:
+					$ids = $id->get($foreign_key);
+
+					if ($ids) {
+						return static::select("`$table`.`id` IN (:id)", [':id' => $ids], null, count($ids), $join);
+					}
+					
+					return new ItemCollection;
+			}
+		}
+
+		if (empty($id)) {
+			return is_array($id) ? new ItemCollection : false;
+		}
+
+		if (is_array($id)) {
+			return static::select("id IN (:id)", [':id' => $id], null, count($id), $join);
+		}
+
+		return static::select("id = :id", [':id' => $id], null, true, $join);
+	}
+
+
+	/**
+	 * Makes a SELECT COUNT
+	 * 
+	 * @param string $where The "where" syntax.
+	 * @param array $marks Optional marks used in the query
+	 * @param int/string $limit Limit of the selection. Use an array for ranges
+	 * 
+	 * @return integer
+	 */
+	public static function count ($where = '', $marks = null, $limit = null) {
+		$table = static::TABLE;
+		$query = "SELECT COUNT(*) FROM `$table`";
+
+		if ($where) {
+			$query .= " WHERE $where";
+		}
+
+		if ($limit) {
+			$query .= ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
+		}
+
+		if (($statement = static::execute($query, $marks)) && ($result = $statement->fetch(\PDO::FETCH_NUM))) {
+			return (int)$result[0];
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * Makes a SELECT COUNT to check if an item exists in database
+	 * 
+	 * @param int $id The id value
+	 * @param string $name The name of the id field. By default "id"
+	 * 
+	 * @return boolean
+	 */
+	public static function exists ($id, $name = 'id') {
+		return (static::count("$name = :id", [':id' => $id], 1) === 1);
+	}
+
+
+	/**
+	 * Saves the item into the database.
+	 * If the object has the property "id", makes an UPDATE, otherwise makes an INSERT
+	 * 
+	 * @return boolean True if the row has been saved, false if doesn't
+	 */
+	public function save ($applyCallback = true) {
+		$table = static::TABLE;
+		$data = $this->get();
+
+		unset($data['id']);
+
+		$new = empty($this->id);
+
+		if (!($data = $this->prepareData($data, $new))) {
+			return false;
+		}
+
+		$initialTransation = ((static::$__inTransaction === false) && (static::$__connection->inTransaction() === false));
+
+		try {
+			if ($initialTransation) {
+				static::$__connection->beginTransaction();
+				static::$__inTransaction = true;
+			}
+
+			//Insert
+			if ($new) {
+				$fields = '`'.implode('`, `', array_keys($data)).'`';
+				$marks = implode(', ', array_fill(0, count($data), '?'));
+
+				static::execute("INSERT INTO `$table` ($fields) VALUES ($marks)", array_values($data));
+				$this->id = static::$__connection->lastInsertId();
+
+				if ($applyCallback === true) {
+					$this->onInsert($data);
+				}
+			}
+
+			//Update
+			else {
+				$set = [];
+
+				foreach ($data as $field => $value) {
+					$set[] = "`$field` = ?";
+				}
+
+				$set = implode(', ', $set);
+				$id = intval($this->id);
+
+				if ($applyCallback === true) {
+					if (static::ONUPDATE_PASS_DIFF_VALUES === true) {
+						if (($oldValues = $this->selectBy($id))) {
+							static::execute("UPDATE `$table` SET $set WHERE id = $id LIMIT 1", array_values($data));
+
+							$this->onUpdate(array_diff_assoc($oldValues->get(), $data));
+						}
+					} else {
+						static::execute("UPDATE `$table` SET $set WHERE id = $id LIMIT 1", array_values($data));
+
+						$this->onUpdate($data);
+					}
+				} else {
+					static::execute("UPDATE `$table` SET $set WHERE id = $id LIMIT 1", array_values($data));
+				}
+			}
+
+			if ($initialTransation) {
+				static::$__connection->commit();
+				static::$__inTransaction = false;
+			}
+
+			return true;
+
+		} catch (\Exception $e) {
+			if ($initialTransation) {
+				static::$__connection->rollBack();
+			}
+
+			return false;
+		}
+	}
+
+	public function prepareData (array $data, $new) {
+		return $data;
+	}
+
+	public function onInsert (array $data) {}
+	public function onUpdate (array $data) {}
+	public function onDelete () {}
+
+
+	/**
+	 * Deletes the current item in the database
+	 * 
+	 * @return boolean True if the register is deleted, false if any error happened
+	 */
+	public function delete ($callbackArgs = null) {
+		if (empty($this->id)) {
+			return false;
+		}
+		
+		$table = static::TABLE;
+
+		$initialTransation = ((static::$__inTransaction === false) && (static::$__connection->inTransaction() === false));
+
+		try {
+			if ($initialTransation) {
+				static::$__connection->beginTransaction();
+				static::$__inTransaction = true;
+			}
+
+			static::execute("DELETE FROM `$table` WHERE id = :id LIMIT 1", [':id' => $this->id]);
+			
+			if ($callbackArgs !== false) {
+				$this->onDelete($callbackArgs);
+			}
+
+			if ($initialTransation) {
+				static::$__connection->commit();
+				static::$__inTransaction = false;
+			}
+
+			$this->id = null;
+
+			return true;
+
+		} catch (\Exception $e) {
+			if ($initialTransation) {
+				static::$__connection->rollBack();
+			}
+
+			return false;
+		}
+	}
+
+
+	/**
+	 * Execute a query and returns the statement object with the result
+	 * 
+	 * @param string $query The Mysql query to execute
+	 * @param array $marks The marks passed to the statement
+	 *
+	 * @throws Exception On error preparing or executing the statement
+	 * 
+	 * @return PDOStatement The result
+	 */
+	private static function execute ($query, array $marks = null) {
+		$query = (string)$query;
+
+		if (!empty($marks)) {
+			foreach ($marks as $name => $mark) {
+				if (is_array($mark)) {
+					foreach ($mark as &$val) {
+						$val = static::$__connection->quote($val);
+					}
+
+					$query = str_replace($name, implode(', ', $mark), $query);
+					unset($marks[$name]);
+				}
+			}
+			if (empty($marks)) {
+				$marks = null;
+			}
+		}
+
+		$statement = static::$__connection->prepare($query);
+
+		if ($statement === false) {
+			throw new \Exception('MySQL error: '.implode(' / ', static::$__connection->errorInfo()));
+			return false;
+		}
+
+		if ($statement->execute($marks) === false) {
+			throw new \Exception('MySQL statement error: '.implode(' / ', $statement->errorInfo()));
+			return false;
+		}
+
+		if (is_array(static::$__debug)) {
+			static::$__debug[] = [
+				'statement' => $statement,
+				'marks' => $marks,
+				'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20)
+			];
+		}
+
+		return $statement;
 	}
 
 
@@ -182,365 +503,128 @@ class Item {
 			return $this->$name = $this->$method();
 		}
 
+		$foreignClass = static::ITEMS_NAMESPACE.$name;
+
+		if (class_exists($foreignClass) && static::getRelation($foreignClass)) {
+			return $this->$name = $foreignClass::selectBy($this);
+		}
+
 		return $this->$name = null;
+	}
+
+	public function load ($joinItem) {
+		foreach ((array)$joinItem as $name) {
+			$foreignClass = static::ITEMS_NAMESPACE.$name;
+
+			if (class_exists($foreignClass) && static::getRelation($foreignClass)) {
+				return $this->$name = $foreignClass::selectBy($this);
+			}
+		}
 	}
 
 
 	/**
-	 * Magic method to execute 'set' functions.
+	 * Magic method to execute 'set' functions and relate items each others.
 	 * 
 	 * @param string $name The property name
 	 * @param string $value The value of the property
 	 */
 	public function __set ($name, $value) {
-		$method = "set$name";
+		if (strpos($name, '.')) {
+			list($name, $property) = explode('.', $name, 2);
 
-		if (method_exists($this, $method)) {
-			$this->$method($value);
+			if ($value !== null) {
+				if (isset($this->$name) && ($this->$name instanceof Item)) {
+					return $this->$name->$property = $value;
+				}
+
+				$foreignClass = static::ITEMS_NAMESPACE.$name;
+
+				if (class_exists($foreignClass)) {
+					return $this->$name = $foreignClass::create([$property => $value]);
+				}
+			}
 		} else {
 			$this->$name = $value;
 		}
 	}
 
 
-
 	/**
-	 * Execute a query and returns the statement object with the result
+	 * Edit the data of the object using an array
+	 * It's the same than edit the properties of the object but only accepts defined properties
 	 * 
-	 * @param  string $query The Mysql query to execute
-	 * @param  array $marks The marks passed to the statement
-	 *
-	 * @throws Exception On error preparing or executing the statement
+	 * @param array $data The new data (name => value)
 	 * 
-	 * @return PDOStatement The result
-	 */
-	public static function execute ($query, array $marks = null) {
-		$statement = static::$connection->prepare($query);
-
-		if ($statement === false) {
-			throw new \Exception('MySQL error: '.implode(' / ', static::$connection->errorInfo()));
-			return false;
-		}
-
-		if ($statement->execute($marks) === false) {
-			throw new \Exception('MySQL statement error: '.implode(' / ', $statement->errorInfo()));
-			return false;
-		}
-
-		if (is_array(static::$debug)) {
-			static::debug($statement, $marks);
-		}
-
-		return $statement;
-	}
-
-
-
-	/**
-	 * Execute a query and returns the statement object with the result
-	 * 
-	 * @param  string $query The Mysql query to execute
-	 * @param  array $marks The marks passed to the statement
-	 *
-	 * @throws Exception On error preparing or executing the statement
-	 * 
-	 * @return PDOStatement The result
-	 */
-	public static function getStatement ($query, array $marks = null) {
-		if (($statement = static::execute($query, $marks))) {
-			$statement->setFetchMode(\PDO::FETCH_CLASS, get_called_class());
-			
-			return $statement;
-		}
-
-		return false;
-	}
-
-
-	/**
-	 * Save the current statement for debuggin purposes
-	 * 
-	 * @param  PDOStatement $statement The query statement
-	 * @param  array $marks The marks passed to the statement
-	 */
-	public static function debug (\PDOStatement $statement, array $marks = null) {
-		static::$debug[] = [
-			'statement' => $statement,
-			'marks' => $marks,
-			'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20)
-		];
-	}
-
-
-
-	/**
-	 * Fetch all results of a mysql selection
-	 * 
-	 * @param string/PDOStatement $query The query for the selection
-	 * @param array $marks Optional marks used in the query
-	 * 
-	 * @return array The result of the query or false if there was an error
-	 */
-	public static function fetchAll ($query, array $marks = null) {
-		if (!($query instanceof \PDOStatement)) {
-			$query = static::getStatement($query, $marks);
-		}
-
-		return new ItemCollection($query->fetchAll());
-	}
-
-
-	/**
-	 * Fetch the first result of a mysql selection
-	 * 
-	 * @param string/PDOStatement $query The query for the selection. Note that "LIMIT 1" will be automatically added
-	 * @param array $marks Optional marks used in the query
-	 * 
-	 * @return object The result of the query or false if there was an error
-	 */
-	public static function fetch ($query, array $marks = null) {
-		if (!($query instanceof \PDOStatement)) {
-			$query = static::getStatement($query, $marks);
-		}
-
-		return $query->fetch();
-	}
-
-
-	/**
-	 * Select one or more rows using a index key
-	 * 
-	 * @param int/array $id The id value
-	 * @param string $name The name of the id field. By default "id"
-	 * 
-	 * @return object The result of the query or false if there was an error
-	 */
-	public static function selectBy ($id, $name = 'id') {
-		if ($id instanceof Item) {
-			$Item = $id;
-
-			if (!empty($Item::$foreign_key)) {
-				$field = $Item::$foreign_key;
-
-				if (in_array($field, static::getFields())) {
-					if (!isset($Item->id)) {
-						throw new \Exception('The item '.$Item::$table.' must have defined the property "id" to select the related items in '.static::$table);
-					}
-
-					return static::selectAll("$field = :id", [':id' => $Item->id]);
-				}
-			}
-
-			if (!empty(static::$foreign_key)) {
-				$field = static::$foreign_key;
-
-				if (in_array($field, $Item->getFields())) {
-					if (!isset($Item->$field)) {
-						throw new \Exception('The item '.$Item::$table.' must have defined the property "'.$field.'" to select the related items in '.static::$table);
-					}
-
-					return static::selectOne('id = :id', [':id' => $Item->$field]);
-				}
-			}
-
-			throw new \Exception('The items '.static::$table.' and '.$Item::$table.' are no related');
-		}
-
-		if ($id instanceof ItemCollection) {
-			if ($id->isEmpty()) {
-				return new ItemCollection;
-			}
-
-			$Item = $id->rewind();
-
-			if (!empty($Item::$foreign_key) && ($field = $Item::$foreign_key) && in_array($field, static::getFields())) {
-				$id = $id->getKeys();
-				$name = $field;
-			} else if (!empty(static::$foreign_key) && ($field = static::$foreign_key) && in_array($field, $Item::getFields())) {
-				$id = $id->getKeys($field);
-			} else {
-				throw new \Exception('The items '.static::$table.' and '.$Item::$table.' are no related');
-			}
-		}
-
-		if (empty($id)) {
-			return is_array($id) ? new ItemCollection : false;
-		}
-
-		if (is_array($id)) {
-			$limit = count($id);
-			$in = substr(str_repeat(', ?', $limit), 2);
-
-			return static::selectAll("$name IN ($in)", array_values($id), null, $limit);
-		}
-
-		return static::selectOne("$name = :id", [':id' => $id]);
-	}
-
-
-	/**
-	 * Select all rows using custom conditions
-	 * 
-	 * Example:
-	 * $Item = Item::selectOne('title = :title', [':title' => 'Titulo']);
-	 * 
-	 * @param string $where The "where" syntax.
-	 * @param array $marks Optional marks used in the query
-	 * @param string $orderBy Optional parameter to sort the rows
-	 * @param int/string $limit Limit of the selection. Use an array for ranges
-	 * 
-	 * @return object The result of the query or false if there was an error
-	 */
-	public static function selectAll ($where = '', $marks = null, $orderBy = null, $limit = null) {
-		$table = static::$table;
-
-		if ($where) {
-			$where = " WHERE $where";
-		}
-
-		if ($orderBy) {
-			$where .= " ORDER BY $orderBy";
-		}
-
-		if ($limit) {
-			$where .= " LIMIT $limit";
-		}
-
-		return static::fetchAll("SELECT * FROM `$table`$where", $marks);
-	}
-
-
-	/**
-	 * Select one or various rows using custom conditions
-	 * 
-	 * Example:
-	 * $Item = Item::selectOne('title = :title', [':title' => 'Titulo']);
-	 * 
-	 * @param string $where The "where" syntax.
-	 * @param array $marks Optional marks used in the query
-	 * @param string $orderBy Optional parameter to sort the rows
-	 * 
-	 * @return object The result of the query or false if there was an error
-	 */
-	public static function selectOne ($where = '', $marks = null, $orderBy = null) {
-		$table = static::$table;
-
-		if ($where) {
-			$where = " WHERE $where";
-		}
-
-		if ($orderBy) {
-			$where .= " ORDER BY $orderBy";
-		}
-
-		return static::fetch("SELECT * FROM `$table`$where LIMIT 1", $marks);
-	}
-
-
-	/**
-	 * Makes a SELECT COUNT
-	 * 
-	 * @param string $where The "where" syntax.
-	 * @param array $marks Optional marks used in the query
-	 * @param int/string $limit Limit of the selection. Use an array for ranges
-	 * 
-	 * @return integer
-	 */
-	public static function count ($where = '', $marks = null, $limit = null) {
-		$table = static::$table;
-
-		if ($where) {
-			$where = " WHERE $where";
-		}
-
-		if ($limit) {
-			$where .= " LIMIT $limit";
-		}
-
-		if (($statement = static::execute("SELECT COUNT(*) FROM `$table` $where", $marks)) && ($result = $statement->fetch(\PDO::FETCH_NUM))) {
-			return (int)$result[0];
-		}
-
-		return false;
-	}
-
-
-	/**
-	 * Makes a SELECT COUNT
-	 * 
-	 * @param string $where The "where" syntax.
-	 * @param array $marks Optional marks used in the query
-	 * @param int/string $limit Limit of the selection. Use an array for ranges
-	 * 
-	 * @return integer
-	 */
-	public static function exists ($id, $name = 'id') {
-		return (static::count("$name = :id", [':id' => $id], 1) === 1);
-	}
-
-
-	/**
-	 * Creates a empty object or, optionally, fill with some data
-	 * 
-	 * @param array $data Data to fill the option.
-	 * 
-	 * @return object The instantiated objec
-	 */
-	public static function create (array $data = null) {
-		$Item = new static();
-
-		if ($data !== null) {
-			$Item->set($data);
-		}
-
-		return $Item;
-	}
-
-
-	/**
-	 * Edit the data of the object using an array (but doesn't save it into the database)
-	 * It's the same than edit the properties of the object but check if the property name is in the fields list
-	 * 
-	 * @param array $data The new data (field => value)
-	 * 
-	 * @param array $field The field name
+	 * @param array $name The property name
 	 * @param array $value The new value
+	 *
+	 * @return $this
 	 */
-	public function set ($field, $value = null) {
-		$fields = static::getFields();
+	public function set ($name, $value = null) {
+		$fields = getItemVars($this);
 
-		if (is_array($field)) {
-			foreach ($field as $field => $value) {
-				if (!in_array($field, $fields)) {
-					throw new \Exception("The field '$field' does not exists");
+		if (is_array($name)) {
+			foreach ($name as $name => $value) {
+				if (is_int($name)) {
+					static::set($value);
+				} else {
+					static::set($name, $value);
 				}
-
-				$this->$field = $value;
-			}
-		} else {
-			if (!in_array($field, $fields)) {
-				throw new \Exception("The field '$field' does not exists");
 			}
 
-			$this->$field = $value;
+			return $this;
 		}
+
+		if ($name instanceof Item) {
+			if ($relation = static::getRelation($name)) {
+				list($type, $foreign_key) = $relation;
+
+				if ($type === self::RELATION_HAS_ONE) {
+					$this->$foreign_key = $name->id;
+					$prefix = lcfirst(substr(get_class($name), strlen(static::ITEMS_NAMESPACE)));
+
+					$this->$prefix = $name;
+
+					return $this;
+				}
+			}
+
+			throw new \Exception('The items '.static::TABLE.' and '.$name::TABLE.' cannot be related');
+		}
+
+		if (!in_array($name, $fields)) {
+			throw new \Exception("The property '$name' is not defined in ".static::TABLE);
+		}
+
+		$this->$name = $value;
+
+		return $this;
 	}
 
 
 	/**
-	 * Returns one or all data of the row
+	 * Returns one or all data of the item
+	 *
+	 * @param string $name The property name
 	 * 
-	 * @return mixed The data of the row
+	 * @return mixed The property value or an array with all values
 	 */
-	public function get ($field = null) {
-		if ($field !== null) {
-			return (in_array($field, static::getFields()) && isset($this->$field)) ? $this->$field : null;
+	public function get ($name = null) {
+		$fields = getItemVars($this);
+
+		if ($name !== null) {
+			if (in_array($name, $fields)) {
+				return $this->$fields;
+			}
+
+			throw new \Exception("The property '$name' is not defined in".static::TABLE);
 		}
 
-		$data = array();
+		$data = [];
 
-		foreach (static::getFields() as $field) {
-			$data[$field] = isset($this->$field) ? $this->$field : null;
+		foreach ($fields as $name) {
+			$data[$name] = $this->$name;
 		}
 
 		return $data;
@@ -548,109 +632,28 @@ class Item {
 
 
 	/**
-	 * Saves the object data into the database. If the object has the property "id", makes an UPDATE, otherwise makes an INSERT
+	 * Returns the type of relation with other item
 	 * 
-	 * @return boolean True if the row has been saved, false if doesn't
+	 * @param  SimpleCrud\Item $item
+	 * 
+	 * @return array The relation type and the foreign_key used
 	 */
-	public function save () {
-		if (($data = $this->prepareToSave($this->get())) === false) {
-			return false;
+	public static function getRelation ($item) {
+		if (($foreign_key = $item::FOREIGN_KEY) && property_exists(get_called_class(), $foreign_key)) {
+			return [self::RELATION_HAS_ONE, $foreign_key];
 		}
 
-		unset($data['id']);
-
-		foreach ($data as $field => $value) {
-			if ($value === null) {
-				unset($data[$field]);
-			}
+		if (($foreign_key = static::FOREIGN_KEY) && property_exists($item, $foreign_key)) {
+			return [self::RELATION_HAS_MANY, $foreign_key];
 		}
+	}
+}
 
-		$table = static::$table;
 
-		//Insert
-		if (empty($this->id)) {
-			$fields = '`'.implode('`, `', array_keys($data)).'`';
-			$marks = implode(', ', array_fill(0, count($data), '?'));
-
-			if (static::execute("INSERT INTO `$table` ($fields) VALUES ($marks)", array_values($data))) {
-				$this->id = static::$connection->lastInsertId();
-
-				return true;
-			}
-
-			return false;
-		}
-
-		//Update
-		$set = array();
-		$id = intval($this->id);
-
-		foreach ($data as $field => $value) {
-			$set[] = "`$field` = ?";
-		}
-
-		$set = implode(', ', $set);
-
-		return static::execute("UPDATE `$table` SET $set WHERE id = $id LIMIT 1", array_values($data)) ? true : false;
+function getItemVars ($item) {
+	if (is_object($item)) {
+		$item = get_class($item);
 	}
 
-
-	/**
-	 * Deletes the current row in the database (but keep the data in the object)
-	 * 
-	 * @return boolean True if the register is deleted, false if any error happened
-	 */
-	public function delete () {
-		if (!empty($this->id)) {
-			$table = static::$table;
-			$id = intval($this->id);
-
-			if (static::execute("DELETE FROM `$table` WHERE id = $id LIMIT 1") !== false) {
-				$this->id = null;
-
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-
-	/**
-	 * Prepare the data before to save. Useful to validate or transform data before save in database
-	 * This function is provided to be overwrited by the class that uses this trait
-	 * 
-	 * @param array $data The data to save.
-	 * 
-	 * @return array The transformed data. If returns false, the data will be not saved.
-	 */
-	public function prepareToSave (array $data) {
-		return $data;
-	}
-
-
-	/**
-	 * Join two objects modifing the relation field
-	 * 
-	 * @param string $name The name used to store the item inside
-	 * @param Opentraits\Crud\Item $Item The item to relate
-	 *
-	 * @throws Exception If the items are not related
-	 *
-	 * @return boolean True if the relation has been executed
-	 */
-	public function join ($name, Item $Item) {
-		if (!empty($Item::$foreign_key)) {
-			$field = $Item::$foreign_key;
-
-			if (in_array($field, static::getFields())) {
-				$this->$field = $Item->id;
-				$this->$name = $Item;
-
-				return true;
-			}
-		}
-
-		throw new \Exception('The items '.static::$table.' and '.$Item::$table.' cannot be related');
-	}
+	return array_keys(get_class_vars($item));
 }
