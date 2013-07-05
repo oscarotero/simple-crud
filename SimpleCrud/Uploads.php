@@ -3,70 +3,31 @@
  * SimpleCrud\Uploads
  * 
  * Provides basic upload operations (save files from user upload or url).
- * Example:
- * 
- * class Item extends SimpleCrud\Item {
- * 	use SimpleCrud\Uploads;
- * 
- *  static $uploadsPath = 'www/uploadsfolder/';
- *  static $uploadsUrl = '/uploadsfolder/';
- * }
- * 
- * $Item = new Item();
- * 
- * $Item::saveFile('http://domain.com/picture.jpg', 'pictures');
  */
 namespace SimpleCrud;
 
 trait Uploads {
-	protected static $uploadsPath;
-	protected static $uploadsUrl;
+	protected static $__assets;
 
 
 	/**
 	 * Save a file
 	 * 
 	 * @param string/array $file The file to save. Can be from $_FILES or url
-	 * @param string $path The path for the file (starting from uploads folder)
 	 * @param string $filename An optional new filename
 	 * 
 	 * @return string The upload filename.
 	 * @return null If no file has been uploaded
 	 * @return false If there was an error
 	 */
-	public static function saveFile ($file, $path, $filename = null) {
+	public static function saveFile ($file, $filename = null) {
 		if (is_array($file)) {
-			return static::saveUploadedFile($file, $path, $filename);
+			return static::saveUploadedFile($file, $filename);
 		}
+
 		if (is_string($file)) {
-			return static::saveFileFromUrl($file, $path, $filename);
+			return static::saveFileFromUrl($file, $filename);
 		}
-	}
-
-	
-	/**
-	 * Returns the full path of a file
-	 * 
-	 * @param string $path The path for the file (starting from uploads folder)
-	 * @param string $filename An optional new filename
-	 * 
-	 * @return string The file path
-	 */
-	public static function getFilePath ($path, $filename = null) {
-		return static::$uploadsPath.$path.$filename;
-	}
-
-	
-	/**
-	 * Returns the url of a file 
-	 * 
-	 * @param string $path The path for the file (starting from uploads url)
-	 * @param string $filename An optional new filename
-	 * 
-	 * @return string The file url
-	 */
-	public static function getFileUrl ($path, $filename = null) {
-		return static::$uploadsUrl.$path.$filename;
 	}
 
 	
@@ -74,14 +35,13 @@ trait Uploads {
 	 * Save an uploaded file
 	 * 
 	 * @param array $file The uploaded file (from $_FILES array)
-	 * @param string $path The path for the file (starting from uploads folder)
 	 * @param string $filename An optional new filename
 	 * 
 	 * @return string The upload filename.
 	 * @return null If no file has been uploaded
 	 * @return false If there was an error
 	 */
-	public static function saveUploadedFile (array $file, $path, $filename = null) {
+	public static function saveUploadedFile (array $file, $filename = null) {
 		if (!empty($file['tmp_name']) && empty($file['error'])) {
 			if ($filename === null) {
 				$filename = $file['name'];
@@ -91,7 +51,7 @@ trait Uploads {
 				$filename .= ".$extension";
 			}
 
-			$destination = static::getFilePath($path, $filename);
+			$destination = static::$__assets.$filename;
 
 			if (!rename($file['tmp_name'], $destination)) {
 				return false;
@@ -108,14 +68,13 @@ trait Uploads {
 	 * Save a file from an URL
 	 * 
 	 * @param string $file The url of the file
-	 * @param string $path The path for the file (starting from uploads folder)
 	 * @param string $filename An optional new filename
 	 * 
 	 * @return string The upload filename.
 	 * @return null If no file has been uploaded
 	 * @return false If there was an error
 	 */
-	public static function saveFileFromUrl ($file, $path, $filename = null) {
+	public static function saveFileFromUrl ($file, $filename = null) {
 		if (!empty($file) && strpos($file, '://')) {
 			if ($filename === null) {
 				$filename = pathinfo($file, PATHINFO_BASENAME);
@@ -123,11 +82,12 @@ trait Uploads {
 				$filename .= ".$extension";
 			}
 
-			$destination = static::getFilePath($path, $filename);
-
 			try {
 				$content = file_get_contents($file);
-				file_put_contents($destination, $content);
+
+				if (!file_put_contents(static::$__assets.$filename, $content)) {
+					return false;
+				}
 			} catch (\Exception $Exception) {
 				return false;
 			}
@@ -136,4 +96,3 @@ trait Uploads {
 		}
 	}
 }
-?>
