@@ -503,21 +503,30 @@ class Item {
 			return $this->$name = $this->$method();
 		}
 
-		$foreignClass = static::ITEMS_NAMESPACE.ucfirst($name);
-
-		if (class_exists($foreignClass) && static::getRelation($foreignClass)) {
-			return $this->$name = $foreignClass::selectBy($this);
-		}
-
-		return $this->$name = null;
+		return $this->$name = $this->load($name);
 	}
 
-	public function load ($joinItem) {
-		foreach ((array)$joinItem as $name) {
-			$foreignClass = static::ITEMS_NAMESPACE.ucfirst($name);
+
+	/**
+	 * Load joined data
+	 * 
+	 * @param  string/array $joinItem
+	 */
+	public function load ($joinItems, array $subJoinItems = null) {
+		if (!is_array($joinItems)) {
+			$joinItems = array($joinItems => $subJoinItems);
+		}
+
+		foreach ($joinItems as $joinItems => $subJoinItems) {
+			if (is_int($joinItems)) {
+				$joinItems = $subJoinItems;
+				$subJoinItems = null;
+			}
+
+			$foreignClass = static::ITEMS_NAMESPACE.ucfirst($joinItems);
 
 			if (class_exists($foreignClass) && static::getRelation($foreignClass)) {
-				return $this->$name = $foreignClass::selectBy($this);
+				return $this->$joinItems = $foreignClass::selectBy($this);
 			}
 		}
 	}
@@ -583,8 +592,30 @@ class Item {
 				if ($type === self::RELATION_HAS_ONE) {
 					$this->$foreign_key = $name->id;
 					$prefix = lcfirst(substr(get_class($name), strlen(static::ITEMS_NAMESPACE)));
-
 					$this->$prefix = $name;
+
+					return $this;
+				}
+			}
+
+			throw new \Exception('The items '.static::TABLE.' and '.$name::TABLE.' cannot be related');
+		}
+
+		if ($name instanceof ItemCollection) {
+			if (!($item = $name->rewind())) {
+				return $this;
+			}
+
+			if ($relation = static::getRelation($item)) {
+				list($type, $foreign_key) = $relation;
+
+				if ($type === self::RELATION_HAS_MANY) {
+					$foreign_prefix = lcfirst(substr(get_class($item), strlen(static::ITEMS_NAMESPACE)));
+					$this_prefix = lcfirst(substr(get_class($this), strlen(static::ITEMS_NAMESPACE)));
+					
+					$name->set($foreign_key, $this->id);
+					$name->set($this_prefix, $this);
+					$this->$foreign_prefix = $name;
 
 					return $this;
 				}

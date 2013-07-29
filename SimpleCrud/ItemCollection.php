@@ -70,6 +70,12 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 	public function get ($name = null, $key = null) {
 		$values = [];
 
+		if ($name === null) {
+			foreach ($this->items as $item) {
+				$values[] = $item->get();
+			}
+		}
+
 		if ($key !== null) {
 			foreach ($this->items as $item) {
 				$k = $item->$key;
@@ -93,24 +99,32 @@ class ItemCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerial
 		return $values;
 	}
 
-	public function load ($joinItems) {
+	public function load ($joinItems, array $subJoinItems = null) {
 		if (!($item = $this->rewind())) {
 			return null;
 		}
 
-		foreach ((array)$joinItems as $joinItems => $subJoinItems) {
+		if (!is_array($joinItems)) {
+			$joinItems = array($joinItems => $subJoinItems);
+		}
+
+		foreach ($joinItems as $joinItems => $subJoinItems) {
 			if (is_int($joinItems)) {
 				$joinItems = $subJoinItems;
 				$subJoinItems = null;
 			}
 
-			$class = $item::ITEMS_NAMESPACE.ucfirst($joinItems);
+			$foreignClass = $item::ITEMS_NAMESPACE.ucfirst($joinItems);
 
-			$this->set($class::selectBy($this, $subJoinItems));
+			$this->set($foreignClass::selectBy($this, $subJoinItems));
 		}
 	}
 
 	public function set ($name, $value = null) {
+		if ($name instanceof Item) {
+			$name = new ItemCollection($name);
+		}
+
 		if ($name instanceof ItemCollection) {
 			if (!($item = $this->rewind()) || !($joinItem = $name->rewind())) {
 				return null;
