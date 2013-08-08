@@ -83,9 +83,9 @@ trait Uploads {
 			}
 
 			try {
-				$content = file_get_contents($file);
+				$content = @file_get_contents($file);
 
-				if (empty($content) || !file_put_contents(static::$__assets.$filename, $content)) {
+				if (empty($content) || !@file_put_contents(static::$__assets.$filename, $content)) {
 					return false;
 				}
 			} catch (\Exception $Exception) {
