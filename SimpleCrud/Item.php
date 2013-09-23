@@ -375,12 +375,12 @@ class Item {
 
 			return true;
 
-		} catch (\Exception $e) {
+		} catch (\Exception $exception) {
 			if ($initialTransation) {
 				static::$__connection->rollBack();
 			}
 
-			return false;
+			throw $exception;
 		}
 	}
 
@@ -467,16 +467,27 @@ class Item {
 			}
 		}
 
-		$statement = static::$__connection->prepare($query);
+		try {
+			$statement = static::$__connection->prepare($query);
 
-		if ($statement === false) {
-			throw new \Exception('MySQL error: '.implode(' / ', static::$__connection->errorInfo()));
-			return false;
-		}
+			if ($statement === false) {
+				throw new \Exception('MySQL error: '.implode(' / ', static::$__connection->errorInfo()));
+			}
 
-		if ($statement->execute($marks) === false) {
-			throw new \Exception('MySQL statement error: '.implode(' / ', $statement->errorInfo()));
-			return false;
+			if ($statement->execute($marks) === false) {
+				throw new \Exception('MySQL statement error: '.implode(' / ', $statement->errorInfo()));
+			}
+		} catch (\Exception $exception) {
+			if (is_array(static::$__debug)) {
+				static::$__debug[] = [
+					'error' => $exception->getMessage(),
+					'statement' => $statement,
+					'marks' => $marks,
+					'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20)
+				];
+			}
+
+			throw $exception;
 		}
 
 		if (is_array(static::$__debug)) {
