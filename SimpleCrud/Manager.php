@@ -2,26 +2,22 @@
 /**
  * SimpleCrud\Manager
  * 
- * Provides a simple model with basic database operations.
+ * Base class that manages all entities
  */
 namespace SimpleCrud;
 
 class Manager {
 	protected $connection;
 	protected $inTransaction;
-	protected $namespace;
-	protected $entities = [];
 	protected $debug = [];
+	protected $entityFactory;
+	protected $entities = [];
 
 
-	public function __construct (\PDO $connection, $namespace = '') {
+	public function __construct (\PDO $connection, EntityFactory $entityFactory) {
+		$entityFactory->setManager($this);
+		$this->entityFactory = $entityFactory;
 		$this->connection = $connection;
-
-		if ($namespace && (substr($namespace, -1) !== '\\')) {
-			$namespace .= '\\';
-		}
-
-		$this->namespace = $namespace;
 	}
 
 
@@ -30,10 +26,9 @@ class Manager {
 			return $this->entities[$name];
 		}
 
-		$entityClass = $this->namespace.ucfirst($name);
-
-		return $this->entities[$name] = new $entityClass($this, $this->namespace.ucfirst($name));
+		return $this->entities[$name] = $this->entityFactory->create($name);
 	}
+
 
 
 	/**

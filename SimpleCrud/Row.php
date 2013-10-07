@@ -1,14 +1,14 @@
 <?php
 /**
- * SimpleCrud\Item
+ * SimpleCrud\Row
  * 
- * Provides a simple model with basic database operations.
+ * Stores the data of an entity row
  */
 namespace SimpleCrud;
 
 use SimpleCrud\Entity;
 
-class Row {
+class Row implements HasEntityInterface {
 	private $__entity;
 
 	public function __construct (Entity $entity) {
@@ -23,6 +23,10 @@ class Row {
 
 	public function getEntity () {
 		return $this->__entity;
+	}
+
+	public function isCollection () {
+		return false;
 	}
 
 
@@ -43,8 +47,8 @@ class Row {
 		$fields = $this->getEntity()->getFields();
 
 		if ($name !== null) {
-			if (!in_array($name, $fields)) {
-				return $this->$fields;
+			if (in_array($name, $fields)) {
+				return $this->$name;
 			}
 
 			throw new \Exception("The property '$name' is not defined");

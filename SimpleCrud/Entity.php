@@ -1,44 +1,37 @@
 <?php
 /**
- * SimpleCrud\Item
- * 
- * Provides a simple model with basic database operations.
+ * SimpleCrud\Entity
+ *
+ * Manages a database entity
  */
+
 namespace SimpleCrud;
 
 class Entity {
+	const RELATION_HAS_ONE = 1;
+	const RELATION_HAS_MANY = 2;
+
 	protected $manager;
 
-	protected $rowClass = 'SimpleCrud\\Row';
-	protected $table;
-	protected $fields = [];
-	protected $foreign_key;
+	public $table;
+	public $fields;
+	public $foreignKey;
 
 
 	public function __construct (Manager $manager) {
 		$this->manager = $manager;
-
-		if (!$this->table) {
-			throw new \Exception("No table defined");
-		}
-
-		if (!$this->fields) {
-			throw new \Exception("No fields defined");
-		}
-
-		if (!$this->foreign_key) {
-			$this->foreign_key = "{$this->table}_id";
-		}
-
-		$fields = [];
-
-		foreach ($this->fields as $field) {
-			$fields[$field] = [$field, "`{$this->table}`.`$field`", "`$field`"];
-		}
-
-		$this->fields = $fields;
 	}
 
+	public function setConfig ($table, array $fields, $foreignKey) {
+		$this->table = $table;
+		$this->foreignKey = $foreignKey;
+
+		$this->fields = [];
+
+		foreach ($fields as $field) {
+			$this->fields[$field] = [$field, "`$table`.`$field`", "`$field`"];
+		}
+	}
 
 	public function getFields () {
 		return array_keys($this->fields);
@@ -53,7 +46,7 @@ class Entity {
 
 
 	public function create (array $data = null) {
-		$row = new $this->rowClass($this);
+		$row = new Row($this);
 
 		if ($data !== null) {
 			$row->set($data);
@@ -63,9 +56,14 @@ class Entity {
 	}
 
 
+	public function createCollection (array $rows = null) {
+		return new RowCollection($this, $rows);
+	}
+
+
 	public function select ($where = '', $marks = null, $orderBy = null, $limit = null) {
 		if ($limit === 0) {
-			return new ItemCollection;
+			return $this->createCollection();
 		}
 
 		$fields = implode(', ', $this->getSqlFields(true));
@@ -90,6 +88,41 @@ class Entity {
 
 
 	public function selectBy ($id) {
+		if ($id instanceof HasEntityInterface) {
+			$entity = $id->getEntity();
+			$relation = $this->getRelation($entity);
+
+			if ($relation === self::RELATION_HAS_ONE) {
+				$ids = $id->get('id');
+
+				if (empty($ids)) {
+					return $id->isCollection() ? $this->createCollection() : null;
+				}
+
+				if ($id->isCollection()) {
+					return $this->select("`{$this->table}`.`{$entity->foreignKey}` IN (:id)", [':id' => $ids], null, count($ids));
+				}
+
+				return $this->select("`{$this->table}`.`{$entity->foreignKey}` = :id", [':id' => $ids]);
+			}
+
+			if ($relation === self::RELATION_HAS_MANY) {
+				$ids = $id->get($this->foreignKey);
+
+				if (empty($ids)) {
+					return $id->isCollection() ? $this->createCollection() : null;
+				}
+
+				if ($id->isCollection()) {
+					return $this->select("`{$this->table}`.`id` IN (:id)", [':id' => $ids], null, count($ids));
+				}
+
+				return $this->select("`{$this->table}`.`id` = :id", [':id' => $ids], null, true);
+			}
+
+			throw new \Exception("The items {$this->table} and {$entity->table} are no related");
+		}
+
 		if (empty($id)) {
 			return is_array($id) ? [] : false;
 		}
@@ -143,7 +176,7 @@ class Entity {
 				$result[] = $this->create($row);
 			}
 
-			return new RowCollection($result);
+			return $this->createCollection($result);
 		}
 
 		return false;
@@ -257,6 +290,17 @@ class Entity {
 			}
 
 			throw $exception;
+		}
+	}
+
+
+	protected function getRelation (Entity $entity) {
+		if (isset($entity->fields[$this->foreignKey])) {
+			return self::RELATION_HAS_MANY;
+		}
+
+		if (isset($this->fields[$entity->foreignKey])) {
+			return self::RELATION_HAS_ONE;
 		}
 	}
 }

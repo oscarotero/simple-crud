@@ -2,17 +2,28 @@
 /**
  * SimpleCrud\RowCollection
  * 
- * Simple class to store arrays of results
+ * Stores a row collection of an entity
  */
 namespace SimpleCrud;
 
-class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
+class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable, HasEntityInterface {
 	private $rows = [];
+	private $__entity;
 
-	public function __construct ($rows = null) {
+	public function __construct (Entity $entity, $rows = null) {
+		$this->__entity = $entity;
+
 		if ($rows !== null) {
 			$this->add($rows);
 		}
+	}
+
+	public function getEntity () {
+		return $this->__entity;
+	}
+
+	public function isCollection () {
+		return true;
 	}
 
 	public function offsetSet ($offset, $value) {
