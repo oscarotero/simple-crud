@@ -36,6 +36,10 @@ class Entity {
 		}
 	}
 
+	public function getManager () {
+		return $this->manager;
+	}
+
 	public function getFields () {
 		return array_keys($this->fields);
 	}
@@ -214,11 +218,11 @@ class Entity {
 			$this->manager->execute("INSERT INTO `{$this->table}` ($fields) VALUES ($marks)", array_values($data));
 
 			if ($initialTransation) {
-				$entity->manager->commit();
+				$this->manager->commit();
 			}
 		} catch (\Exception $exception) {
 			if ($initialTransation) {
-				$entity->manager->rollBack();
+				$this->manager->rollBack();
 			}
 
 			throw $exception;
@@ -261,11 +265,11 @@ class Entity {
 			$this->manager->execute($query, $marks);
 
 			if ($initialTransation) {
-				$entity->manager->commit();
+				$this->manager->commit();
 			}
 		} catch (\Exception $exception) {
 			if ($initialTransation) {
-				$entity->manager->rollBack();
+				$this->manager->rollBack();
 			}
 
 			throw $exception;
@@ -290,15 +294,24 @@ class Entity {
 			$this->manager->execute($query, $marks);
 
 			if ($initialTransation) {
-				$entity->manager->commit();
+				$this->manager->commit();
 			}
 		} catch (\Exception $exception) {
 			if ($initialTransation) {
-				$entity->manager->rollBack();
+				$this->manager->rollBack();
 			}
 
 			throw $exception;
 		}
+	}
+
+
+	public function isRelated ($entity) {
+		if (!($entity instanceof Entity) && !($entity = $this->manager->$entity)) {
+			return false;
+		}
+
+		return ($this->getRelation($entity) !== null);
 	}
 
 

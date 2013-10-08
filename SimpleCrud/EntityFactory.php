@@ -31,7 +31,7 @@ class EntityFactory {
 
 		if (!class_exists($class)) {
 			if (!$this->autocreate) {
-				throw new \Exception("Entity '$name' is not defined");
+				return false;
 			}
 
 			$class = 'SimpleCrud\\Entity';

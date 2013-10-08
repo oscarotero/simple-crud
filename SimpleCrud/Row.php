@@ -32,7 +32,11 @@ class Row implements HasEntityInterface {
 			return $this->$name = $this->$method();
 		}
 
-		return $this->$name = $this->load($name);
+		if ($this->getEntity()->isRelated($name)) {
+			return $this->$name = $this->load($name);
+		}
+
+		return null;
 	}
 
 
@@ -105,6 +109,22 @@ class Row implements HasEntityInterface {
 		}
 
 		$this->getEntity()->delete('id = :id', [':id' => $this->id], 1);
+
+		return $this;
+	}
+
+
+	public function load ($entities) {
+		$entity = $this->getEntity();
+		$manager = $entity->getManager();
+
+		foreach ((array)$entities as $name) {
+			if (!$entity->isRelated($name)) {
+				throw new \Exception("Cannot load '$name' because is not related or does not exists");
+			}
+
+			$this->$name = $manager->$name->selectBy($this);
+		}
 
 		return $this;
 	}

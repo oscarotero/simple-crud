@@ -30,7 +30,6 @@ class Manager {
 	}
 
 
-
 	/**
 	 * Execute a query and returns the statement object with the result
 	 * 
