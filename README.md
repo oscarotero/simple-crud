@@ -13,10 +13,11 @@ Requirements
 Usage
 -----
 
-SimpleCrud has two main classes: Item and ItemCollection.
+SimpleCrud has the following classes:
 
 * Manager: Is the main class that stores the database connection and manage all entities
 * Entity: Is a class that manage an entity (table) of the database: select, insert, update, delete rows.
+* EntityFactory: The class responsive for the creation of Entity instances.
 * Row: Manage the data stored in a row of a table
 * RowCollection: Is a collection of rows
 
