@@ -61,12 +61,16 @@ class Users extends Entity {
 
 #### Init the library
 
-Let's create a instance of the Manager, passing the PDO object with the database connection and the namespace where the entities are defined:
+Let's create a instance of the Manager, passing the PDO object with the database connection and a instance of EntityFactory to create the entities. The EntityFactory has some options used on create the entities
 
 ```php
 use SimpleCrud\Manager;
+use SimpleCrud\EntityFactory;
 
-$db = new Manager($PDO, 'MyApp\\Entities');
+$db = new Manager($PDO, new EntityFactory([
+	'namespace' => 'MyApp\\Entities' //The namespace where all entities classes are defined
+	'autocreate' => false //Create automatically non defined entities? false by default
+]));
 ```
 
 #### Using the library
@@ -92,6 +96,10 @@ $post->save();
 $post = $db->posts->selectBy(45); //Select by id
 $posts = $db->posts->selectBy([45, 34, 98]); //Select various posts
 
+//selectBy also can select related elements
+$post = $db->posts->selectBy(5);
+$comments = $db->comments->selectBy($post); //Select all comments related with this post
+
 
 //Making more advanced select:
 $post = $db->posts->select("date < :date", [':date' => date('Y-m-d H:i:s')], 'id DESC', 10);
@@ -103,4 +111,15 @@ $post = $db->posts->select("id = :id", [':id' => 45], null, true);
 
 //Delete
 $post->delete();
+
+//To insert, update or delete rows without select them, use directly the entity:
+
+$db->posts->delete('id > :id', [':id' => 23], 10);
+//DELETE FROM `posts` WHERE id > 23 LIMIT 10
+
+$db->posts->update(['text' => 'Hello world'], 'id = :id', [':id' => 23], 1);
+//UPDATE `posts` SET `text` = 'Hello world' WHERE id = 23 LIMIT 1
+
+$id = $db->posts->insert(['text' => 'Hello world']);
+//INSERT INTO `posts` (`text`) VALUES ('Hello world')
 ```
