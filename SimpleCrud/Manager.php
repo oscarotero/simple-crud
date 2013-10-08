@@ -9,7 +9,7 @@ namespace SimpleCrud;
 class Manager {
 	protected $connection;
 	protected $inTransaction;
-	protected $debug = [];
+	protected $debug;
 	protected $entityFactory;
 	protected $entities = [];
 

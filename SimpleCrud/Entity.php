@@ -29,12 +29,17 @@ class Entity {
 		$this->fields = [];
 
 		foreach ($fields as $field) {
-			$this->fields[$field] = [$field, "`$table`.`$field`", "`$field`"];
+			$this->fields[$field] = [$field, "`$table`.`$field`", "`$field`", null];
 		}
 	}
 
 	public function getFields () {
 		return array_keys($this->fields);
+	}
+
+
+	public function getDefaults () {
+		return array_column($this->fields, 3, 0);
 	}
 
 

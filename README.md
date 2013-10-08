@@ -108,7 +108,7 @@ $post = $db->posts->select("date < :date", [':date' => date('Y-m-d H:i:s')], 'id
 
 $post = $db->posts->select("id = :id", [':id' => 45], null, true);
 //SELECT * FROM posts WHERE id = :id LIMIT 1
-// (*) the difference between limit = 1 and limit = true is that true returns the fetched item and 1 returns an itemCollection with 1 element
+// (*) the difference between limit = 1 and limit = true is that true returns the fetched item and 1 returns an rowCollection with 1 element
 
 //Delete
 $post->delete();

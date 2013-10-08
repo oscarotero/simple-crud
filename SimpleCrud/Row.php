@@ -13,6 +13,10 @@ class Row implements HasEntityInterface {
 
 	public function __construct (Entity $entity) {
 		$this->__entity = $entity;
+
+		foreach ($entity->getDefaults() as $name => $value) {
+			$this->$name = $value;
+		}
 	}
 
 
@@ -40,6 +44,8 @@ class Row implements HasEntityInterface {
 
 			$this->$name = $value;
 		}
+
+		return $this;
 	}
 
 
@@ -67,11 +73,13 @@ class Row implements HasEntityInterface {
 	public function save () {
 		$data = $this->get();
 
-		if (($id = intval($this->id))) {
-			$this->getEntity()->update($data, 'id = :id', [':id' => $id], 1);
-		} else {
+		if (empty($this->id)) {
 			$this->id = $this->getEntity()->insert($data);
+		} else {
+			$this->getEntity()->update($data, 'id = :id', [':id' => $this->id], 1);
 		}
+
+		return $this;
 	}
 
 
@@ -80,6 +88,8 @@ class Row implements HasEntityInterface {
 			return false;
 		}
 
-		$this->getEntity()->delete('id = :id', [':id' => $id], 1);
+		$this->getEntity()->delete('id = :id', [':id' => $this->id], 1);
+
+		return $this;
 	}
 }

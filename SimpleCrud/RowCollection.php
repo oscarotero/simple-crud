@@ -129,6 +129,8 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		foreach ($this->rows as $row) {
 			$row->set($data);
 		}
+
+		return $this;
 	}
 
 	public function add ($rows) {
@@ -139,6 +141,8 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		} else if (isset($rows)) {
 			$this->offsetSet(null, $rows);
 		}
+
+		return $this;
 	}
 
 	public function filter ($name, $value, $first = false) {
@@ -154,6 +158,6 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 			}
 		}
 
-		return $first ? null : new ItemCollection($rows);
+		return $first ? null : new static($rows);
 	}
 }
