@@ -14,6 +14,11 @@ class EntityFactory {
 
 	public function __construct (array $config = null) {
 		$this->namespace = isset($config['namespace']) ? $config['namespace'] : '';
+
+		if ($this->namespace && (substr($this->namespace, -1) !== '\\')) {
+			$this->namespace .= '\\';
+		}
+
 		$this->autocreate = isset($config['autocreate']) ? (bool)$config['autocreate'] : false;
 	}
 
