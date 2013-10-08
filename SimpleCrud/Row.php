@@ -20,6 +20,22 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Magic method to execute 'get' functions and save the result in a property.
+	 *
+	 * @param string $name The property name
+	 */
+	public function __get ($name) {
+		$method = "get$name";
+
+		if (method_exists($this, $method)) {
+			return $this->$name = $this->$method();
+		}
+
+		return $this->$name = $this->load($name);
+	}
+
+
 	public function jsonSerialize () {
 		return $this->get();
 	}

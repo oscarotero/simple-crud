@@ -13,6 +13,9 @@ class Entity {
 
 	protected $manager;
 
+	public $rowClass = 'SimpleCrud\\Row';
+	public $rowCollectionClass = 'SimpleCrud\\RowCollection';
+
 	public $table;
 	public $fields;
 	public $foreignKey;
@@ -51,7 +54,7 @@ class Entity {
 
 
 	public function create (array $data = null) {
-		$row = new Row($this);
+		$row = new $this->rowClass($this);
 
 		if ($data !== null) {
 			$row->set($data);
@@ -62,7 +65,7 @@ class Entity {
 
 
 	public function createCollection (array $rows = null) {
-		return new RowCollection($this, $rows);
+		return new $this->rowCollectionClass($this, $rows);
 	}
 
 
