@@ -163,23 +163,23 @@ class Entity {
 	 * @return PDOStatement The result
 	 */
 	public function fetch ($query, array $marks = null, $fetchOne = false) {
-		if (($statement = $this->manager->execute($query, $marks))) {
-			$statement->setFetchMode(\PDO::FETCH_ASSOC);
-
-			if ($fetchOne === true) {
-				return $this->create($statement->fetch());
-			}
-
-			$result = [];
-
-			while (($row = $statement->fetch())) {
-				$result[] = $this->create($row);
-			}
-
-			return $this->createCollection($result);
+		if (!($statement = $this->manager->execute($query, $marks))) {
+			return false;
 		}
 
-		return false;
+		$statement->setFetchMode(\PDO::FETCH_ASSOC);
+
+		if ($fetchOne === true) {
+			return ($result = $statement->fetch()) ? $this->create($result) : $result;
+		}
+
+		$result = [];
+
+		while (($row = $statement->fetch())) {
+			$result[] = $this->create($row);
+		}
+
+		return $this->createCollection($result);
 	}
 
 
