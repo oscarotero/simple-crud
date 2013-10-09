@@ -69,6 +69,12 @@ class Row implements HasEntityInterface {
 	public function get ($name = null) {
 		$data = call_user_func('get_object_vars', $this);
 
+		foreach ($data as $k => $row) {
+			if ($row instanceof HasEntityInterface) {
+				$data[$k] = $row->get();
+			}
+		}
+
 		if ($name === null) {
 			return $data;
 		}

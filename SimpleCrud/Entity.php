@@ -16,13 +16,15 @@ class Entity {
 	public $rowClass = 'SimpleCrud\\Row';
 	public $rowCollectionClass = 'SimpleCrud\\RowCollection';
 
+	public $name;
 	public $table;
 	public $fields;
 	public $foreignKey;
 
 
-	public function __construct (Manager $manager) {
+	public function __construct (Manager $manager, $name) {
 		$this->manager = $manager;
+		$this->name = $name;
 	}
 
 
@@ -331,7 +333,7 @@ class Entity {
 	}
 
 
-	protected function getRelation (Entity $entity) {
+	public function getRelation (Entity $entity) {
 		if (isset($entity->fields[$this->foreignKey])) {
 			return self::RELATION_HAS_MANY;
 		}

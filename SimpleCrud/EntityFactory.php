@@ -37,7 +37,7 @@ class EntityFactory {
 			$class = 'SimpleCrud\\Entity';
 		}
 
-		$entity = new $class($this->manager);
+		$entity = new $class($this->manager, $name);
 
 		$table = empty($entity->table) ? $name : $entity->table;
 		$fields = empty($entity->fields) ? $this->manager->execute("DESCRIBE `$table`")->fetchAll(\PDO::FETCH_COLUMN, 0) : $entity->fields;

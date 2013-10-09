@@ -137,6 +137,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		return $this;
 	}
 
+
 	public function add ($rows) {
 		if (is_array($rows)) {
 			foreach ($rows as $row) {
@@ -148,6 +149,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 
 		return $this;
 	}
+
 
 	public function filter ($name, $value, $first = false) {
 		$rows = [];
@@ -163,5 +165,64 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		}
 
 		return $first ? null : new static($rows);
+	}
+
+
+	public function load ($entities) {
+		$entity = $this->entity();
+		$manager = $this->manager();
+
+		foreach ((array)$entities as $name) {
+			if (!$entity->isRelated($name)) {
+				throw new \Exception("Cannot load '$name' because is not related or does not exists");
+			}
+
+			$this->distribute($manager->$name->selectBy($this));
+		}
+
+		return $this;
+	}
+
+
+	public function distribute ($data) {
+		if ($data instanceof RowCollection) {
+			$thisEntity = $this->entity();
+			$dataEntity = $data->entity();
+
+			$name = $dataEntity->name;
+			$relation = $thisEntity->getRelation($dataEntity);
+
+			if ($relation === Entity::RELATION_HAS_MANY) {
+				$foreignKey = $thisEntity->foreignKey;
+
+				foreach ($data as $row) {
+					$id = $row->$foreignKey;
+
+					if (isset($this->rows[$id])) {
+						if (!isset($this->rows[$id]->$name)) {
+							$this->rows[$id]->$name = $dataEntity->createCollection();
+						}
+
+						$this->rows[$id]->$name->add($row);
+					}
+				}
+
+				return $this;
+			}
+
+			if ($relation === Entity::RELATION_HAS_ONE) {
+				$foreignKey = $dataEntity->foreignKey;
+
+				foreach ($this->rows as $row) {
+					if (($id = $row->$foreignKey) && isset($data[$id])) {
+						$row->$name = $data[$id];
+					}
+				}
+
+				return $this;
+			}
+
+			throw new \Exception("Cannot set '$name' and '".$thisEntity->name."' because is not related or does not exists");
+		}
 	}
 }
