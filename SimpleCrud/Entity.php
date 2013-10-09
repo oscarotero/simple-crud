@@ -182,20 +182,31 @@ class Entity {
 		$statement->setFetchMode(\PDO::FETCH_ASSOC);
 
 		if ($fetchOne === true) {
-			return ($result = $statement->fetch()) ? $this->create($result) : $result;
+			if (($row = $statement->fetch()) && ($row = $this->prepareDataFromSelection($row))) {
+				return $this->create($row);
+			}
+
+			return false;
 		}
 
 		$result = [];
 
 		while (($row = $statement->fetch())) {
-			$result[] = $this->create($row);
+			if (($row = $this->prepareDataFromSelection($row))) {
+				$result[] = $this->create($row);
+			}
 		}
 
 		return $this->createCollection($result);
 	}
 
 
-	public function prepareData (array $data, $new) {
+	public function prepareDataToSave (array $data, $new) {
+		return $data;
+	}
+
+
+	public function prepareDataFromSelection (array $data) {
 		return $data;
 	}
 
@@ -205,7 +216,7 @@ class Entity {
 			throw new \Exception("Invalid fields");
 		}
 
-		if (!($data = $this->prepareData($data, true))) {
+		if (!($data = $this->prepareDataToSave($data, true))) {
 			throw new \Exception("Data not valid");
 		}
 
@@ -237,7 +248,7 @@ class Entity {
 			throw new \Exception("Invalid fields");
 		}
 
-		if (!($data = $this->prepareData($data, true))) {
+		if (!($data = $this->prepareDataToSave($data, true))) {
 			throw new \Exception("Data not valid");
 		}
 
