@@ -25,6 +25,7 @@ class Entity {
 		$this->manager = $manager;
 	}
 
+
 	public function setConfig ($table, array $fields, $foreignKey) {
 		$this->table = $table;
 		$this->foreignKey = $foreignKey;
@@ -35,6 +36,10 @@ class Entity {
 			$this->fields[$field] = [$field, "`$table`.`$field`", "`$field`", null];
 		}
 	}
+
+
+	public function onInit () {}
+
 
 	public function getManager () {
 		return $this->manager;

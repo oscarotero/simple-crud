@@ -124,3 +124,40 @@ $db->posts->update(['text' => 'Hello world'], 'id = :id', [':id' => 23], 1);
 $id = $db->posts->insert(['text' => 'Hello world']);
 //INSERT INTO `posts` (`text`) VALUES ('Hello world')
 ```
+
+#### Validate data
+
+SimpleCrud provides two methods to convert or validate data before save to database and after selection from the database. You can define this methods in the entity class:
+
+```php
+class Posts extends Entity {
+	protected $table = 'posts';
+	protected $fields = [
+		'id',
+		'title',
+		'text',
+		'pubDate',
+		'latestUpdate',
+		'users_id'
+	];
+
+	public function prepareDataToSave (array $data, $new) {
+		$data['latestUpdate'] = date('Y-m-d H:i:s');
+
+		if ($new) { //its an insert
+			 $data['pubDate'] = $data['latestUpdate'];
+		} else if ($data['pubDate'] instanceof Datetime) {
+			$data['pubDate'] = $data['pubDate']->format('Y-m-d H:i:s');
+		}
+
+		return $data;
+	}
+
+	public function prepareDataFromSelection (array $data) {
+		$data['latestUpdate'] = new DateTime($data['latestUpdate']);
+		$data['pubDate'] = new DateTime($data['pubDate']);
+
+		return $data;
+	}
+}
+```
