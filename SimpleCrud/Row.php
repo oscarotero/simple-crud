@@ -13,10 +13,7 @@ class Row implements HasEntityInterface {
 
 	public function __construct (Entity $entity) {
 		$this->__entity = $entity;
-
-		foreach ($entity->getDefaults() as $name => $value) {
-			$this->$name = $value;
-		}
+		$this->set($entity->getDefaults());
 	}
 
 
@@ -61,13 +58,7 @@ class Row implements HasEntityInterface {
 
 
 	public function set (array $data) {
-		$fields = $this->entity()->getFields();
-
 		foreach ($data as $name => $value) {
-			if (!in_array($name, $fields)) {
-				throw new \Exception("The property '$name' is not defined");
-			}
-
 			$this->$name = $value;
 		}
 
@@ -76,28 +67,22 @@ class Row implements HasEntityInterface {
 
 
 	public function get ($name = null) {
-		$fields = $this->entity()->getFields();
+		$data = call_user_func('get_object_vars', $this);
 
-		if ($name !== null) {
-			if (in_array($name, $fields)) {
-				return $this->$name;
-			}
-
-			throw new \Exception("The property '$name' is not defined");
+		if ($name === null) {
+			return $data;
 		}
 
-		$data = [];
-
-		foreach ($fields as $name) {
-			$data[$name] = $this->$name;
-		}
-
-		return $data;
+		return isset($data[$name]) ? $data[$name] : null;
 	}
 
 
 	public function save () {
-		$data = $this->get();
+		$data = [];
+
+		foreach ($this->entity()->getFields() as $name) {
+			$data[$name] = $this->$name;
+		}
 
 		if (empty($this->id)) {
 			$this->id = $this->entity()->insert($data);

@@ -106,7 +106,7 @@ class Entity {
 
 	public function selectBy ($id) {
 		if ($id instanceof HasEntityInterface) {
-			$entity = $id->getEntity();
+			$entity = $id->entity();
 			$relation = $this->getRelation($entity);
 
 			if ($relation === self::RELATION_HAS_ONE) {

@@ -18,7 +18,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		}
 	}
 
-	public function getEntity () {
+	public function entity () {
 		return $this->__entity;
 	}
 
