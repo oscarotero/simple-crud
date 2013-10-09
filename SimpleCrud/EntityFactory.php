@@ -45,6 +45,8 @@ class EntityFactory {
 
 		$entity->setConfig($table, $fields, $foreignKey);
 
+		$entity->onInit();
+
 		return $entity;
 	}
 }
