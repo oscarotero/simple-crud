@@ -32,7 +32,7 @@ class Row implements HasEntityInterface {
 			return $this->$name = $this->$method();
 		}
 
-		if ($this->getEntity()->isRelated($name)) {
+		if ($this->entity()->isRelated($name)) {
 			return $this->$name = $this->load($name);
 		}
 
@@ -45,9 +45,15 @@ class Row implements HasEntityInterface {
 	}
 
 
-	public function getEntity () {
+	public function entity () {
 		return $this->__entity;
 	}
+
+
+	public function manager () {
+		return $this->__entity->getManager();
+	}
+
 
 	public function isCollection () {
 		return false;
@@ -55,7 +61,7 @@ class Row implements HasEntityInterface {
 
 
 	public function set (array $data) {
-		$fields = $this->getEntity()->getFields();
+		$fields = $this->entity()->getFields();
 
 		foreach ($data as $name => $value) {
 			if (!in_array($name, $fields)) {
@@ -70,7 +76,7 @@ class Row implements HasEntityInterface {
 
 
 	public function get ($name = null) {
-		$fields = $this->getEntity()->getFields();
+		$fields = $this->entity()->getFields();
 
 		if ($name !== null) {
 			if (in_array($name, $fields)) {
@@ -94,9 +100,9 @@ class Row implements HasEntityInterface {
 		$data = $this->get();
 
 		if (empty($this->id)) {
-			$this->id = $this->getEntity()->insert($data);
+			$this->id = $this->entity()->insert($data);
 		} else {
-			$this->getEntity()->update($data, 'id = :id', [':id' => $this->id], 1);
+			$this->entity()->update($data, 'id = :id', [':id' => $this->id], 1);
 		}
 
 		return $this;
@@ -108,15 +114,15 @@ class Row implements HasEntityInterface {
 			return false;
 		}
 
-		$this->getEntity()->delete('id = :id', [':id' => $this->id], 1);
+		$this->entity()->delete('id = :id', [':id' => $this->id], 1);
 
 		return $this;
 	}
 
 
 	public function load ($entities) {
-		$entity = $this->getEntity();
-		$manager = $entity->getManager();
+		$entity = $this->entity();
+		$manager = $this->manager();
 
 		foreach ((array)$entities as $name) {
 			if (!$entity->isRelated($name)) {

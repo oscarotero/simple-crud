@@ -9,6 +9,7 @@ namespace SimpleCrud;
 use SimpleCrud\Entity;
 
 interface HasEntityInterface {
-	public function getEntity ();
+	public function entity ();
+	public function manager ();
 	public function isCollection ();
 }

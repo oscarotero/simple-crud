@@ -22,6 +22,10 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		return $this->__entity;
 	}
 
+	public function manager () {
+		return $this->__entity->getManager();
+	}
+
 	public function isCollection () {
 		return true;
 	}
