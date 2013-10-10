@@ -138,7 +138,7 @@ class Entity {
 	}
 
 
-	public function select ($where = '', $marks = null, $orderBy = null, $limit = null, array $joins = array()) {
+	public function select ($where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null) {
 		if ($limit === 0) {
 			return $this->createCollection();
 		}
@@ -146,7 +146,7 @@ class Entity {
 		$fields = implode(', ', $this->getFields(self::FIELDS_SQL_SELECT));
 		$query = '';
 
-		if ($joins) {
+		if ($joins !== null) {
 			foreach ($joins as $join) {
 				$entity = $this->manager->$join;
 
@@ -167,7 +167,7 @@ class Entity {
 	}
 
 
-	public function selectBy ($id) {
+	public function selectBy ($id, array $joins = null) {
 		if ($id instanceof HasEntityInterface) {
 			$entity = $id->entity();
 			$relation = $this->getRelation($entity);
@@ -180,10 +180,10 @@ class Entity {
 				}
 
 				if ($id->isCollection()) {
-					return $this->select("`{$this->table}`.`{$entity->foreignKey}` IN (:id)", [':id' => $ids], null, count($ids));
+					return $this->select("`{$this->table}`.`{$entity->foreignKey}` IN (:id)", [':id' => $ids], null, count($ids), $joins);
 				}
 
-				return $this->select("`{$this->table}`.`{$entity->foreignKey}` = :id", [':id' => $ids]);
+				return $this->select("`{$this->table}`.`{$entity->foreignKey}` = :id", [':id' => $ids], null, null, $joins);
 			}
 
 			if ($relation === self::RELATION_HAS_MANY) {
@@ -194,10 +194,10 @@ class Entity {
 				}
 
 				if ($id->isCollection()) {
-					return $this->select("`{$this->table}`.`id` IN (:id)", [':id' => $ids], null, count($ids));
+					return $this->select("`{$this->table}`.`id` IN (:id)", [':id' => $ids], null, count($ids), $joins);
 				}
 
-				return $this->select("`{$this->table}`.`id` = :id", [':id' => $ids], null, true);
+				return $this->select("`{$this->table}`.`id` = :id", [':id' => $ids], null, true, $joins);
 			}
 
 			throw new \Exception("The items {$this->table} and {$entity->table} are no related");
@@ -208,10 +208,10 @@ class Entity {
 		}
 
 		if (is_array($id)) {
-			return $this->select('id IN (:id)', [':id' => $id], null, count($id));
+			return $this->select('id IN (:id)', [':id' => $id], null, count($id), $joins);
 		}
 
-		return $this->select('id = :id', [':id' => $id], null, true);
+		return $this->select('id = :id', [':id' => $id], null, true, $joins);
 	}
 
 
