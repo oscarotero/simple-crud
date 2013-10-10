@@ -184,7 +184,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 
-	public function distribute ($data) {
+	public function distribute ($data, $bidirectional = true) {
 		if ($data instanceof RowCollection) {
 			$thisEntity = $this->entity();
 			$dataEntity = $data->entity();
@@ -207,6 +207,10 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 					}
 				}
 
+				if ($bidirectional === true) {
+					$data->distribute($this, false);
+				}
+
 				return $this;
 			}
 
@@ -217,6 +221,10 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 					if (($id = $row->$foreignKey) && isset($data[$id])) {
 						$row->$name = $data[$id];
 					}
+				}
+
+				if ($bidirectional === true) {
+					$data->distribute($this, false);
 				}
 
 				return $this;

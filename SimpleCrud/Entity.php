@@ -11,6 +11,11 @@ class Entity {
 	const RELATION_HAS_ONE = 1;
 	const RELATION_HAS_MANY = 2;
 
+	const FIELDS = 0;
+	const FIELDS_SQL = 1;
+	const FIELDS_SQL_SELECT = 2;
+	const FIELDS_SQL_JOIN = 3;
+
 	protected $manager;
 
 	public $rowClass = 'SimpleCrud\\Row';
@@ -19,7 +24,31 @@ class Entity {
 	public $name;
 	public $table;
 	public $fields;
+	public $defaults;
 	public $foreignKey;
+
+
+	static private function generateQuery ($query, $where = '', $orderBy = null, $limit = null) {
+		if ($where) {
+			if (is_array($where)) {
+				$where = implode(') AND (', $where);
+			}
+
+			$query .= " WHERE ($where)";
+		}
+
+		if ($orderBy) {
+			$query .= ' ORDER BY '.(is_array($orderBy) ? implode(', ', $orderBy) : $orderBy);
+		}
+
+		if ($limit === true) {
+			$query .= ' LIMIT 1';
+		} else if ($limit) {
+			$query .= ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
+		}
+
+		return $query;
+	}
 
 
 	public function __construct (Manager $manager, $name) {
@@ -32,10 +61,11 @@ class Entity {
 		$this->table = $table;
 		$this->foreignKey = $foreignKey;
 
-		$this->fields = [];
+		$this->fields = $this->defaults = [];
 
 		foreach ($fields as $field) {
-			$this->fields[$field] = [$field, "`$table`.`$field`", "`$field`", null];
+			$this->defaults[$field] = null;
+			$this->fields[$field] = [$field, "`$field`", "`$table`.`$field`", "`$table`.`$field` as `$this->name.$field`"];
 		}
 	}
 
@@ -47,20 +77,48 @@ class Entity {
 		return $this->manager;
 	}
 
-	public function getFields () {
-		return array_keys($this->fields);
+	public function getFields ($mode = 0, array $filter = null) {
+		if ($filter === null) {
+			return array_column($this->fields, $mode, 0);
+		}
+
+		return array_column(array_intersect_key($this->fields, array_flip($filter)), $mode, 0);
 	}
 
 
-	public function getDefaults () {
-		return array_column($this->fields, 3, 0);
-	}
+	protected function createFromSelection (array $row, $expand) {
+		if ($expand === false) {
+			return ($row = $this->prepareDataFromSelection($row)) ? $this->create($row) : false;
+		}
 
+		$fields = $joinFields = [];
 
-	public function getSqlFields ($with_table = false, array $filter = null) {
-		$fields = ($filter === null) ? $this->fields : array_intersect_key($this->fields, array_flip($filter));
+		foreach ($row as $name => $value) {
+			if (strpos($name, '.') === false) {
+				$fields[$name] = $value;
+				continue;
+			}
 
-		return array_column($fields, ($with_table === true) ? 1 : 2, 0);
+			list($name, $fieldName) = explode('.', $name);
+
+			if (!isset($joinFields[$name])) {
+				$joinFields[$name] = [];
+			}
+
+			$joinFields[$name][$fieldName] = $value;
+		}
+
+		if (!($row = $this->prepareDataFromSelection($fields))) {
+			return false;
+		}
+
+		$row = $this->create($row);
+
+		foreach ($joinFields as $name => $values) {
+			$row->$name = $this->manager->$name->create($values);
+		}
+
+		return $row;
 	}
 
 
@@ -80,29 +138,32 @@ class Entity {
 	}
 
 
-	public function select ($where = '', $marks = null, $orderBy = null, $limit = null) {
+	public function select ($where = '', $marks = null, $orderBy = null, $limit = null, array $joins = array()) {
 		if ($limit === 0) {
 			return $this->createCollection();
 		}
 
-		$fields = implode(', ', $this->getSqlFields(true));
-		$query = "SELECT $fields FROM `{$this->table}`";
+		$fields = implode(', ', $this->getFields(self::FIELDS_SQL_SELECT));
+		$query = '';
 
-		if ($where) {
-			$query .= " WHERE $where";
+		if ($joins) {
+			foreach ($joins as $join) {
+				$entity = $this->manager->$join;
+
+				if ($this->getRelation($entity) === self::RELATION_HAS_ONE) {
+					$fields .= ', '.implode(', ', $entity->getFields(self::FIELDS_SQL_JOIN));
+					$query .= " LEFT JOIN `{$entity->table}` ON (`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`)";
+
+					continue;
+				}
+
+				throw new \Exception("The items {$this->table} and {$entity->table} are no related");
+			}
 		}
 
-		if ($orderBy) {
-			$query .= " ORDER BY $orderBy";
-		}
+		$query = self::generateQuery("SELECT $fields FROM `{$this->table}`$query", $where, $orderBy, $limit);
 
-		if ($limit === true) {
-			$query .= ' LIMIT 1';
-		} elseif ($limit) {
-			$query .= ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
-		}
-
-		return $this->fetch($query, $marks, $limit);
+		return $this->fetch($query, $marks, $limit, (bool)$joins);
 	}
 
 
@@ -143,7 +204,7 @@ class Entity {
 		}
 
 		if (empty($id)) {
-			return is_array($id) ? [] : false;
+			return is_array($id) ? $this->createCollection() : false;
 		}
 
 		if (is_array($id)) {
@@ -155,15 +216,7 @@ class Entity {
 
 
 	public function count ($where = '', $marks = null, $limit = null) {
-		$query = "SELECT COUNT(*) FROM `{$this->table}`";
-
-		if ($where) {
-			$query .= " WHERE $where";
-		}
-
-		if ($limit) {
-			$query .= ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
-		}
+		$query = self::generateQuery("SELECT COUNT(*) FROM `{$this->table}`", $where, null, $limit);
 
 		if (($statement = $this->manager->execute($query, $marks)) && ($result = $statement->fetch(\PDO::FETCH_NUM))) {
 			return (int)$result[0];
@@ -181,7 +234,7 @@ class Entity {
 	 *
 	 * @return PDOStatement The result
 	 */
-	public function fetch ($query, array $marks = null, $fetchOne = false) {
+	public function fetch ($query, array $marks = null, $fetchOne = false, $expand = false) {
 		if (!($statement = $this->manager->execute($query, $marks))) {
 			return false;
 		}
@@ -189,18 +242,14 @@ class Entity {
 		$statement->setFetchMode(\PDO::FETCH_ASSOC);
 
 		if ($fetchOne === true) {
-			if (($row = $statement->fetch()) && ($row = $this->prepareDataFromSelection($row))) {
-				return $this->create($row);
-			}
-
-			return false;
+			return ($row = $statement->fetch()) ? $this->createFromSelection($row, $expand) : false;
 		}
 
 		$result = [];
 
 		while (($row = $statement->fetch())) {
-			if (($row = $this->prepareDataFromSelection($row))) {
-				$result[] = $this->create($row);
+			if (($row = $this->createFromSelection($row, $expand))) {
+				$result[] = $row;
 			}
 		}
 
@@ -227,7 +276,7 @@ class Entity {
 			throw new \Exception("Data not valid");
 		}
 
-		$fields = implode(', ', $this->getSqlFields(false,  array_keys($data)));
+		$fields = implode(', ', $this->getFields(self::FIELDS_SQL, array_keys($data)));
 		$marks = implode(', ', array_fill(0, count($data), '?'));
 
 		try {
@@ -262,20 +311,12 @@ class Entity {
 		$data = $this->manager->quote($data);
 		$set = [];
 
-		foreach ($this->getSqlFields(false,  array_keys($data)) as $field => $value) {
+		foreach ($this->getFields(self::FIELDS_SQL, array_keys($data)) as $field => $value) {
 			$set[] = "`$field` = ".$data[$field];
 		}
 
 		$set = implode(', ', $set);
-		$query = "UPDATE `{$this->table}` SET $set";
-
-		if ($where) {
-			$query .= " WHERE $where";
-		}
-
-		if ($limit) {
-			$query .= ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
-		}
+		$query = self::generateQuery("UPDATE `{$this->table}` SET $set", $where, null, $limit);
 
 		try {
 			$initialTransation = $this->manager->beginTransaction();
@@ -296,15 +337,7 @@ class Entity {
 
 
 	public function delete ($where = '', $marks = null, $limit = null) {
-		$query = "DELETE FROM `{$this->table}`";
-
-		if ($where) {
-			$query .= " WHERE $where";
-		}
-
-		if ($limit) {
-			$query .= ' LIMIT '.(is_array($limit) ? implode(', ', $limit) : $limit);
-		}
+		$query = self::generateQuery("DELETE FROM `{$this->table}`", $where, null, $limit);
 
 		try {
 			$initialTransation = $this->manager->beginTransaction();

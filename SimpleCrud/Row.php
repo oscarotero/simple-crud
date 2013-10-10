@@ -13,7 +13,7 @@ class Row implements HasEntityInterface {
 
 	public function __construct (Entity $entity) {
 		$this->__entity = $entity;
-		$this->set($entity->getDefaults());
+		$this->set($entity->defaults);
 	}
 
 
@@ -30,7 +30,9 @@ class Row implements HasEntityInterface {
 		}
 
 		if ($this->entity()->isRelated($name)) {
-			return $this->$name = $this->load($name);
+			$this->load($name);
+
+			return $this->$name;
 		}
 
 		return null;
