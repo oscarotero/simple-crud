@@ -145,14 +145,22 @@ class Entity {
 
 		$fields = implode(', ', $this->getFields(self::FIELDS_SQL_SELECT));
 		$query = '';
+		$load = [];
 
 		if ($joins !== null) {
 			foreach ($joins as $join) {
 				$entity = $this->manager->$join;
+				$relation = $this->getRelation($entity);
 
-				if ($this->getRelation($entity) === self::RELATION_HAS_ONE) {
+				if ($relation === self::RELATION_HAS_ONE) {
 					$fields .= ', '.implode(', ', $entity->getFields(self::FIELDS_SQL_JOIN));
 					$query .= " LEFT JOIN `{$entity->table}` ON (`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`)";
+
+					continue;
+				}
+
+				if ($relation === self::RELATION_HAS_MANY) {
+					$load[] = $join;
 
 					continue;
 				}
@@ -163,7 +171,13 @@ class Entity {
 
 		$query = self::generateQuery("SELECT $fields FROM `{$this->table}`$query", $where, $orderBy, $limit);
 
-		return $this->fetch($query, $marks, $limit, (bool)$joins);
+		$result = $this->fetch($query, $marks, $limit, (bool)$joins);
+
+		if ($load) {
+			$result->load($load);
+		}
+
+		return $result;
 	}
 
 

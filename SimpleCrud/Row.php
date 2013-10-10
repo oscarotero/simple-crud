@@ -113,16 +113,21 @@ class Row implements HasEntityInterface {
 	}
 
 
-	public function load ($entities) {
+	public function load (array $entities) {
 		$entity = $this->entity();
 		$manager = $this->manager();
 
-		foreach ((array)$entities as $name) {
+		foreach ($entities as $name => $joins) {
+			if (is_int($name)) {
+				$name = $joins;
+				$joins = null;
+			}
+
 			if (!$entity->isRelated($name)) {
 				throw new \Exception("Cannot load '$name' because is not related or does not exists");
 			}
 
-			$this->$name = $manager->$name->selectBy($this);
+			$this->$name = $manager->$name->selectBy($this, $joins);
 		}
 
 		return $this;
