@@ -10,7 +10,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	private $rows = [];
 	private $__entity;
 
-	public function __construct (Entity $entity, $rows = null) {
+	public function __construct (Entity $entity, array $rows = null) {
 		$this->__entity = $entity;
 
 		if ($rows !== null) {
@@ -190,6 +190,10 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 
 
 	public function distribute ($data, $bidirectional = true) {
+		if ($data instanceof Row) {
+			$data = $data->entity()->createCollection([$data]);
+		}
+
 		if ($data instanceof RowCollection) {
 			$thisEntity = $this->entity();
 			$dataEntity = $data->entity();
