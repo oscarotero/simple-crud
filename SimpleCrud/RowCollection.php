@@ -164,7 +164,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 			}
 		}
 
-		return $first ? null : new static($rows);
+		return $first ? null : $this->entity()->createCollection($rows);
 	}
 
 
