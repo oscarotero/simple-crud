@@ -89,8 +89,6 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 			return null;
 		}
 
-		$parentEntities[] = $name;
-
 		$rows = [];
 
 		foreach ($this->rows as $row) {

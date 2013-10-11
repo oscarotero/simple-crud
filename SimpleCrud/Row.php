@@ -76,13 +76,18 @@ class Row implements HasEntityInterface {
 		}
 
 		$parentEntities[] = $name;
+		$data = [];
 
-		$data = call_user_func('get_object_vars', $this);
-
-		foreach ($data as $k => $row) {
+		foreach (call_user_func('get_object_vars', $this) as $k => $row) {
 			if ($row instanceof HasEntityInterface) {
-				$data[$k] = $row->toArray($parentEntities);
+				if (($row = $row->toArray($parentEntities)) !== null) {
+					$data[$k] = $row;
+				}
+
+				continue;
 			}
+
+			$data[$k] = $row;
 		}
 
 		return $data;
