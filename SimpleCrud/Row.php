@@ -40,7 +40,7 @@ class Row implements HasEntityInterface {
 
 
 	public function jsonSerialize () {
-		return $this->get();
+		return $this->toArray();
 	}
 
 
@@ -68,14 +68,29 @@ class Row implements HasEntityInterface {
 	}
 
 
-	public function get ($name = null) {
+	public function toArray (array $parentEntities = array()) {
+		$name = $this->entity()->name;
+
+		if ($parentEntities && in_array($name, $parentEntities)) {
+			return null;
+		}
+
+		$parentEntities[] = $name;
+
 		$data = call_user_func('get_object_vars', $this);
 
 		foreach ($data as $k => $row) {
 			if ($row instanceof HasEntityInterface) {
-				$data[$k] = $row->get();
+				$data[$k] = $row->toArray($parentEntities);
 			}
 		}
+
+		return $data;
+	}
+
+
+	public function get ($name = null) {
+		$data = call_user_func('get_object_vars', $this);
 
 		if ($name === null) {
 			return $data;

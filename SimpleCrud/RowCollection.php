@@ -79,26 +79,41 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 	public function jsonSerialize () {
-		return $this->rows;
+		return $this->toArray();
 	}
+
+	public function toArray (array $parentEntities = array()) {
+		$name = $this->entity()->name;
+
+		if ($parentEntities && in_array($name, $parentEntities)) {
+			return null;
+		}
+
+		$parentEntities[] = $name;
+
+		$rows = [];
+
+		foreach ($this->rows as $row) {
+			$rows[] = $row->toArray($parentEntities);
+		}
+
+		return $rows;
+	}
+
 
 	public function get ($name = null, $key = null) {
 		$rows = [];
 
 		if ($name === null) {
 			if ($key === null) {
-				foreach ($this->rows as $row) {
-					$rows[] = $row->get();
-				}
-
-				return $rows;
+				return array_values($this->rows);
 			}
 
 			foreach ($this->rows as $row) {
 				$k = $row->$key;
 
 				if (!empty($k)) {
-					$rows[$k] = $row->get();
+					$rows[$k] = $row;
 				}
 			}
 
