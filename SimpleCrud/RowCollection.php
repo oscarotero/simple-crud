@@ -200,14 +200,16 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 			if ($relation === Entity::RELATION_HAS_MANY) {
 				$foreignKey = $thisEntity->foreignKey;
 
+				foreach ($this->rows as $row) {
+					if (!isset($row->$name)) {
+						$row->$name = $dataEntity->createCollection();
+					}
+				}
+
 				foreach ($data as $row) {
 					$id = $row->$foreignKey;
 
 					if (isset($this->rows[$id])) {
-						if (!isset($this->rows[$id]->$name)) {
-							$this->rows[$id]->$name = $dataEntity->createCollection();
-						}
-
 						$this->rows[$id]->$name->add($row);
 					}
 				}

@@ -30,7 +30,7 @@ class Row implements HasEntityInterface {
 		}
 
 		if ($this->entity()->isRelated($name)) {
-			$this->load($name);
+			$this->load([$name]);
 
 			return $this->$name;
 		}
