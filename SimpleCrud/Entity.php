@@ -148,7 +148,12 @@ class Entity {
 		$load = [];
 
 		if ($joins !== null) {
-			foreach ($joins as $join) {
+			foreach ($joins as $k => $join) {
+				if (is_array($join)) {
+					$load[$k] = $join;
+					continue;
+				}
+
 				$entity = $this->manager->$join;
 				$relation = $this->getRelation($entity);
 
@@ -160,12 +165,12 @@ class Entity {
 				}
 
 				if ($relation === self::RELATION_HAS_MANY) {
-					$load[] = $join;
+					$load[$k] = $join;
 
 					continue;
 				}
 
-				throw new \Exception("The items {$this->table} and {$entity->table} are no related");
+				throw new \Exception("The items '{$this->table}' and '{$entity->table}' are no related");
 			}
 		}
 
