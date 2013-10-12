@@ -286,7 +286,7 @@ class Entity {
 	}
 
 
-	public function insert (array $data) {
+	public function insert (array $data, $duplicateKey = false) {
 		if (array_diff_key($data, $this->fields)) {
 			throw new \Exception("Invalid fields");
 		}
@@ -295,10 +295,22 @@ class Entity {
 			throw new \Exception("Data not valid");
 		}
 
-		$fields = implode(', ', $this->getFields(self::FIELDS_SQL, array_keys($data)));
-		$quoted = implode(', ', $this->manager->quote($data));
+		$quoted = $this->manager->quote($data);
+		$fields = $values = [];
 
-		$query = "INSERT INTO `{$this->table}` ($fields) VALUES ($quoted)";
+		foreach ($this->getFields(self::FIELDS_SQL, array_keys($quoted)) as $name => $field) {
+			$fields[] = $field;
+			$values[] = $quoted[$name];
+		}
+
+		$fields = implode(', ', $fields);
+		$values = implode(', ', $values);
+
+		$query = "INSERT INTO `{$this->table}` ($fields) VALUES ($values)";
+
+		if ($duplicateKey) {
+			$query .= ' ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)';
+		}
 
 		$this->manager->executeTransaction(function () use ($query) {
 			$this->manager->execute($query);

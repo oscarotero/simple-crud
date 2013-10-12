@@ -8,7 +8,7 @@ namespace SimpleCrud;
 
 class Manager {
 	protected $connection;
-	protected $inTransaction;
+	protected $inTransaction = false;
 	protected $debug;
 	protected $entityFactory;
 	protected $entities = [];
@@ -97,7 +97,7 @@ class Manager {
 	public function executeTransaction (callable $callable) {
 		try {
 			$transaction = $this->beginTransaction();
-
+var_dump($transaction);
 			$return = $callable();
 
 			if ($transaction) {
@@ -146,13 +146,13 @@ class Manager {
 	public function quote ($data) {
 		if (is_array($data)) {
 			foreach ($data as &$value) {
-				$value = $this->connection->quote($value);
+				$value = ($value === null) ? 'null' : $this->connection->quote($value);
 			}
 
 			return $data;
 		}
 
-		return $this->connection->quote($data);
+		return ($data === null) ? 'null' : $this->connection->quote($data);
 	}
 
 

@@ -68,6 +68,28 @@ class Row implements HasEntityInterface {
 	}
 
 
+	public function setRelation (HasEntityInterface $row) {
+		if (func_num_args() > 1) {
+			foreach (func_get_args() as $row) {
+				$this->setRelation($row);
+			}
+
+			return $this;
+		}
+
+		$entity = $row->entity();
+
+		if ($this->entity()->getRelation($entity) !== self::RELATION_HAS_ONE) {
+			throw new Exception("Not valid relation");
+		}
+
+		$foreignKey = $entity->foreignKey;
+		$this->$foreignKey = $row->id;
+
+		return $this;
+	}
+
+
 	public function toArray (array $parentEntities = array()) {
 		$name = $this->entity()->name;
 

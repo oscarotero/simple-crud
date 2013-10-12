@@ -152,7 +152,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 
 
 	public function add ($rows) {
-		if (is_array($rows)) {
+		if (is_array($rows) || (($rows instanceof HasEntityInterface) && $rows->isCollection())) {
 			foreach ($rows as $row) {
 				$this->offsetSet(null, $row);
 			}
