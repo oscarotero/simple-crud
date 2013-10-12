@@ -106,19 +106,20 @@ class Row implements HasEntityInterface {
 
 
 	public function save () {
+		$entity = $this->entity();
 		$data = [];
 
-		foreach ($this->entity()->getFields() as $name) {
+		foreach ($entity->getFields() as $name) {
 			$data[$name] = $this->$name;
 		}
 
 		if (empty($this->id)) {
-			$this->id = $this->entity()->insert($data);
+			$data = $entity->insert($data);
 		} else {
-			$this->entity()->update($data, 'id = :id', [':id' => $this->id], 1);
+			$data = $entity->update($data, 'id = :id', [':id' => $this->id], 1);
 		}
 
-		return $this;
+		return $this->set($data);
 	}
 
 

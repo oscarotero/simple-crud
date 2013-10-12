@@ -88,7 +88,7 @@ class Entity {
 
 	protected function createFromSelection (array $row, $expand) {
 		if ($expand === false) {
-			return ($row = $this->prepareDataFromSelection($row)) ? $this->create($row) : false;
+			return ($row = $this->dataFromDatabase($row)) ? $this->create($row) : false;
 		}
 
 		$fields = $joinFields = [];
@@ -108,7 +108,7 @@ class Entity {
 			$joinFields[$name][$fieldName] = $value;
 		}
 
-		if (!($row = $this->prepareDataFromSelection($fields))) {
+		if (!($row = $this->dataFromDatabase($fields))) {
 			return false;
 		}
 
@@ -276,12 +276,12 @@ class Entity {
 	}
 
 
-	public function prepareDataToSave (array $data, $new) {
+	public function dataToDatabase (array $data, $new) {
 		return $data;
 	}
 
 
-	public function prepareDataFromSelection (array $data) {
+	public function dataFromDatabase (array $data) {
 		return $data;
 	}
 
@@ -291,30 +291,22 @@ class Entity {
 			throw new \Exception("Invalid fields");
 		}
 
-		if (!($data = $this->prepareDataToSave($data, true))) {
+		if (!($data = $this->dataToDatabase($data, true))) {
 			throw new \Exception("Data not valid");
 		}
 
 		$fields = implode(', ', $this->getFields(self::FIELDS_SQL, array_keys($data)));
-		$marks = implode(', ', array_fill(0, count($data), '?'));
+		$quoted = implode(', ', $this->manager->quote($data));
 
-		try {
-			$initialTransation = $this->manager->beginTransaction();
+		$query = "INSERT INTO `{$this->table}` ($fields) VALUES ($quoted)";
 
-			$this->manager->execute("INSERT INTO `{$this->table}` ($fields) VALUES ($marks)", array_values($data));
+		$this->manager->executeTransaction(function () use ($query) {
+			$this->manager->execute($query);
+		});
 
-			if ($initialTransation) {
-				$this->manager->commit();
-			}
-		} catch (\Exception $exception) {
-			if ($initialTransation) {
-				$this->manager->rollBack();
-			}
+		$data['id'] = $this->manager->lastInsertId();
 
-			throw $exception;
-		}
-
-		return $this->manager->lastInsertId();
+		return $this->dataFromDatabase($data);
 	}
 
 
@@ -323,56 +315,36 @@ class Entity {
 			throw new \Exception("Invalid fields");
 		}
 
-		if (!($data = $this->prepareDataToSave($data, true))) {
+		if (!($data = $this->dataToDatabase($data, true))) {
 			throw new \Exception("Data not valid");
 		}
 
-		$data = $this->manager->quote($data);
+		$quoted = $this->manager->quote($data);
+		unset($quoted['id']);
+		
 		$set = [];
 
-		foreach ($this->getFields(self::FIELDS_SQL, array_keys($data)) as $field => $value) {
-			$set[] = "`$field` = ".$data[$field];
+		foreach ($this->getFields(self::FIELDS_SQL, array_keys($quoted)) as $name => $field) {
+			$set[] = "$field = ".$quoted[$name];
 		}
 
 		$set = implode(', ', $set);
 		$query = self::generateQuery("UPDATE `{$this->table}` SET $set", $where, null, $limit);
 
-		try {
-			$initialTransation = $this->manager->beginTransaction();
-
+		$this->manager->executeTransaction(function () use ($query, $marks) {
 			$this->manager->execute($query, $marks);
+		});
 
-			if ($initialTransation) {
-				$this->manager->commit();
-			}
-		} catch (\Exception $exception) {
-			if ($initialTransation) {
-				$this->manager->rollBack();
-			}
-
-			throw $exception;
-		}
+		return $this->dataFromDatabase($data);
 	}
 
 
 	public function delete ($where = '', $marks = null, $limit = null) {
 		$query = self::generateQuery("DELETE FROM `{$this->table}`", $where, null, $limit);
 
-		try {
-			$initialTransation = $this->manager->beginTransaction();
-
+		$this->manager->executeTransaction(function () use ($query, $marks) {
 			$this->manager->execute($query, $marks);
-
-			if ($initialTransation) {
-				$this->manager->commit();
-			}
-		} catch (\Exception $exception) {
-			if ($initialTransation) {
-				$this->manager->rollBack();
-			}
-
-			throw $exception;
-		}
+		});
 	}
 
 

@@ -94,6 +94,27 @@ class Manager {
 	}
 
 
+	public function executeTransaction (callable $callable) {
+		try {
+			$transaction = $this->beginTransaction();
+
+			$return = $callable();
+
+			if ($transaction) {
+				$this->commit();
+			}
+		} catch (\Exception $exception) {
+			if ($transaction) {
+				$this->rollBack();
+			}
+
+			throw $exception;
+		}
+
+		return $return;
+	}
+
+
 	public function lastInsertId () {
 		return $this->connection->lastInsertId();
 	}
@@ -124,7 +145,7 @@ class Manager {
 
 	public function quote ($data) {
 		if (is_array($data)) {
-			foreach ($data as $name => &$value) {
+			foreach ($data as &$value) {
 				$value = $this->connection->quote($value);
 			}
 
