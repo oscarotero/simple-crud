@@ -42,8 +42,10 @@ class EntityFactory {
 		$table = empty($entity->table) ? $name : $entity->table;
 		$fields = empty($entity->fields) ? $this->manager->execute("DESCRIBE `$table`")->fetchAll(\PDO::FETCH_COLUMN, 0) : $entity->fields;
 		$foreignKey = empty($entity->foreignKey) ? "{$table}_id" : $entity->foreignKey;
+		$rowClass = class_exists("{$class}Row") ? "{$class}Row" : 'SimpleCrud\\Row';
+		$rowCollectionClass = class_exists("{$class}RowCollection") ? "{$class}RowCollection" : 'SimpleCrud\\RowCollection';
 
-		$entity->setConfig($table, $fields, $foreignKey);
+		$entity->setConfig($table, $fields, $foreignKey, $rowClass, $rowCollectionClass);
 
 		$entity->onInit();
 

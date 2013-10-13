@@ -78,6 +78,14 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		return count($this->rows);
 	}
 
+	public function __call ($name, $args) {
+		foreach ($this->rows as $row) {
+			call_user_func_array([$row, $name], $args);
+		}
+
+		return $this;
+	}
+
 	public function jsonSerialize () {
 		return $this->toArray();
 	}

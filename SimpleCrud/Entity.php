@@ -18,8 +18,8 @@ class Entity {
 
 	protected $manager;
 
-	public $rowClass = 'SimpleCrud\\Row';
-	public $rowCollectionClass = 'SimpleCrud\\RowCollection';
+	public $rowClass;
+	public $rowCollectionClass;
 
 	public $name;
 	public $table;
@@ -57,9 +57,11 @@ class Entity {
 	}
 
 
-	public function setConfig ($table, array $fields, $foreignKey) {
+	public function setConfig ($table, array $fields, $foreignKey, $rowClass, $rowCollectionClass) {
 		$this->table = $table;
 		$this->foreignKey = $foreignKey;
+		$this->rowClass = $rowClass;
+		$this->rowCollectionClass = $rowCollectionClass;
 
 		$this->fields = $this->defaults = [];
 
