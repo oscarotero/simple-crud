@@ -97,7 +97,7 @@ class Manager {
 	public function executeTransaction (callable $callable) {
 		try {
 			$transaction = $this->beginTransaction();
-var_dump($transaction);
+
 			$return = $callable();
 
 			if ($transaction) {
