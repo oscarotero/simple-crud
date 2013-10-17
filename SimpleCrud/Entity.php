@@ -314,11 +314,11 @@ class Entity {
 			$query .= ' ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)';
 		}
 
-		$this->manager->executeTransaction(function () use ($query) {
+		$data['id'] = $this->manager->executeTransaction(function () use ($query) {
 			$this->manager->execute($query);
-		});
 
-		$data['id'] = $this->manager->lastInsertId();
+			return $this->manager->lastInsertId();
+		});
 
 		return $this->dataFromDatabase($data);
 	}
