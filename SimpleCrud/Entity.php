@@ -140,7 +140,7 @@ class Entity {
 	}
 
 
-	public function select ($where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null) {
+	public function select ($where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null, array $from = null) {
 		if ($limit === 0) {
 			return $this->createCollection();
 		}
@@ -176,8 +176,14 @@ class Entity {
 			}
 		}
 
-		$query = self::generateQuery("SELECT $fields FROM `{$this->table}`$query", $where, $orderBy, $limit);
+		if ($from) {
+			$from[] = "`{$this->table}`";
+			$from = implode(', ', $from);
+		} else {
+			$from = "`{$this->table}`";
+		}
 
+		$query = self::generateQuery("SELECT $fields FROM {$from}{$query}", $where, $orderBy, $limit);
 		$result = $this->fetch($query, $marks, $limit, (bool)$joins);
 
 		if ($load) {
