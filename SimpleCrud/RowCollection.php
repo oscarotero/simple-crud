@@ -19,7 +19,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 	public function __get ($name) {
-		return $this->get($name, 'id');
+		return $this->get($name);
 	}
 
 	public function entity () {
@@ -148,6 +148,21 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 			if (!empty($value)) {
 				$rows[] = $value;
 			}
+		}
+
+		if ($this->entity()->isRelated($name)) {
+			$entity = $this->manager()->$name;
+			$collection = $this->manager()->$name->createCollection();
+
+			if ($this->entity()->getRelation($entity) === Entity::RELATION_HAS_ONE) {
+				$collection->add($rows);
+			} else {
+				foreach ($rows as $rows) {
+					$collection->add($rows);
+				}
+			}
+
+			return $collection;
 		}
 
 		return $rows;
