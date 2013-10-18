@@ -39,6 +39,13 @@ class Row implements HasEntityInterface {
 	}
 
 
+	public function __isset ($name) {
+		$value = $this->$name;
+
+		return empty($value);
+	}
+
+
 	public function jsonSerialize () {
 		return $this->toArray();
 	}

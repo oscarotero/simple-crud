@@ -13,4 +13,5 @@ interface HasEntityInterface {
 	public function manager ();
 	public function isCollection ();
 	public function toArray (array $parentEntities = array());
+	public function load (array $entities);
 }
