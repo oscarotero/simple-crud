@@ -86,7 +86,7 @@ class Row implements HasEntityInterface {
 
 		$entity = $row->entity();
 
-		if ($this->entity()->getRelation($entity) !== self::RELATION_HAS_ONE) {
+		if ($this->entity()->getRelation($entity) !== Entity::RELATION_HAS_ONE) {
 			throw new Exception("Not valid relation");
 		}
 
