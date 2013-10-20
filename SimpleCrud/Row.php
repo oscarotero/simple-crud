@@ -134,7 +134,7 @@ class Row implements HasEntityInterface {
 	}
 
 
-	public function save () {
+	public function save ($duplicateKey = false) {
 		$entity = $this->entity();
 		$data = [];
 
@@ -143,7 +143,7 @@ class Row implements HasEntityInterface {
 		}
 
 		if (empty($this->id)) {
-			$data = $entity->insert($data);
+			$data = $entity->insert($data, $duplicateKey);
 		} else {
 			$data = $entity->update($data, 'id = :id', [':id' => $this->id], 1);
 		}
