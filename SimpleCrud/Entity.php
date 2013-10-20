@@ -186,7 +186,7 @@ class Entity {
 		$query = self::generateQuery("SELECT $fields FROM {$from}{$query}", $where, $orderBy, $limit);
 		$result = $this->fetch($query, $marks, $limit, (bool)$joins);
 
-		if ($load) {
+		if ($load && $result) {
 			$result->load($load);
 		}
 
