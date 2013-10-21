@@ -18,22 +18,50 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		}
 	}
 
+
+	/**
+	 * Magic method to execute the get method on access to undefined property
+	 * 
+	 * @see SimpleCrud\RowCollection::get()
+	 */
 	public function __get ($name) {
 		return $this->get($name);
 	}
 
+
+	/**
+	 * Returns the entity of the row
+	 * 
+	 * @return SimpleCrud\Entity
+	 */
 	public function entity () {
 		return $this->__entity;
 	}
 
+
+	/**
+	 * Returns the entity manager
+	 * 
+	 * @return SimpleCrud\Manager
+	 */
 	public function manager () {
 		return $this->__entity->getManager();
 	}
 
+
+	/**
+	 * Returns true if is a collection, false if isn't
+	 * 
+	 * @return boolean
+	 */
 	public function isCollection () {
 		return true;
 	}
 
+
+	/**
+	 * ArrayAcces interface
+	 */
 	public function offsetSet ($offset, $value) {
 		if (is_null($offset)) {
 			$offset = $value->id;
@@ -46,42 +74,86 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		}
 	}
 
+
+	/**
+	 * ArrayAcces interface
+	 */
 	public function offsetExists ($offset) {
 		return isset($this->rows[$offset]);
 	}
 
+
+	/**
+	 * ArrayAcces interface
+	 */
 	public function offsetUnset ($offset) {
 		unset($this->rows[$offset]);
 	}
 
+
+	/**
+	 * ArrayAcces interface
+	 */
 	public function offsetGet ($offset) {
 		return isset($this->rows[$offset]) ? $this->rows[$offset] : null;
 	}
 
+
+	/**
+	 * Iterator interface
+	 */
 	public function rewind () {
 		return reset($this->rows);
 	}
 
+
+	/**
+	 * Iterator interface
+	 */
 	public function current () {
 		return current($this->rows);
 	}
 
+
+	/**
+	 * Iterator interface
+	 */
 	public function key () {
 		return key($this->rows);
 	}
 
+
+	/**
+	 * Iterator interface
+	 */
 	public function next () {
 		return next($this->rows);
 	}
 
+
+	/**
+	 * Iterator interface
+	 */
 	public function valid () {
 		return key($this->rows) !== null;
 	}
 
+
+	/**
+	 * Countable interface
+	 */
 	public function count () {
 		return count($this->rows);
 	}
 
+
+	/**
+	 * Magic method to execute the same function in all rows
+	 * @param string $name The function name
+	 * @param string $args Array with all arguments passed to the function
+	 * 
+	 * @return $this
+	 */
 	public function __call ($name, $args) {
 		foreach ($this->rows as $row) {
 			call_user_func_array([$row, $name], $args);
@@ -90,10 +162,24 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		return $this;
 	}
 
+
+	/**
+	 * jsonSerialize interface
+	 * 
+	 * @return array
+	 */
 	public function jsonSerialize () {
 		return $this->toArray();
 	}
 
+
+	/**
+	 * Generate an array with all values and subvalues of the collection
+	 * 
+	 * @param array $parentEntities Parent entities of this row. It's used to avoid infinite recursions
+	 * 
+	 * @return array
+	 */
 	public function toArray (array $parentEntities = array()) {
 		$name = $this->entity()->name;
 
@@ -111,6 +197,14 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 
+	/**
+	 * Returns one or all values of the collections
+	 * 
+	 * @param string $name The value name. If it's not defined returns all values
+	 * @param string $key  The parameter name used for the keys. If it's not defined, returns a numerica array
+	 * 
+	 * @return array All values found. It generates a RowCollection if the values are rows.
+	 */
 	public function get ($name = null, $key = null) {
 		$rows = [];
 
@@ -169,15 +263,11 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 
-	public function set (array $data) {
-		foreach ($this->rows as $row) {
-			$row->set($data);
-		}
-
-		return $this;
-	}
-
-
+	/**
+	 * Add new values to the collection
+	 * 
+	 * @param array/HasEntityInterface $rows The new rows
+	 */
 	public function add ($rows) {
 		if (is_array($rows) || (($rows instanceof HasEntityInterface) && $rows->isCollection())) {
 			foreach ($rows as $row) {
@@ -191,6 +281,15 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 
+	/**
+	 * Filter the rows by a value
+	 * 
+	 * @param string $name  The value name
+	 * @param mixed  $value The value to filter
+	 * @param boolean $first Set true to return only the first row found
+	 * 
+	 * @return SimpleCrud\HasEntityInterface The rows found or null if no value is found and $first parameter is true
+	 */
 	public function filter ($name, $value, $first = false) {
 		$rows = [];
 
@@ -208,6 +307,13 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 
+	/**
+	 * Load related elements from the database
+	 * 
+	 * @param array $entities The entities names
+	 * 
+	 * @return $this
+	 */
 	public function load (array $entities) {
 		$entity = $this->entity();
 		$manager = $this->manager();
@@ -229,6 +335,14 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	}
 
 
+	/**
+	 * Distribute a row or rowcollection througth all rows
+	 * 
+	 * @param SimpleCrud\HasEntityInterface $data The row or rowcollection to distribute
+	 * @param boolean $bidirectional Set true to distribute also in reverse direccion
+	 * 
+	 * @return $this
+	 */
 	public function distribute ($data, $bidirectional = true) {
 		if ($data instanceof Row) {
 			$data = $data->entity()->createCollection([$data]);

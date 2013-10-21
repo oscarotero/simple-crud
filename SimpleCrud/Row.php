@@ -8,7 +8,7 @@ namespace SimpleCrud;
 
 use SimpleCrud\Entity;
 
-class Row implements HasEntityInterface {
+class Row implements HasEntityInterface, \JsonSerializable {
 	private $__entity;
 
 	public function __construct (Entity $entity) {
@@ -39,6 +39,13 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Magic method to check if a property is defined or is empty
+	 * 
+	 * @param string $name Property name
+	 *  
+	 * @return boolean
+	 */
 	public function __isset ($name) {
 		$value = $this->$name;
 
@@ -46,27 +53,59 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * jsonSerialize interface
+	 * 
+	 * @return array
+	 */
 	public function jsonSerialize () {
 		return $this->toArray();
 	}
 
 
+	/**
+	 * Returns the entity of the row
+	 * 
+	 * @return SimpleCrud\Entity
+	 */
 	public function entity () {
 		return $this->__entity;
 	}
 
 
+	/**
+	 * Returns the entity manager
+	 * 
+	 * @return SimpleCrud\Manager
+	 */
 	public function manager () {
 		return $this->__entity->getManager();
 	}
 
 
+	/**
+	 * Returns true if is a collection, false if isn't
+	 * 
+	 * @return boolean
+	 */
 	public function isCollection () {
 		return false;
 	}
 
 
+	/**
+	 * Set new values to the row. Only fields defined
+	 * 
+	 * @param array $data The new values
+	 *
+	 * @return $this
+	 */
 	public function set (array $data) {
+		if (($notValid = array_diff_key($data, $this->entity()->getFields()))) {
+			$notValid = implode(', ', array_keys($notValid));
+			throw new \Exception("The keys '$notValid' are not valid");
+		}
+
 		foreach ($data as $name => $value) {
 			$this->$name = $value;
 		}
@@ -75,6 +114,13 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Relate 'has-one' elements with this row
+	 * 
+	 * @param HasEntityInterface $row The row to relate
+	 *
+	 * @return $this
+	 */
 	public function setRelation (HasEntityInterface $row) {
 		if (func_num_args() > 1) {
 			foreach (func_get_args() as $row) {
@@ -97,6 +143,13 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Generate an array with all values and subvalues of the row
+	 * 
+	 * @param array $parentEntities Parent entities of this row. It's used to avoid infinite recursions
+	 * 
+	 * @return array
+	 */
 	public function toArray (array $parentEntities = array()) {
 		$name = $this->entity()->name;
 
@@ -123,8 +176,15 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Return one or all values of the row
+	 * 
+	 * @param string $name The value name to recover. If it's not defined, returns all values
+	 * 
+	 * @return mixed The value or an array with all values
+	 */
 	public function get ($name = null) {
-		$data = call_user_func('get_object_vars', $this);
+		$data = array_intersect_key(call_user_func('get_object_vars', $this), $this->entity()->getFields());
 
 		if ($name === null) {
 			return $data;
@@ -134,6 +194,13 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Saves this row in the database
+	 * 
+	 * @param boolean $duplicateKey Set true to detect duplicates index
+	 * 
+	 * @return $this
+	 */
 	public function save ($duplicateKey = false) {
 		$entity = $this->entity();
 		$data = [];
@@ -152,6 +219,11 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Deletes the row in the database
+	 * 
+	 * @return $this
+	 */
 	public function delete () {
 		if (empty($this->id)) {
 			return false;
@@ -163,6 +235,13 @@ class Row implements HasEntityInterface {
 	}
 
 
+	/**
+	 * Load related elements from the database
+	 * 
+	 * @param array $entities The entities names
+	 * 
+	 * @return $this
+	 */
 	public function load (array $entities) {
 		$entity = $this->entity();
 		$manager = $this->manager();

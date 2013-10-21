@@ -28,6 +28,9 @@ class Entity {
 	public $foreignKey;
 
 
+	/**
+	 * Private function to generate the mysql queries
+	 */
 	static private function generateQuery ($query, $where = '', $orderBy = null, $limit = null) {
 		if ($where) {
 			if (is_array($where)) {
@@ -57,6 +60,15 @@ class Entity {
 	}
 
 
+	/**
+	 * Set the configuration for this entity (used by Manager)
+	 * 
+	 * @param string $table The database table name
+	 * @param array  $fields The fields in the table name
+	 * @param string $foreignKey The foreign key name used to relate with other entities
+	 * @param string $rowClass The class name used for rows
+	 * @param string $rowCollectionClass The class name used for row collections
+	 */
 	public function setConfig ($table, array $fields, $foreignKey, $rowClass, $rowCollectionClass) {
 		$this->table = $table;
 		$this->foreignKey = $foreignKey;
@@ -72,13 +84,28 @@ class Entity {
 	}
 
 
+	/**
+	 * Callback onInit
+	 */
 	public function onInit () {}
 
 
+	/**
+	 * Returns the manager of the entity
+	 */
 	public function getManager () {
 		return $this->manager;
 	}
 
+
+	/**
+	 * Returns the fields of the entity
+	 * 
+	 * @param  integer $mode One of the FIELD_* contants values
+	 * @param  array $filter Filter the fields
+	 * 
+	 * @return array
+	 */
 	public function getFields ($mode = 0, array $filter = null) {
 		if ($filter === null) {
 			return array_column($this->fields, $mode, 0);
@@ -88,6 +115,14 @@ class Entity {
 	}
 
 
+	/**
+	 * Create a row instance from the result of a select query
+	 * 
+	 * @param array $row The select values
+	 * @param boolean $expand True to expand the results
+	 * 
+	 * @return SimpleCrud\Row
+	 */
 	protected function createFromSelection (array $row, $expand) {
 		if ($expand === false) {
 			return ($row = $this->dataFromDatabase($row)) ? $this->create($row) : false;
@@ -124,6 +159,13 @@ class Entity {
 	}
 
 
+	/**
+	 * Creates a new row instance
+	 * 
+	 * @param array $data The values of the row
+	 * 
+	 * @return SimpleCrud\Row
+	 */
 	public function create (array $data = null) {
 		$row = new $this->rowClass($this);
 
@@ -135,11 +177,30 @@ class Entity {
 	}
 
 
+	/**
+	 * Creates a new rowCollection instance
+	 * 
+	 * @param array $rows Rows added to this collection
+	 * 
+	 * @return SimpleCrud\RowCollection
+	 */
 	public function createCollection (array $rows = null) {
 		return new $this->rowCollectionClass($this, $rows);
 	}
 
 
+	/**
+	 * Executes a SELECT in the database
+	 * 
+	 * @param  string/array $where
+	 * @param  array $marks
+	 * @param  string/array $orderBy
+	 * @param  int/array $limit
+	 * @param  array $joins Optional entities to join
+	 * @param  array $from Extra tables used in the query
+	 * 
+	 * @return mixed The row or rowcollection with the result or null
+	 */
 	public function select ($where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null, array $from = null) {
 		if ($limit === 0) {
 			return $this->createCollection();
@@ -194,6 +255,14 @@ class Entity {
 	}
 
 
+	/**
+	 * Executes a selection by id or by relation with other rows or collections
+	 * 
+	 * @param mixed $id The id/ids, row or rowCollection used to select
+	 * @param array $joins Optional entities to join to this selection
+	 * 
+	 * @return mixed The row or rowcollection with the result or null
+	 */
 	public function selectBy ($id, array $joins = null) {
 		if ($id instanceof HasEntityInterface) {
 			$entity = $id->entity();
@@ -242,14 +311,23 @@ class Entity {
 	}
 
 
+
+	/**
+	 * Execute a count query in the database
+	 * 
+	 * @param  string/array $where
+	 * @param  array $marks
+	 * @param  int/array $limit
+	 * 
+	 * @return int 
+	 */
 	public function count ($where = '', $marks = null, $limit = null) {
 		$query = self::generateQuery("SELECT COUNT(*) FROM `{$this->table}`", $where, null, $limit);
 
-		if (($statement = $this->manager->execute($query, $marks)) && ($result = $statement->fetch(\PDO::FETCH_NUM))) {
-			return (int)$result[0];
-		}
-
-		return false;
+		$statement = $this->manager->execute($query, $marks);
+		$result = $statement->fetch(\PDO::FETCH_NUM);
+		
+		return (int)$result[0];
 	}
 
 
@@ -258,6 +336,8 @@ class Entity {
 	 * 
 	 * @param  string $query The Mysql query to execute
 	 * @param  array $marks The marks passed to the statement
+	 * @param  boolean $fetchOne Set true to returns only the first value
+	 * @param  boolean $expand Used to expand values in subrows on JOINs
 	 *
 	 * @return PDOStatement The result
 	 */
@@ -284,16 +364,34 @@ class Entity {
 	}
 
 
+	/**
+	 * Default data converter/validator from database
+	 * 
+	 * @param  array $data The values before insert to database
+	 */
 	public function dataToDatabase (array $data, $new) {
 		return $data;
 	}
 
 
+	/**
+	 * Default data converter from database
+	 * 
+	 * @param  array $data The database format values
+	 */
 	public function dataFromDatabase (array $data) {
 		return $data;
 	}
 
 
+	/**
+	 * Executes an 'insert' query in the database
+	 * 
+	 * @param  array  $data  The values to insert
+	 * @param  boolean $duplicateKey Set true if you can avoid duplicate key errors
+	 * 
+	 * @return array The new values of the inserted row
+	 */
 	public function insert (array $data, $duplicateKey = false) {
 		if (array_diff_key($data, $this->fields)) {
 			throw new \Exception("Invalid fields");
@@ -330,6 +428,16 @@ class Entity {
 	}
 
 
+	/**
+	 * Executes an 'update' query in the database
+	 * 
+	 * @param  array  $data  The values to update
+	 * @param  string/array $where
+	 * @param  array $marks
+	 * @param  int/array $limit
+	 * 
+	 * @return array The new values of the updated row
+	 */
 	public function update (array $data, $where = '', $marks = null, $limit = null) {
 		if (array_diff_key($data, $this->fields)) {
 			throw new \Exception("Invalid fields");
@@ -359,6 +467,13 @@ class Entity {
 	}
 
 
+	/**
+	 * Execute a delete query in the database
+	 * 
+	 * @param  string/array $where
+	 * @param  array $marks
+	 * @param  int/array $limit
+	 */
 	public function delete ($where = '', $marks = null, $limit = null) {
 		$query = self::generateQuery("DELETE FROM `{$this->table}`", $where, null, $limit);
 
@@ -368,6 +483,13 @@ class Entity {
 	}
 
 
+	/**
+	 * Check if this entity is related with other
+	 * 
+	 * @param SimpleCrud\Entity / string $entity The entity object or name
+	 * 
+	 * @return boolean
+	 */
 	public function isRelated ($entity) {
 		if (!($entity instanceof Entity) && !($entity = $this->manager->$entity)) {
 			return false;
@@ -377,6 +499,13 @@ class Entity {
 	}
 
 
+	/**
+	 * Returns the relation type of this entity with other
+	 * 
+	 * @param SimpleCrud\Entity $entity
+	 * 
+	 * @return int One of the RELATION_* constants values or null
+	 */
 	public function getRelation (Entity $entity) {
 		if (isset($entity->fields[$this->foreignKey])) {
 			return self::RELATION_HAS_MANY;

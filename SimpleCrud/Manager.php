@@ -21,6 +21,13 @@ class Manager {
 	}
 
 
+	/**
+	 * Magic method to initialize the entities in lazy mode
+	 * 
+	 * @param string $name The entity name
+	 * 
+	 * @return SimpleCrud\Entity
+	 */
 	public function __get ($name) {
 		if (isset($this->entities[$name])) {
 			return $this->entities[$name];
@@ -94,6 +101,13 @@ class Manager {
 	}
 
 
+	/**
+	 * Execute a callable inside a transaction
+	 * 
+	 * @param callable $callable The function with all operations
+	 * 
+	 * @return mixed The callable returned value
+	 */
 	public function executeTransaction (callable $callable) {
 		try {
 			$transaction = $this->beginTransaction();
@@ -115,11 +129,21 @@ class Manager {
 	}
 
 
+	/**
+	 * Returns the last insert id
+	 * 
+	 * @return int
+	 */
 	public function lastInsertId () {
 		return $this->connection->lastInsertId();
 	}
 
 
+	/**
+	 * Starts a transaction if it's not started yet
+	 * 
+	 * @return boolean True if a the transaction is started or false if its not started
+	 */
 	public function beginTransaction () {
 		if (($this->inTransaction === false) && ($this->connection->inTransaction() === false)) {
 			$this->connection->beginTransaction();
@@ -129,6 +153,10 @@ class Manager {
 		return false;
 	}
 
+
+	/**
+	 * Commits the changes of the transaction to the database
+	 */
 	public function commit () {
 		if (($this->inTransaction === true) && ($this->connection->inTransaction() === true)) {
 			$this->connection->commit();
@@ -136,6 +164,10 @@ class Manager {
 		}
 	}
 
+
+	/**
+	 * rollBack a transaction
+	 */
 	public function rollBack () {
 		if (($this->inTransaction === true) && ($this->connection->inTransaction() === true)) {
 			$this->connection->rollBack();
@@ -143,6 +175,14 @@ class Manager {
 		}
 	}
 
+
+	/**
+	 * Escape the values before use them into the sql queries
+	 * 
+	 * @param string/array $data Value or values to scape
+	 * 
+	 * @return string/array
+	 */
 	public function quote ($data) {
 		if (is_array($data)) {
 			foreach ($data as &$value) {
