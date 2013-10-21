@@ -94,14 +94,15 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
-	 * Set new values to the row. Only fields defined
+	 * Set new values to the row.
 	 * 
 	 * @param array $data The new values
+	 * @param boolean $strictMode Set true to only set declared fields
 	 *
 	 * @return $this
 	 */
-	public function set (array $data) {
-		if (($notValid = array_diff_key($data, $this->entity()->getFields()))) {
+	public function set (array $data, $strictMode = false) {
+		if (($strictMode === true) && ($notValid = array_diff_key($data, $this->entity()->getFields()))) {
 			$notValid = implode(', ', array_keys($notValid));
 			throw new \Exception("The keys '$notValid' are not valid");
 		}
