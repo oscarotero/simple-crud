@@ -443,7 +443,7 @@ class Entity {
 			throw new \Exception("Invalid fields");
 		}
 
-		if (!($data = $this->dataToDatabase($data, true))) {
+		if (!($data = $this->dataToDatabase($data, false))) {
 			throw new \Exception("Data not valid");
 		}
 
