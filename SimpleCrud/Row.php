@@ -94,28 +94,6 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
-	 * Set new values to the row.
-	 * 
-	 * @param array $data The new values
-	 * @param boolean $strictMode Set true to only set declared fields
-	 *
-	 * @return $this
-	 */
-	public function set (array $data, $strictMode = false) {
-		if (($strictMode === true) && ($notValid = array_diff_key($data, $this->entity()->getFields()))) {
-			$notValid = implode(', ', array_keys($notValid));
-			throw new \Exception("The keys '$notValid' are not valid");
-		}
-
-		foreach ($data as $name => $value) {
-			$this->$name = $value;
-		}
-
-		return $this;
-	}
-
-
-	/**
 	 * Relate 'has-one' elements with this row
 	 * 
 	 * @param HasEntityInterface $row The row to relate
@@ -178,14 +156,39 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
+	 * Set new values to the row.
+	 * 
+	 * @param array $data The new values
+	 * @param boolean $onlyDeclaredFields Set true to only set declared fields
+	 *
+	 * @return $this
+	 */
+	public function set (array $data, $onlyDeclaredFields = false) {
+		if ($onlyDeclaredFields === true) {
+			$data = array_intersect_key($data, $this->entity()->getFields());
+		}
+
+		foreach ($data as $name => $value) {
+			$this->$name = $value;
+		}
+
+		return $this;
+	}
+
+
+	/**
 	 * Return one or all values of the row
 	 * 
-	 * @param string $name The value name to recover. If it's not defined, returns all values
+	 * @param string $name The value name to recover. If it's not defined, returns all values. If it's true, returns only the fields values.
 	 * 
 	 * @return mixed The value or an array with all values
 	 */
 	public function get ($name = null) {
-		$data = array_intersect_key(call_user_func('get_object_vars', $this), $this->entity()->getFields());
+		$data = call_user_func('get_object_vars', $this);
+
+		if ($name === true) {
+			return array_intersect_key($data, $this->entity()->getFields());
+		}
 
 		if ($name === null) {
 			return $data;
@@ -203,17 +206,12 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @return $this
 	 */
 	public function save ($duplicateKey = false) {
-		$entity = $this->entity();
-		$data = [];
-
-		foreach ($entity->getFields() as $name) {
-			$data[$name] = $this->$name;
-		}
+		$data = $this->get(true);
 
 		if (empty($this->id)) {
-			$data = $entity->insert($data, $duplicateKey);
+			$data = $this->entity()->insert($data, $duplicateKey);
 		} else {
-			$data = $entity->update($data, 'id = :id', [':id' => $this->id], 1);
+			$data = $this->entity()->update($data, 'id = :id', [':id' => $this->id], 1);
 		}
 
 		return $this->set($data);
