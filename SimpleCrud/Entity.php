@@ -403,6 +403,10 @@ class Entity {
 			throw new \Exception("Data not valid");
 		}
 
+		if (empty($data['id'])) {
+			unset($data['id']);
+		}
+
 		$quoted = $this->manager->quote($data);
 		$fields = $values = [];
 
@@ -411,13 +415,19 @@ class Entity {
 			$values[] = $quoted[$name];
 		}
 
-		$fields = implode(', ', $fields);
-		$values = implode(', ', $values);
+		$queryFields = implode(', ', $fields);
+		$queryValues = implode(', ', $values);
 
-		$query = "INSERT INTO `{$this->table}` ($fields) VALUES ($values)";
+		$query = "INSERT INTO `{$this->table}` ($queryFields) VALUES ($queryValues)";
 
 		if ($duplicateKey) {
-			$query .= ' ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)';
+			$update = ['id = LAST_INSERT_ID(id)'];
+
+			foreach ($fields as $k => $field) {
+				$update[] = "$field = ".$values[$k];
+			}
+
+			$query .= ' ON DUPLICATE KEY UPDATE '.implode(', ', $update);
 		}
 
 		$data['id'] = $this->manager->executeTransaction(function () use ($query) {
