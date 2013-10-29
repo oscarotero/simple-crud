@@ -247,7 +247,7 @@ class Entity {
 		}
 
 		$query = self::generateQuery("SELECT $fields FROM {$from}{$query}", $where, $orderBy, $limit);
-		$result = $this->fetch($query, $marks, $limit, (bool)$joins);
+		$result = $this->fetch($query, $marks, (isset($limit[1]) ? $limit[1] : $limit), (bool)$joins);
 
 		if ($load && $result) {
 			$result->load($load);
