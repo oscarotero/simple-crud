@@ -383,9 +383,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 				$foreignKey = $dataEntity->foreignKey;
 
 				foreach ($this->rows as $row) {
-					if (($id = $row->$foreignKey) && isset($data[$id])) {
-						$row->$name = $data[$id];
-					}
+					$row->$name = (($id = $row->$foreignKey) && isset($data[$id])) ? $data[$id] : null;
 				}
 
 				if ($bidirectional === true) {
