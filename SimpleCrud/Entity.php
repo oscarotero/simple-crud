@@ -91,14 +91,6 @@ class Entity {
 
 
 	/**
-	 * Returns the manager of the entity
-	 */
-	public function getManager () {
-		return $this->manager;
-	}
-
-
-	/**
 	 * Returns the fields of the entity
 	 * 
 	 * @param  integer $mode One of the FIELD_* contants values

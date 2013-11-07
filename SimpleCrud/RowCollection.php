@@ -8,10 +8,13 @@ namespace SimpleCrud;
 
 class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable, HasEntityInterface {
 	private $rows = [];
-	private $__entity;
+
+	public $entity;
+	public $manager;
 
 	public function __construct (Entity $entity, array $rows = null) {
-		$this->__entity = $entity;
+		$this->entity = $entity;
+		$this->manager = $entity->manager;
 
 		if ($rows !== null) {
 			$this->add($rows);
@@ -26,26 +29,6 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 */
 	public function __get ($name) {
 		return $this->get($name);
-	}
-
-
-	/**
-	 * Returns the entity of the row
-	 * 
-	 * @return SimpleCrud\Entity
-	 */
-	public function entity () {
-		return $this->__entity;
-	}
-
-
-	/**
-	 * Returns the entity manager
-	 * 
-	 * @return SimpleCrud\Manager
-	 */
-	public function manager () {
-		return $this->__entity->getManager();
 	}
 
 
@@ -181,9 +164,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 * @return array
 	 */
 	public function toArray (array $parentEntities = array()) {
-		$name = $this->entity()->name;
-
-		if ($parentEntities && in_array($name, $parentEntities)) {
+		if ($parentEntities && in_array($this->entity->name, $parentEntities)) {
 			return null;
 		}
 
@@ -244,11 +225,11 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 			}
 		}
 
-		if ($this->entity()->isRelated($name)) {
-			$entity = $this->manager()->$name;
-			$collection = $this->manager()->$name->createCollection();
+		if ($this->entity->isRelated($name)) {
+			$entity = $this->manager->$name;
+			$collection = $entity->createCollection();
 
-			if ($this->entity()->getRelation($entity) === Entity::RELATION_HAS_ONE) {
+			if ($this->entity->getRelation($entity) === Entity::RELATION_HAS_ONE) {
 				$collection->add($rows);
 			} else {
 				foreach ($rows as $rows) {
@@ -303,7 +284,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 			}
 		}
 
-		return $first ? null : $this->entity()->createCollection($rows);
+		return $first ? null : $this->entity->createCollection($rows);
 	}
 
 
@@ -315,20 +296,17 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 * @return $this
 	 */
 	public function load (array $entities) {
-		$entity = $this->entity();
-		$manager = $this->manager();
-
 		foreach ($entities as $name => $joins) {
 			if (is_int($name)) {
 				$name = $joins;
 				$joins = null;
 			}
 
-			if (!$entity->isRelated($name)) {
+			if (!$this->entity->isRelated($name)) {
 				throw new \Exception("Cannot load '$name' because is not related or does not exists");
 			}
 
-			$this->distribute($manager->$name->selectBy($this, $joins));
+			$this->distribute($this->manager->$name->selectBy($this, $joins));
 		}
 
 		return $this;
@@ -345,55 +323,51 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 */
 	public function distribute ($data, $bidirectional = true) {
 		if ($data instanceof Row) {
-			$data = $data->entity()->createCollection([$data]);
+			$data = $data->entity->createCollection([$data]);
 		}
 
 		if ($data instanceof RowCollection) {
-			$thisEntity = $this->entity();
-			$dataEntity = $data->entity();
+			$name = $data->entity->name;
 
-			$name = $dataEntity->name;
-			$relation = $thisEntity->getRelation($dataEntity);
+			switch ($this->entity->getRelation($data->entity)) {
+				case Entity::RELATION_HAS_MANY:
+					$foreignKey = $this->entity->foreignKey;
 
-			if ($relation === Entity::RELATION_HAS_MANY) {
-				$foreignKey = $thisEntity->foreignKey;
-
-				foreach ($this->rows as $row) {
-					if (!isset($row->$name)) {
-						$row->$name = $dataEntity->createCollection();
+					foreach ($this->rows as $row) {
+						if (!isset($row->$name)) {
+							$row->$name = $data->entity->createCollection();
+						}
 					}
-				}
 
-				foreach ($data as $row) {
-					$id = $row->$foreignKey;
+					foreach ($data as $row) {
+						$id = $row->$foreignKey;
 
-					if (isset($this->rows[$id])) {
-						$this->rows[$id]->$name->add($row);
+						if (isset($this->rows[$id])) {
+							$this->rows[$id]->$name->add($row);
+						}
 					}
-				}
 
-				if ($bidirectional === true) {
-					$data->distribute($this, false);
-				}
+					if ($bidirectional === true) {
+						$data->distribute($this, false);
+					}
 
-				return $this;
+					return $this;
+
+				case Entity::RELATION_HAS_ONE:
+					$foreignKey = $data->entity->foreignKey;
+
+					foreach ($this->rows as $row) {
+						$row->$name = (($id = $row->$foreignKey) && isset($data[$id])) ? $data[$id] : null;
+					}
+
+					if ($bidirectional === true) {
+						$data->distribute($this, false);
+					}
+
+					return $this;
 			}
 
-			if ($relation === Entity::RELATION_HAS_ONE) {
-				$foreignKey = $dataEntity->foreignKey;
-
-				foreach ($this->rows as $row) {
-					$row->$name = (($id = $row->$foreignKey) && isset($data[$id])) ? $data[$id] : null;
-				}
-
-				if ($bidirectional === true) {
-					$data->distribute($this, false);
-				}
-
-				return $this;
-			}
-
-			throw new \Exception("Cannot set '$name' and '".$thisEntity->name."' because is not related or does not exists");
+			throw new \Exception("Cannot set '$name' and '{$this->entity->name}' because is not related or does not exists");
 		}
 	}
 }

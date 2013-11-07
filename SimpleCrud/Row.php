@@ -9,10 +9,15 @@ namespace SimpleCrud;
 use SimpleCrud\Entity;
 
 class Row implements HasEntityInterface, \JsonSerializable {
-	private $__entity;
+	private $values;
+
+	public $entity;
+	public $manager;
 
 	public function __construct (Entity $entity) {
-		$this->__entity = $entity;
+		$this->entity = $entity;
+		$this->manager = $entity->manager;
+
 		$this->set($entity->defaults);
 	}
 
@@ -25,17 +30,32 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	public function __get ($name) {
 		$method = "get$name";
 
-		if (method_exists($this, $method)) {
-			return $this->$name = $this->$method();
+		if (array_key_exists($name, $this->values)) {
+			return $this->values[$name];
 		}
 
-		if ($this->entity()->isRelated($name)) {
+		if (method_exists($this, $method)) {
+			return $this->values[$name] = $this->$method();
+		}
+
+		if ($this->entity->isRelated($name)) {
 			$this->load([$name]);
 
-			return $this->$name;
+			return $this->values[$name];
 		}
 
 		return null;
+	}
+
+
+	/**
+	 * Magic method to execute 'set' function
+	 * 
+	 * @param string $name The property name
+	 * @param mixed $value The value
+	 */
+	public function __set ($name, $value) {
+		return $this->values[$name] = $value;
 	}
 
 
@@ -47,9 +67,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @return boolean
 	 */
 	public function __isset ($name) {
-		$value = $this->$name;
-
-		return empty($value);
+		return empty($this->values[$name]);
 	}
 
 
@@ -60,26 +78,6 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 */
 	public function jsonSerialize () {
 		return $this->toArray();
-	}
-
-
-	/**
-	 * Returns the entity of the row
-	 * 
-	 * @return SimpleCrud\Entity
-	 */
-	public function entity () {
-		return $this->__entity;
-	}
-
-
-	/**
-	 * Returns the entity manager
-	 * 
-	 * @return SimpleCrud\Manager
-	 */
-	public function manager () {
-		return $this->__entity->getManager();
 	}
 
 
@@ -109,13 +107,11 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			return $this;
 		}
 
-		$entity = $row->entity();
-
-		if ($this->entity()->getRelation($entity) !== Entity::RELATION_HAS_ONE) {
+		if ($this->entity->getRelation($row->entity) !== Entity::RELATION_HAS_ONE) {
 			throw new Exception("Not valid relation");
 		}
 
-		$foreignKey = $entity->foreignKey;
+		$foreignKey = $row->entity->foreignKey;
 		$this->$foreignKey = $row->id;
 
 		return $this;
@@ -130,25 +126,17 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @return array
 	 */
 	public function toArray (array $parentEntities = array()) {
-		$name = $this->entity()->name;
-
-		if ($parentEntities && in_array($name, $parentEntities)) {
+		if ($parentEntities && in_array($this->entity->name, $parentEntities)) {
 			return null;
 		}
 
-		$parentEntities[] = $name;
-		$data = [];
+		$parentEntities[] = $this->entity->name;
+		$data = $this->values;
 
-		foreach (call_user_func('get_object_vars', $this) as $k => $row) {
-			if ($row instanceof HasEntityInterface) {
-				if (($row = $row->toArray($parentEntities)) !== null) {
-					$data[$k] = $row;
-				}
-
-				continue;
+		foreach ($data as &$value) {
+			if ($value instanceof HasEntityInterface) {
+				$value = $value->toArray($parentEntities);
 			}
-
-			$data[$k] = $row;
 		}
 
 		return $data;
@@ -165,11 +153,11 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 */
 	public function set (array $data, $onlyDeclaredFields = false) {
 		if ($onlyDeclaredFields === true) {
-			$data = array_intersect_key($data, $this->entity()->getFields());
+			$data = array_intersect_key($data, $this->entity->getFields());
 		}
 
 		foreach ($data as $name => $value) {
-			$this->$name = $value;
+			$this->values[$name] = $value;
 		}
 
 		return $this;
@@ -184,17 +172,15 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @return mixed The value or an array with all values
 	 */
 	public function get ($name = null) {
-		$data = call_user_func('get_object_vars', $this);
-
 		if ($name === true) {
-			return array_intersect_key($data, $this->entity()->getFields());
+			return array_intersect_key($this->values, $this->entity->getFields());
 		}
 
 		if ($name === null) {
-			return $data;
+			return $this->values;
 		}
 
-		return isset($data[$name]) ? $data[$name] : null;
+		return isset($this->values[$name]) ? $this->values[$name] : null;
 	}
 
 
@@ -209,9 +195,9 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		$data = $this->get(true);
 
 		if (empty($this->id)) {
-			$data = $this->entity()->insert($data, $duplicateKey);
+			$data = $this->entity->insert($data, $duplicateKey);
 		} else {
-			$data = $this->entity()->update($data, 'id = :id', [':id' => $this->id], 1);
+			$data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1);
 		}
 
 		return $this->set($data);
@@ -228,7 +214,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			return false;
 		}
 
-		$this->entity()->delete('id = :id', [':id' => $this->id], 1);
+		$this->entity->delete('id = :id', [':id' => $this->id], 1);
 
 		return $this;
 	}
@@ -242,20 +228,17 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @return $this
 	 */
 	public function load (array $entities) {
-		$entity = $this->entity();
-		$manager = $this->manager();
-
 		foreach ($entities as $name => $joins) {
 			if (is_int($name)) {
 				$name = $joins;
 				$joins = null;
 			}
 
-			if (!$entity->isRelated($name)) {
+			if (!$this->entity->isRelated($name)) {
 				throw new \Exception("Cannot load '$name' because is not related or does not exists");
 			}
 
-			$this->$name = $manager->$name->selectBy($this, $joins);
+			$this->$name = $this->manager->$name->selectBy($this, $joins);
 		}
 
 		return $this;
