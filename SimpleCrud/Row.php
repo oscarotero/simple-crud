@@ -228,17 +228,20 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @return $this
 	 */
 	public function load (array $entities) {
-		foreach ($entities as $name => $joins) {
-			if (is_int($name)) {
-				$name = $joins;
-				$joins = null;
+		foreach ($entities as $name => $options) {
+			if (!is_array($options)) {
+				$this->$options = $this->manager->$options->selectBy($this);
+
+				continue;
 			}
 
-			if (!$this->entity->isRelated($name)) {
-				throw new \Exception("Cannot load '$name' because is not related or does not exists");
-			}
-
-			$this->$name = $this->manager->$name->selectBy($this, $joins);
+			$this->$name = $this->manager->$name->selectBy($this,
+				isset($options['join']) ? $options['join'] : null,
+				isset($options['where']) ? $options['where'] : '',
+				isset($options['marks']) ? $options['marks'] : null,
+				isset($options['orderBy']) ? $options['orderBy'] : null,
+				isset($options['limit']) ? $options['limit'] : null
+			);
 		}
 
 		return $this;

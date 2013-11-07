@@ -205,24 +205,39 @@ class Entity {
 		$load = [];
 
 		if ($joins !== null) {
-			foreach ($joins as $k => $join) {
-				if (is_array($join)) {
-					$load[$k] = $join;
+			foreach ($joins as $name => $options) {
+				if (!is_array($options)) {
+					$name = $options;
+					$options = [];
+				}
+
+				if (!empty($options['join'])) {
+					$load[$name] = $options;
 					continue;
 				}
 
-				$entity = $this->manager->$join;
+				$entity = $this->manager->$name;
 				$relation = $this->getRelation($entity);
 
 				if ($relation === self::RELATION_HAS_ONE) {
 					$fields .= ', '.implode(', ', $entity->getFields(self::FIELDS_SQL_JOIN));
-					$query .= " LEFT JOIN `{$entity->table}` ON (`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`)";
+					$on = "`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`";
+
+					if (!empty($options['where'])) {
+						$on .= ' AND ('.$options['where'].')';
+
+						if (!empty($options['marks'])) {
+							$marks = array_replace($marks, $options['marks']);
+						}
+					}
+
+					$query .= " LEFT JOIN `{$entity->table}` ON ($on)";
 
 					continue;
 				}
 
 				if ($relation === self::RELATION_HAS_MANY) {
-					$load[$k] = $join;
+					$load[$name] = $options;
 
 					continue;
 				}
@@ -257,50 +272,52 @@ class Entity {
 	 * 
 	 * @return mixed The row or rowcollection with the result or null
 	 */
-	public function selectBy ($id, array $joins = null) {
-		if ($id instanceof HasEntityInterface) {
-			$relation = $this->getRelation($id->entity);
-
-			if ($relation === self::RELATION_HAS_ONE) {
-				$ids = $id->get('id');
-
-				if (empty($ids)) {
-					return $id->isCollection() ? $this->createCollection() : null;
-				}
-
-				if ($id->isCollection()) {
-					return $this->select("`{$this->table}`.`{$id->entity->foreignKey}` IN (:id)", [':id' => $ids], null, count($ids), $joins);
-				}
-
-				return $this->select("`{$this->table}`.`{$id->entity->foreignKey}` = :id", [':id' => $ids], null, null, $joins);
-			}
-
-			if ($relation === self::RELATION_HAS_MANY) {
-				$ids = $id->get($this->foreignKey);
-
-				if (empty($ids)) {
-					return $id->isCollection() ? $this->createCollection() : null;
-				}
-
-				if ($id->isCollection()) {
-					return $this->select("`{$this->table}`.`id` IN (:id)", [':id' => $ids], null, count($ids), $joins);
-				}
-
-				return $this->select("`{$this->table}`.`id` = :id", [':id' => $ids], null, true, $joins);
-			}
-
-			throw new \Exception("The items {$this->table} and {$id->entity->table} are no related");
-		}
-
+	public function selectBy ($id, array $joins = null, $where = '', $marks = null, $orderBy = null, $limit = null) {
 		if (empty($id)) {
 			return is_array($id) ? $this->createCollection() : false;
 		}
 
-		if (is_array($id)) {
-			return $this->select('id IN (:id)', [':id' => $id], null, count($id), $joins);
+		$where = empty($where) ? [] : (array)$where;
+		$marks = empty($marks) ? [] : (array)$marks;
+
+		if ($id instanceof HasEntityInterface) {
+			if (!($relation = $this->getRelation($id->entity))) {
+				throw new \Exception("The items {$this->table} and {$id->entity->table} are no related");
+			}
+
+			if ($relation === self::RELATION_HAS_ONE) {
+				$ids = $id->get('id');
+				$foreignKey = $id->entity->foreignKey;
+				$fetch = null;
+			} else if ($relation === self::RELATION_HAS_MANY) {
+				$ids = $id->get($this->foreignKey);
+				$foreignKey = 'id';
+				$fetch = true;
+			}
+
+			if (empty($ids)) {
+				return $id->isCollection() ? $this->createCollection() : null;
+			}
+
+			$where[] = "`{$this->table}`.`$foreignKey` IN (:id)";
+			$marks[':id'] = $ids;
+
+			if (!isset($limit)) {
+				$limit = $id->isCollection() ? count($ids) : $fetch;
+			}
+
+			return $this->select($where, $marks, $orderBy, $limit, $joins);
 		}
 
-		return $this->select('id = :id', [':id' => $id], null, true, $joins);
+
+		$where[] = 'id IN (:id)';
+		$marks[':id'] = $id;
+
+		if (!isset($limit)) {
+			$limit = is_array($id) ? count($id) : true;
+		}
+
+		return $this->select('id = :id', [':id' => $id], $orderBy, $limit, $joins);
 	}
 
 
