@@ -16,7 +16,7 @@ class Entity {
 	const FIELDS_SQL_SELECT = 2;
 	const FIELDS_SQL_JOIN = 3;
 
-	protected $manager;
+	public $manager;
 
 	public $rowClass;
 	public $rowCollectionClass;
@@ -259,8 +259,7 @@ class Entity {
 	 */
 	public function selectBy ($id, array $joins = null) {
 		if ($id instanceof HasEntityInterface) {
-			$entity = $id->entity();
-			$relation = $this->getRelation($entity);
+			$relation = $this->getRelation($id->entity);
 
 			if ($relation === self::RELATION_HAS_ONE) {
 				$ids = $id->get('id');
@@ -270,10 +269,10 @@ class Entity {
 				}
 
 				if ($id->isCollection()) {
-					return $this->select("`{$this->table}`.`{$entity->foreignKey}` IN (:id)", [':id' => $ids], null, count($ids), $joins);
+					return $this->select("`{$this->table}`.`{$id->entity->foreignKey}` IN (:id)", [':id' => $ids], null, count($ids), $joins);
 				}
 
-				return $this->select("`{$this->table}`.`{$entity->foreignKey}` = :id", [':id' => $ids], null, null, $joins);
+				return $this->select("`{$this->table}`.`{$id->entity->foreignKey}` = :id", [':id' => $ids], null, null, $joins);
 			}
 
 			if ($relation === self::RELATION_HAS_MANY) {
@@ -290,7 +289,7 @@ class Entity {
 				return $this->select("`{$this->table}`.`id` = :id", [':id' => $ids], null, true, $joins);
 			}
 
-			throw new \Exception("The items {$this->table} and {$entity->table} are no related");
+			throw new \Exception("The items {$this->table} and {$id->entity->table} are no related");
 		}
 
 		if (empty($id)) {

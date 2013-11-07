@@ -18,7 +18,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		$this->entity = $entity;
 		$this->manager = $entity->manager;
 
-		$this->set($entity->defaults);
+		$this->values = $entity->defaults;
 	}
 
 
@@ -67,7 +67,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @return boolean
 	 */
 	public function __isset ($name) {
-		return empty($this->values[$name]);
+		return !empty($this->values[$name]);
 	}
 
 
