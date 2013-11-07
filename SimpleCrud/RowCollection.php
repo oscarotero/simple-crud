@@ -296,17 +296,20 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 * @return $this
 	 */
 	public function load (array $entities) {
-		foreach ($entities as $name => $joins) {
-			if (is_int($name)) {
-				$name = $joins;
-				$joins = null;
+		foreach ($entities as $name => $options) {
+			if (!is_array($options)) {
+				$result = $this->manager->$options->selectBy($this);
+			} else {
+				$result = $this->manager->$name->selectBy($this,
+					isset($options['join']) ? $options['join'] : null,
+					isset($options['where']) ? $options['where'] : '',
+					isset($options['marks']) ? $options['marks'] : null,
+					isset($options['orderBy']) ? $options['orderBy'] : null,
+					isset($options['limit']) ? $options['limit'] : null
+				);
 			}
 
-			if (!$this->entity->isRelated($name)) {
-				throw new \Exception("Cannot load '$name' because is not related or does not exists");
-			}
-
-			$this->distribute($this->manager->$name->selectBy($this, $joins));
+			$this->distribute($result);
 		}
 
 		return $this;
