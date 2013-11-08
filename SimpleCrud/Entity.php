@@ -144,9 +144,7 @@ class Entity {
 		$row = $this->create($row);
 
 		foreach ($joinFields as $name => $values) {
-			if (!empty($values['id'])) {
-				$row->$name = $this->manager->$name->create($values);
-			}
+			$row->$name = empty($values['id']) ? null : $this->manager->$name->create($values);
 		}
 
 		return $row;

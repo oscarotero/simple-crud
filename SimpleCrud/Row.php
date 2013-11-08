@@ -72,6 +72,16 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
+	 * Magic method to print the row values (and subvalues)
+	 * 
+	 * @return string
+	 */
+	public function __toString () {
+		return "\n".$this->entity->name.":\n".print_r($this->toArray(), true)."\n";
+	}
+
+
+	/**
 	 * jsonSerialize interface
 	 * 
 	 * @return array
