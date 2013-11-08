@@ -6,6 +6,8 @@
  */
 namespace SimpleCrud;
 
+use PDO;
+
 class Manager {
 	protected $connection;
 	protected $inTransaction = false;
@@ -14,7 +16,7 @@ class Manager {
 	protected $entities = [];
 
 
-	public function __construct (\PDO $connection, EntityFactory $entityFactory) {
+	public function __construct (PDO $connection, EntityFactory $entityFactory) {
 		$entityFactory->setManager($this);
 		$this->entityFactory = $entityFactory;
 		$this->connection = $connection;
@@ -183,16 +185,24 @@ class Manager {
 	 * 
 	 * @return string/array
 	 */
-	public function quote ($data) {
+	public function quote ($data, $type = PDO::PARAM_STR) {
 		if (is_array($data)) {
+			if (is_array($type)) {
+				foreach ($data as $k => &$value) {
+					$value = ($value === null) ? 'null' : $this->connection->quote($value, $type[$k]);
+				}
+
+				return $data;
+			}
+
 			foreach ($data as &$value) {
-				$value = ($value === null) ? 'null' : $this->connection->quote($value);
+				$value = ($value === null) ? 'null' : $this->connection->quote($value, $type);
 			}
 
 			return $data;
 		}
 
-		return ($data === null) ? 'null' : $this->connection->quote($data);
+		return ($data === null) ? 'null' : $this->connection->quote($data, $type);
 	}
 
 

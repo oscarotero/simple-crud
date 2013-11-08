@@ -7,6 +7,8 @@
 
 namespace SimpleCrud;
 
+use PDO;
+
 class Entity {
 	const RELATION_HAS_ONE = 1;
 	const RELATION_HAS_MANY = 2;
@@ -15,6 +17,7 @@ class Entity {
 	const FIELDS_SQL = 1;
 	const FIELDS_SQL_SELECT = 2;
 	const FIELDS_SQL_JOIN = 3;
+	const FIELDS_DATA_TYPE = 4;
 
 	public $manager;
 
@@ -77,9 +80,9 @@ class Entity {
 
 		$this->fields = $this->defaults = [];
 
-		foreach ($fields as $field) {
+		foreach ($fields as $field => $type) {
 			$this->defaults[$field] = null;
-			$this->fields[$field] = [$field, "`$field`", "`$table`.`$field`", "`$table`.`$field` as `$this->name.$field`"];
+			$this->fields[$field] = [$field, "`$field`", "`$table`.`$field`", "`$table`.`$field` as `$this->name.$field`", $type];
 		}
 	}
 
@@ -413,7 +416,8 @@ class Entity {
 			unset($data['id']);
 		}
 
-		$quoted = $this->manager->quote($data);
+		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
+
 		$fields = $values = [];
 
 		foreach ($this->getFields(self::FIELDS_SQL, array_keys($quoted)) as $name => $field) {
@@ -465,7 +469,7 @@ class Entity {
 			throw new \Exception("Data not valid");
 		}
 
-		$quoted = $this->manager->quote($data);
+		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
 		unset($quoted['id']);
 		
 		$set = [];
