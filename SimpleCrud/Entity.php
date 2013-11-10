@@ -303,24 +303,20 @@ class Entity {
 			$where[] = "`{$this->table}`.`$foreignKey` IN (:id)";
 			$marks[':id'] = $ids;
 
-			if (!isset($limit)) {
+			if ($limit === null) {
 				$limit = $id->isCollection() ? count($ids) : $fetch;
 			}
-
-			return $this->select($where, $marks, $orderBy, $limit, $joins);
+		} else {
+			$where[] = 'id IN (:id)';
+			$marks[':id'] = $id;
+			
+			if ($limit === null) {
+				$limit = is_array($id) ? count($id) : true;
+			}
 		}
 
-
-		$where[] = 'id IN (:id)';
-		$marks[':id'] = $id;
-
-		if (!isset($limit)) {
-			$limit = is_array($id) ? count($id) : true;
-		}
-
-		return $this->select('id = :id', [':id' => $id], $orderBy, $limit, $joins);
+		return $this->select($where, $marks, $orderBy, $limit, $joins);
 	}
-
 
 
 	/**
