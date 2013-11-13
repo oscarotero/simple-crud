@@ -304,7 +304,7 @@ class Entity {
 			$marks[':id'] = $ids;
 
 			if ($limit === null) {
-				$limit = $id->isCollection() ? count($ids) : $fetch;
+				$limit = ($id->isCollection() && $fetch) ? count($ids) : $fetch;
 			}
 		} else {
 			$where[] = 'id IN (:id)';
