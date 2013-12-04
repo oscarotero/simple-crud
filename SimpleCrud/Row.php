@@ -118,7 +118,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		}
 
 		if ($this->entity->getRelation($row->entity) !== Entity::RELATION_HAS_ONE) {
-			throw new Exception("Not valid relation");
+			throw new \Exception("Not valid relation");
 		}
 
 		$foreignKey = $row->entity->foreignKey;
