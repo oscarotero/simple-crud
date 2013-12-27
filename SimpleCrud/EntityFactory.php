@@ -32,9 +32,11 @@ class EntityFactory {
 		$class = $this->namespace.ucfirst($name);
 
 		if (!class_exists($class)) {
-			if (!$this->autocreate) {
+			if (!$this->autocreate || !in_array($name, $this->getTables())) {
 				return false;
 			}
+
+			$this->getTables();
 
 			$class = 'SimpleCrud\\Entity';
 		}
@@ -93,5 +95,15 @@ class EntityFactory {
 		}
 
 		return $fields;
+	}
+
+	protected function getTables () {
+		static $tables;
+
+		if ($tables !== null) {
+			return $tables;
+		}
+
+		return $tables = $this->manager->execute("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN, 0);
 	}
 }
