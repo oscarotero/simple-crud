@@ -33,6 +33,16 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 
 
 	/**
+	 * Magic method to print the row values (and subvalues)
+	 * 
+	 * @return string
+	 */
+	public function __toString () {
+		return "\n".$this->entity->name.":\n".print_r($this->toArray(), true)."\n";
+	}
+
+
+	/**
 	 * Returns true if is a collection, false if isn't
 	 * 
 	 * @return boolean
