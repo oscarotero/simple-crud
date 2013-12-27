@@ -165,7 +165,7 @@ class Entity {
 		$row = new $this->rowClass($this);
 
 		if ($data !== null) {
-			$row->set($data);
+			$row->set($data, true);
 		}
 
 		return $row;
