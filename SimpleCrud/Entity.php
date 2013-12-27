@@ -158,14 +158,15 @@ class Entity {
 	 * Creates a new row instance
 	 * 
 	 * @param array $data The values of the row
+	 * @param boolean $onlyDeclaredFields Set true to only set declared fields
 	 * 
 	 * @return SimpleCrud\Row
 	 */
-	public function create (array $data = null) {
+	public function create (array $data = null, $onlyDeclaredFields = false) {
 		$row = new $this->rowClass($this);
 
 		if ($data !== null) {
-			$row->set($data, true);
+			$row->set($data, $onlyDeclaredFields);
 		}
 
 		return $row;
