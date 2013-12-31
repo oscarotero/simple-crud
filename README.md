@@ -1,6 +1,8 @@
 SimpleCrud
 ==========
 
+[![Build Status](https://travis-ci.org/oscarotero/simplecrud.png?branch=master)](https://travis-ci.org/oscarotero/simplecrud)
+
 Simple PHP library to provide some CRUD functions (Create, Read, Update, Delete) in MySql databases.
 
 Requirements

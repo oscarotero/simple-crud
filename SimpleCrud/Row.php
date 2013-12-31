@@ -121,6 +121,10 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			throw new \Exception("Not valid relation");
 		}
 
+		if (empty($row->id)) {
+			throw new \Exception('Rows without id value cannot be related');
+		}
+
 		$foreignKey = $row->entity->foreignKey;
 		$this->$foreignKey = $row->id;
 

@@ -9,7 +9,8 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 
 	//Init connection before start the test case
 	public static function setUpBeforeClass () {
-		$pdo = new PDO('mysql:dbname=simplecrud_test;host=127.0.0.1;charset=UTF8', 'travis', '');
+		//$pdo = new PDO('mysql:dbname=simplecrud_test;host=127.0.0.1;charset=UTF8', 'travis', '');
+		$pdo = new PDO('mysql:dbname=simplecrud_test;host=localhost;charset=UTF8', 'root', '');
 		$db = new Manager($pdo, new EntityFactory(['autocreate' => true]));
 
 		$db->execute('SET FOREIGN_KEY_CHECKS=0;');
@@ -126,5 +127,27 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf('SimpleCrud\\RowCollection', $post->categories->posts);
 		$this->assertEquals(1, $post->categories->posts->count());
 		$this->assertEquals(['2'], $post->categories->posts->id);
+
+		//Check relation post - tags (x - x)
+		$tag1 = $db->tags->selectBy(1);
+		$tag1InPost = $db->tags_in_posts->create()->setRelation($post, $tag1)->save();
+
+		$this->assertInstanceOf('SimpleCrud\\Row', $tag1InPost);
+		$this->assertEquals($post->id, $tag1InPost->posts_id);
+		$this->assertEquals($tag1->id, $tag1InPost->tags_id);
+		$this->assertEquals(1, $tag1InPost->id);
+
+		$tag2 = $db->tags->create(['name' => 'Tag 2'])->save();
+		$tag2InPost = $db->tags_in_posts->create()->setRelation($post, $tag2)->save();
+
+		$this->assertInstanceOf('SimpleCrud\\Row', $tag2InPost);
+		$this->assertEquals($post->id, $tag2InPost->posts_id);
+		$this->assertEquals($tag2->id, $tag2InPost->tags_id);
+		$this->assertEquals(2, $tag2InPost->id);
+
+		$tags = $post->tags_in_posts->tags;
+		$this->assertInstanceOf('SimpleCrud\\RowCollection', $tags);
+		$this->assertEquals(2, $tags->count());
+		$this->assertEquals(['1', '2'], $tags->id);
 	}
 }
