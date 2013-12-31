@@ -1,0 +1,7 @@
+language: php
+php:
+  - 5.5
+before_script:
+  - mysql -e 'CREATE DATABASE simplecrud_test DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;' -uroot
+  - mysql -uroot simplecrud_test < tests/db.sql
+script: phpunit tests
