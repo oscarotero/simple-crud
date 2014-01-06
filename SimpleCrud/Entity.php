@@ -120,7 +120,7 @@ class Entity {
 	 */
 	protected function createFromSelection (array $row, $expand) {
 		if ($expand === false) {
-			return ($row = $this->dataFromDatabase($row)) ? $this->create($row) : false;
+			return ($row = $this->dataFromDatabase($row)) ? $this->create($row)->emptyChanges() : false;
 		}
 
 		$fields = $joinFields = [];
@@ -144,10 +144,10 @@ class Entity {
 			return false;
 		}
 
-		$row = $this->create($row);
+		$row = $this->create($row)->emptyChanges();
 
 		foreach ($joinFields as $name => $values) {
-			$row->$name = empty($values['id']) ? null : $this->manager->$name->create($values);
+			$row->$name = empty($values['id']) ? null : $this->manager->$name->create($values)->emptyChanges();
 		}
 
 		return $row;

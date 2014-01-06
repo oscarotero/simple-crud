@@ -104,6 +104,24 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
+	 * Empty the changes array
+	 */
+	public function emptyChanges () {
+		$this->changes = [];
+
+		return $this;
+	}
+
+
+	/**
+	 * Return if the row values has been changed or not
+	 */
+	public function changed () {
+		return !empty($this->changes);
+	}
+
+
+	/**
 	 * Relate 'has-one' elements with this row
 	 * 
 	 * @param HasEntityInterface $row The row to relate

@@ -102,19 +102,30 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		//Check changed values
 		$post = $db->posts->create();
 
+		$this->assertFalse($post->changed());
 		$this->assertCount(0, $post->get(true, true));
 		
 		$post->title = 'Third post';
 
+		$this->assertTrue($post->changed());
 		$this->assertCount(1, $post->get(true, true));
 		$this->assertEquals(['title' => 'Third post'], $post->get(true, true));
 
 		$post->save();
 
+		$this->assertFalse($post->changed());
 		$this->assertCount(0, $post->get(true, true));
 		$this->assertCount(3, $post->get(true));
 		$this->assertNull($post->categories_id);
 		$this->assertEquals('Third post', $post->title);
+
+		$post = $db->posts->selectBy(1);
+
+		$this->assertFalse($post->changed());
+		
+		$post->set(['title' => 'New title']);
+
+		$this->assertTrue($post->changed());
 	}
 
 	public function testRelations () {
