@@ -194,12 +194,12 @@ class Entity {
 	/**
 	 * Executes a SELECT in the database
 	 * 
-	 * @param  string/array $where
-	 * @param  array $marks
-	 * @param  string/array $orderBy
-	 * @param  int/array $limit
-	 * @param  array $joins Optional entities to join
-	 * @param  array $from Extra tables used in the query
+	 * @param string/array $where
+	 * @param array $marks
+	 * @param string/array $orderBy
+	 * @param int/array $limit
+	 * @param array $joins Optional entities to join
+	 * @param array $from Extra tables used in the query
 	 * 
 	 * @return mixed The row or rowcollection with the result or null
 	 */
@@ -276,11 +276,15 @@ class Entity {
 	 * Executes a selection by id or by relation with other rows or collections
 	 * 
 	 * @param mixed $id The id/ids, row or rowCollection used to select
-	 * @param array $joins Optional entities to join to this selection
+	 * @param string/array $where
+	 * @param array $marks
+	 * @param string/array $orderBy
+	 * @param int/array $limit
+	 * @param array $joins Optional entities to join
 	 * 
 	 * @return mixed The row or rowcollection with the result or null
 	 */
-	public function selectBy ($id, array $joins = null, $where = '', $marks = null, $orderBy = null, $limit = null) {
+	public function selectBy ($id, $where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null) {
 		if (empty($id)) {
 			return is_array($id) ? $this->createCollection() : false;
 		}
