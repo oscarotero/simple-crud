@@ -98,6 +98,23 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals('2º post', $post->title);
 		$this->assertNull($post->categories_id);
 		$this->assertSame(2, $db->posts->count());
+
+		//Check changed values
+		$post = $db->posts->create();
+
+		$this->assertCount(0, $post->get(true, true));
+		
+		$post->title = 'Third post';
+
+		$this->assertCount(1, $post->get(true, true));
+		$this->assertEquals(['title' => 'Third post'], $post->get(true, true));
+
+		$post->save();
+
+		$this->assertCount(0, $post->get(true, true));
+		$this->assertCount(3, $post->get(true));
+		$this->assertNull($post->categories_id);
+		$this->assertEquals('Third post', $post->title);
 	}
 
 	public function testRelations () {
