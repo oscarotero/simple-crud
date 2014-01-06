@@ -12,13 +12,9 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	public $entity;
 	public $manager;
 
-	public function __construct (Entity $entity, array $rows = null) {
+	public function __construct (Entity $entity) {
 		$this->entity = $entity;
 		$this->manager = $entity->manager;
-
-		if ($rows !== null) {
-			$this->add($rows);
-		}
 	}
 
 

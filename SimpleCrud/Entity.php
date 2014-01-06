@@ -181,7 +181,13 @@ class Entity {
 	 * @return SimpleCrud\RowCollection
 	 */
 	public function createCollection (array $rows = null) {
-		return new $this->rowCollectionClass($this, $rows);
+		$collection = new $this->rowCollectionClass($this);
+
+		if ($rows !== null) {
+			$collection->add($rows);
+		}
+
+		return $collection;
 	}
 
 
