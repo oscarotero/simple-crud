@@ -28,7 +28,7 @@ SimpleCrud has the following classes:
 
 Create a new entity for each table in the database in a common namespace:
 
-```
+```php
 namespace MyApp\Entities;
 
 use SimpleCrud\Entity;
