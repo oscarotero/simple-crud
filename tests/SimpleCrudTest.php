@@ -9,8 +9,12 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 
 	//Init connection before start the test case
 	public static function setUpBeforeClass () {
-		//$pdo = new PDO('mysql:dbname=simplecrud_test;host=127.0.0.1;charset=UTF8', 'travis', '');
-		$pdo = new PDO('mysql:dbname=simplecrud_test;host=localhost;charset=UTF8', 'root', '');
+		if (getenv('TRAVIS')) {
+			$pdo = new PDO('mysql:dbname=simplecrud_test;host=127.0.0.1;charset=UTF8', 'travis', '');
+		} else {
+			$pdo = new PDO('mysql:dbname=simplecrud_test;host=localhost;charset=UTF8', 'root', '');
+		}
+
 		$db = new Manager($pdo, new EntityFactory(['autocreate' => true]));
 
 		$db->execute('SET FOREIGN_KEY_CHECKS=0;');
