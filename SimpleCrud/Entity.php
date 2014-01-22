@@ -120,7 +120,7 @@ class Entity {
 	 */
 	protected function createFromSelection (array $row, $expand) {
 		if ($expand === false) {
-			return ($row = $this->dataFromDatabase($row)) ? $this->create($row) : false;
+			return ($row = $this->dataFromDatabase($row)) ? $this->create($row)->emptyChanges() : false;
 		}
 
 		$fields = $joinFields = [];
@@ -144,10 +144,10 @@ class Entity {
 			return false;
 		}
 
-		$row = $this->create($row);
+		$row = $this->create($row)->emptyChanges();
 
 		foreach ($joinFields as $name => $values) {
-			$row->$name = empty($values['id']) ? null : $this->manager->$name->create($values);
+			$row->$name = empty($values['id']) ? null : $this->manager->$name->create($values)->emptyChanges();
 		}
 
 		return $row;
@@ -181,19 +181,25 @@ class Entity {
 	 * @return SimpleCrud\RowCollection
 	 */
 	public function createCollection (array $rows = null) {
-		return new $this->rowCollectionClass($this, $rows);
+		$collection = new $this->rowCollectionClass($this);
+
+		if ($rows !== null) {
+			$collection->add($rows);
+		}
+
+		return $collection;
 	}
 
 
 	/**
 	 * Executes a SELECT in the database
 	 * 
-	 * @param  string/array $where
-	 * @param  array $marks
-	 * @param  string/array $orderBy
-	 * @param  int/array $limit
-	 * @param  array $joins Optional entities to join
-	 * @param  array $from Extra tables used in the query
+	 * @param string/array $where
+	 * @param array $marks
+	 * @param string/array $orderBy
+	 * @param int/array $limit
+	 * @param array $joins Optional entities to join
+	 * @param array $from Extra tables used in the query
 	 * 
 	 * @return mixed The row or rowcollection with the result or null
 	 */
@@ -270,11 +276,15 @@ class Entity {
 	 * Executes a selection by id or by relation with other rows or collections
 	 * 
 	 * @param mixed $id The id/ids, row or rowCollection used to select
-	 * @param array $joins Optional entities to join to this selection
+	 * @param string/array $where
+	 * @param array $marks
+	 * @param string/array $orderBy
+	 * @param int/array $limit
+	 * @param array $joins Optional entities to join
 	 * 
 	 * @return mixed The row or rowcollection with the result or null
 	 */
-	public function selectBy ($id, array $joins = null, $where = '', $marks = null, $orderBy = null, $limit = null) {
+	public function selectBy ($id, $where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null) {
 		if (empty($id)) {
 			return is_array($id) ? $this->createCollection() : false;
 		}

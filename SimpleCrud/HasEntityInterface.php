@@ -9,6 +9,8 @@ namespace SimpleCrud;
 use SimpleCrud\Entity;
 
 interface HasEntityInterface {
+	public function __construct (Entity $entity);
+
 	public function isCollection ();
 	public function toArray (array $parentEntities = array());
 	public function load (array $entities);

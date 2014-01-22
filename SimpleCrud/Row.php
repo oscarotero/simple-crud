@@ -10,6 +10,7 @@ use SimpleCrud\Entity;
 
 class Row implements HasEntityInterface, \JsonSerializable {
 	private $values;
+	private $changes = [];
 
 	public $entity;
 	public $manager;
@@ -55,7 +56,8 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * @param mixed $value The value
 	 */
 	public function __set ($name, $value) {
-		return $this->values[$name] = $value;
+		$this->changes[$name] = true;
+		$this->values[$name] = $value;
 	}
 
 
@@ -102,6 +104,24 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
+	 * Empty the changes array
+	 */
+	public function emptyChanges () {
+		$this->changes = [];
+
+		return $this;
+	}
+
+
+	/**
+	 * Return if the row values has been changed or not
+	 */
+	public function changed () {
+		return !empty($this->changes);
+	}
+
+
+	/**
 	 * Relate 'has-one' elements with this row
 	 * 
 	 * @param HasEntityInterface $row The row to relate
@@ -119,6 +139,10 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 		if ($this->entity->getRelation($row->entity) !== Entity::RELATION_HAS_ONE) {
 			throw new \Exception("Not valid relation");
+		}
+
+		if (empty($row->id)) {
+			throw new \Exception('Rows without id value cannot be related');
 		}
 
 		$foreignKey = $row->entity->foreignKey;
@@ -167,6 +191,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		}
 
 		foreach ($data as $name => $value) {
+			$this->changes[$name] = true;
 			$this->values[$name] = $value;
 		}
 
@@ -181,16 +206,18 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * 
 	 * @return mixed The value or an array with all values
 	 */
-	public function get ($name = null) {
+	public function get ($name = null, $onlyChangedValues = false) {
+		$values = ($onlyChangedValues === true) ? array_intersect_key($this->values, $this->changes) : $this->values;
+
 		if ($name === true) {
-			return array_intersect_key($this->values, $this->entity->getFields());
+			return array_intersect_key($values, $this->entity->getFields());
 		}
 
 		if ($name === null) {
-			return $this->values;
+			return $values;
 		}
 
-		return isset($this->values[$name]) ? $this->values[$name] : null;
+		return isset($values[$name]) ? $values[$name] : null;
 	}
 
 
@@ -201,8 +228,8 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * 
 	 * @return $this
 	 */
-	public function save ($duplicateKey = false) {
-		$data = $this->get(true);
+	public function save ($duplicateKey = false, $onlyChangedValues = true) {
+		$data = $this->get(true, $onlyChangedValues);
 
 		if (empty($this->id)) {
 			$data = $this->entity->insert($data, $duplicateKey);
@@ -210,7 +237,10 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			$data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1);
 		}
 
-		return $this->set($data);
+		$this->set($data);
+		$this->changes = [];
+
+		return $this;
 	}
 
 
