@@ -462,8 +462,12 @@ class Entity {
 			throw new \Exception("Invalid fields");
 		}
 
-		if (!($data = $this->dataToDatabase($data, false))) {
+		if (!is_array($data = $this->dataToDatabase($data, false))) {
 			throw new \Exception("Data not valid");
+		}
+
+		if (!$data) {
+			return $data;
 		}
 
 		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
