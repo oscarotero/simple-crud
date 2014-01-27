@@ -27,6 +27,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		self::$db = $db;
 	}
 
+
 	public function testAutocreate () {
 		$db = self::$db;
 
@@ -44,6 +45,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertCount(2, $db->tags->getFields());
 		$this->assertCount(3, $db->tags_in_posts->getFields());
 	}
+
 
 	public function testInsert () {
 		$db = self::$db;
@@ -64,6 +66,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertSame(1, $db->categories->count());
 		$this->assertSame(1, $db->tags->count());
 	}
+
 
 	public function testRow () {
 		$db = self::$db;
@@ -97,7 +100,12 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 
 		//Check row saving
 		$post->save();
+		$this->assertEquals(2, $post->get('id'));
+		$this->assertEquals('2º post', $post->title);
+		$this->assertNull($post->categories_id);
+		$this->assertSame(2, $db->posts->count());
 
+		$post->reload();
 		$this->assertEquals(2, $post->get('id'));
 		$this->assertEquals('2º post', $post->title);
 		$this->assertNull($post->categories_id);
@@ -132,6 +140,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertTrue($post->changed());
 	}
 
+
 	public function testRelations () {
 		$db = self::$db;
 
@@ -151,7 +160,6 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$post->setRelation($category)->save();
 
 		$this->assertEquals(1, $post->categories_id);
-
 		$this->assertInstanceOf('SimpleCrud\\Row', $post->categories);
 		$this->assertEquals(1, $post->categories->id);
 

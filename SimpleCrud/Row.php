@@ -122,6 +122,19 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
+	 * Reload the row from the database
+	 */
+	public function reload () {
+		if (!$this->id || !($row = $this->entity->selectBy($this->id))) {
+			throw new \Exception("This row does not exist in database");
+		}
+
+		$this->set($row->get());
+		$this->emptyChanges();
+	}
+
+
+	/**
 	 * Relate 'has-one' elements with this row
 	 * 
 	 * @param HasEntityInterface $row The row to relate
@@ -225,16 +238,18 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * Saves this row in the database
 	 * 
 	 * @param boolean $duplicateKey Set true to detect duplicates index
+	 * @param boolean $onlyChangedValues Set false to save all values instead only the changed
 	 * 
 	 * @return $this
 	 */
 	public function save ($duplicateKey = false, $onlyChangedValues = true) {
-		$data = $this->get(true, $onlyChangedValues);
+		$data = $this->get(true);
+		$onlyChangedValues = $onlyChangedValues ? $this->changes : null;
 
 		if (empty($this->id)) {
-			$data = $this->entity->insert($data, $duplicateKey);
+			$data = $this->entity->insert($data, $duplicateKey, $onlyChangedValues);
 		} else {
-			$data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1);
+			$data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1, $onlyChangedValues);
 		}
 
 		$this->set($data);

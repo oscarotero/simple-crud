@@ -403,6 +403,30 @@ class Entity {
 
 
 	/**
+	 * Prepare the data before save into database (used by update and insert)
+	 *
+	 * @param array $data The data to save
+	 * @param bool $new True if it's a new value (insert)
+	 * @param array $changedFields Array of changed fields. If isn't specified, all fields are changed
+	 */
+	private function getDataToSave (array $data, $new, array $changedFields = null) {
+		if (array_diff_key($data, $this->fields)) {
+			throw new \Exception("Invalid fields");
+		}
+
+		if (!($newData = $this->dataToDatabase($data, $new))) {
+			throw new \Exception("Data not valid");
+		}
+
+		if ($changedFields === null) {
+			return $newData;
+		}
+
+		return array_diff_assoc($newData, $data) + array_intersect_key($newData, $changedFields);
+	}
+
+
+	/**
 	 * Executes an 'insert' query in the database
 	 * 
 	 * @param  array  $data  The values to insert
@@ -410,14 +434,8 @@ class Entity {
 	 * 
 	 * @return array The new values of the inserted row
 	 */
-	public function insert (array $data, $duplicateKey = false) {
-		if (array_diff_key($data, $this->fields)) {
-			throw new \Exception("Invalid fields");
-		}
-
-		if (!($data = $this->dataToDatabase($data, true))) {
-			throw new \Exception("Data not valid");
-		}
+	public function insert (array $data, $duplicateKey = false, array $changedFields = null) {
+		$data = $this->getDataToSave($data, true, $changedFields);
 
 		if (empty($data['id'])) {
 			unset($data['id']);
@@ -467,18 +485,16 @@ class Entity {
 	 * 
 	 * @return array The new values of the updated row
 	 */
-	public function update (array $data, $where = '', $marks = null, $limit = null) {
-		if (array_diff_key($data, $this->fields)) {
-			throw new \Exception("Invalid fields");
-		}
+	public function update (array $data, $where = '', $marks = null, $limit = null, array $changedFields = null) {
+		$data = $this->getDataToSave($data, false, $changedFields);
 
-		if (!($data = $this->dataToDatabase($data, false))) {
-			throw new \Exception("Data not valid");
-		}
+		unset($data['id']);
 
-		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
-		unset($quoted['id']);
+		if (empty($data)) {
+			return $data;
+		}
 		
+		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
 		$set = [];
 
 		foreach ($this->getFields(self::FIELDS_SQL, array_keys($quoted)) as $name => $field) {
