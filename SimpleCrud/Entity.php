@@ -490,10 +490,10 @@ class Entity {
 
 		unset($data['id']);
 
-		if (empty($data)) {
+		if (!$data) {
 			return $data;
 		}
-		
+
 		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
 		$set = [];
 
