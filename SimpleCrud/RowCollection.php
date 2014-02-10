@@ -193,6 +193,14 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 * @return array All values found. It generates a RowCollection if the values are rows.
 	 */
 	public function get ($name = null, $key = null) {
+		if (is_int($name)) {
+			if ($key === true) {
+				return array_slice($this->rows, $name);
+			}
+
+			return array_slice($this->rows, $name, $key, true);
+		}
+
 		$rows = [];
 
 		if ($name === null) {
