@@ -195,7 +195,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	public function get ($name = null, $key = null) {
 		if (is_int($name)) {
 			if ($key === true) {
-				return array_slice($this->rows, $name);
+				return current(array_slice($this->rows, $name, 1));
 			}
 
 			return array_slice($this->rows, $name, $key, true);
