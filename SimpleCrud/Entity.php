@@ -419,10 +419,28 @@ class Entity {
 		}
 
 		if ($changedFields === null) {
-			return $newData;
+			return [$data, $data];
 		}
 
-		return array_diff_assoc($newData, $data) + array_intersect_key($newData, $changedFields);
+		//Implodes the array values for ENUM/SET fields
+		foreach ($newData as &$value) {
+			if (is_array($value)) {
+				$value = implode(',', $value);
+			}
+		}
+
+		$tmpData = $data;
+
+		foreach ($tmpData as &$value) {
+			if (is_array($value)) {
+				$value = implode(',', $value);
+			}
+		}
+
+		return [
+			$data,
+			array_diff_assoc($newData, $tmpData) + array_intersect_key($newData, $changedFields)
+		];
 	}
 
 
@@ -435,7 +453,7 @@ class Entity {
 	 * @return array The new values of the inserted row
 	 */
 	public function insert (array $data, $duplicateKey = false, array $changedFields = null) {
-		$data = $this->getDataToSave($data, true, $changedFields);
+		list($fullData, $data) = $this->getDataToSave($data, true, $changedFields);
 
 		if (empty($data['id'])) {
 			unset($data['id']);
@@ -465,13 +483,13 @@ class Entity {
 			$query .= ' ON DUPLICATE KEY UPDATE '.implode(', ', $update);
 		}
 
-		$data['id'] = $this->manager->executeTransaction(function () use ($query) {
+		$fullData['id'] = $this->manager->executeTransaction(function () use ($query) {
 			$this->manager->execute($query);
 
 			return $this->manager->lastInsertId();
 		});
 
-		return $this->dataFromDatabase($data);
+		return $this->dataFromDatabase($fullData);
 	}
 
 
@@ -486,7 +504,7 @@ class Entity {
 	 * @return array The new values of the updated row
 	 */
 	public function update (array $data, $where = '', $marks = null, $limit = null, array $changedFields = null) {
-		$data = $this->getDataToSave($data, false, $changedFields);
+		list($fullData, $data) = $this->getDataToSave($data, false, $changedFields);
 
 		unset($data['id']);
 
@@ -508,7 +526,7 @@ class Entity {
 			$this->manager->execute($query, $marks);
 		});
 
-		return $this->dataFromDatabase($data);
+		return $this->dataFromDatabase($fullData);
 	}
 
 
