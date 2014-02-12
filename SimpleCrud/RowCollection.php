@@ -289,7 +289,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 		$rows = [];
 
 		foreach ($this->rows as $row) {
-			if ($row->$name === $value) {
+			if (($row->$name === $value) || (is_array($value) && in_array($row->$name, $value, true))) {
 				if ($first === true) {
 					return $row;
 				}
