@@ -271,6 +271,19 @@ foreach ($post->comments as $comment) {
 $comments = $db->comments->selectBy($post);
 ```
 
+This allows make things like this:
+
+```php
+$post = $db->posts->selectBy(34);
+
+$title = $post->comments->users->posts->title;
+
+//Get the comments of the post
+//Then the users related with these comments
+//Then the posts created by these users
+//And finally, the titles of all these posts
+```
+
 You can define the way of the lacy loads are executed, creating methods starting by "get" in the row class. The result of the method will be cached in the property.
 Lacy loads not only works with relations, but also with any property you want. Just create a method named get[NameOfTheProperty] and that is all.
 
@@ -301,8 +314,6 @@ $post->comments; //Execute getComments() methods and save the result in $post->c
 $post->comments; //Access to the cached result instead execute getComments() again
 $post->lowercaseTitle; //Execute getLowercaseTitle() and save the result in $post->lowercaseTitle;
 ```
-
-Check the commented code to know full API.
 
 
 #### Fields
@@ -409,3 +420,5 @@ return ($post->data instanceOf MyDataClass); //Return true
 ```
 
 If you create a Field in your namespace with the same name than any of the defaults fields (Date, Datetime, Set, etc), SimpleCrud will choose your custom Field instead the default, so this is useful to overwrite the default behaviours.
+
+Check the commented code to know full API.
