@@ -59,6 +59,12 @@ CREATE TABLE `fields` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `customfield` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `field` text,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Restricións para os envorcados das táboas
 --

@@ -1,6 +1,8 @@
 <?php
 include_once __DIR__.'/../SimpleCrud/autoloader.php';
+include_once __DIR__.'/entities.php';
 
+use SimpleCrud\Entity;
 use SimpleCrud\Manager;
 use SimpleCrud\EntityFactory;
 
@@ -17,7 +19,10 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 
 		shell_exec('mysql -uroot simplecrud_test < '.__DIR__.'/db.sql');
 
-		$db = new Manager($pdo, new EntityFactory(['autocreate' => true]));
+		$db = new Manager($pdo, new EntityFactory([
+			'namespace' => 'CustomEntities',
+			'autocreate' => true
+		]));
 
 		self::$db = $db;
 	}
@@ -241,5 +246,18 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 
 		$row->reload();
 		$this->assertSame(['text', 'video'], $row->set);
+	}
+
+	public function testCustomField () {
+		$db = self::$db;
+
+		$this->assertInstanceOf('CustomEntities\\Fields\\Json', $db->customfield->fields['field']);
+
+		$row = $db->customfield->create([
+			'field' => ['red', 'blue', 'green']
+		])->save();
+
+		$row->reload();
+		$this->assertSame(['red', 'blue', 'green'], $row->field);
 	}
 }

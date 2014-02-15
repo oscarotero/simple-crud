@@ -20,11 +20,11 @@ class Field {
 		$this->name = $name;
 	}
 
-	public function getEscapedNameForSelect () {
+	final public function getEscapedNameForSelect () {
 		return "`{$this->table}`.`{$this->name}`";
 	}
 
-	public function getEscapedNameForJoin () {
+	final public function getEscapedNameForJoin () {
 		return "`{$this->table}`.`{$this->name}` as `{$this->entityName}.{$this->name}`";
 	}
 

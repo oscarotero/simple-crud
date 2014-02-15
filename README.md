@@ -35,9 +35,9 @@ namespace MyApp\Entities;
 use SimpleCrud\Entity;
 
 class Posts extends Entity {
-	protected $table = 'posts';
-	protected $foreignKey = 'posts_id';
-	protected $fields = [
+	public $table = 'posts';
+	public $foreignKey = 'posts_id';
+	public $fields = [
 		'id',
 		'title',
 		'text',
@@ -46,9 +46,9 @@ class Posts extends Entity {
 }
 
 class Comments extends Entity {
-	protected $table = 'comments';
-	protected $foreignKey = 'comments_id';
-	protected $fields = [
+	public $table = 'comments';
+	public $foreignKey = 'comments_id';
+	public $fields = [
 		'id',
 		'text',
 		'posts_id',
@@ -57,9 +57,9 @@ class Comments extends Entity {
 }
 
 class Users extends Entity {
-	protected $table = 'users';
-	protected $foreignKey = 'users_id';
-	protected $fields = [
+	public $table = 'users';
+	public $foreignKey = 'users_id';
+	public $fields = [
 		'id',
 		'name'
 	]
@@ -161,8 +161,8 @@ SimpleCrud provides two methods to convert or validate data before push to datab
 
 ```php
 class Posts extends Entity {
-	protected $table = 'posts';
-	protected $fields = [
+	public $table = 'posts';
+	public $fields = [
 		'id',
 		'title',
 		'text',
@@ -174,7 +174,7 @@ class Posts extends Entity {
 	public function dataToDatabase (array $data, $new) {
 		$data['latestUpdate'] = date('Y-m-d H:i:s');
 
-		if ($new) { //its an insert
+		if ($new) { //it's an insert
 			 $data['pubDate'] = $data['latestUpdate'];
 		} else if ($data['pubDate'] instanceof Datetime) {
 			$data['pubDate'] = $data['pubDate']->format('Y-m-d H:i:s');
@@ -300,3 +300,109 @@ $post->lowercaseTitle; //Execute getLowercaseTitle() and save the result in $pos
 ```
 
 Check the commented code to know full API.
+
+
+#### Fields
+
+There are some special classes for manage fields. The purpose of these classes is convert the data between the database and the entity. For example, in mysql the format used to store datetime values is "Y-m-d H:i:s", so the class SimpleCrud\Fields\Datetime converts any string or Datetime instance to this format. This not overwrite the value of the row (you will keep the Datetime instance), only converts the data to be stored. The available fields are:
+
+* Field: It's the default field.
+* Datetime: Converts a string or Datetime instance to "Y-M-d H:i:s"
+* Date: Converts a string or Datetime instance to "Y-M-d"
+* Set: an array of values to a string. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
+
+As said at begining, if the fields in the entity are not specified, the EntityFactory use a "DESCRIBE `$table`" to get them and use the mysql Type to decide the Field class used ("date" fields use the Date class, "datetime" the Datetime, etc). If you have the fields defined in the entity, you can specify the format in this way:
+
+```php
+use SimpleCrud\Entity;
+
+class Posts extends Entity {
+	public $table = 'posts';
+	public $foreignKey = 'posts_id';
+	public $fields = [
+		'id',
+		'title',
+		'text',
+		'pubdate' => 'datetime' //[fieldName => fieldType]
+	];
+}
+
+//Init the SimpleCrud library
+// ...
+
+//Now check the post:
+$post = $db->posts->create([
+	'title' => 'My post'
+	'text' => 'My post text'
+]);
+
+//Set the pubdate, we don't care about the datetime format in mysql
+$post->pubdate = new Datetime('now');
+
+$post->save();
+```
+
+#### Custom fields types
+
+You can create your own fields types or overwrite the existing ones. SimpleCrud will search in the namespace ```[entities-namespace]\\Fields\\``` for your custom classes. For example:
+
+```php
+
+// - Define the custom fields in the namespace "MyModels\Fields"
+
+use SimpleCrud\Fields;
+
+class Serializable extends Fields\Field {
+	public function dataToDatabase ($data) {
+		return serialize($data);
+	}
+
+	public function dataFromDatabase ($data) {
+		return unserialize($data);
+	}
+}
+
+
+// - Define entities in the namespace "MyModels"
+
+use SimpleCrud\Entity;
+
+class Posts extends Entity {
+	public $table = 'posts';
+	public $foreignKey = 'posts_id';
+	public $fields = [
+		'id',
+		'text',
+		'data' => 'serializable'
+	];
+}
+
+
+// - Init the SimpleCrud library providing the namespace where our entities and fields are.
+
+use SimpleCrud\Manager;
+use SimpleCrud\EntityFactory;
+
+$db = new Manager($PDO, new EntityFactory([
+	'namespace' => 'MyModels'
+]));
+
+
+// - Use it
+
+$post = $db->posts->create();
+
+//Add serializable data, for example an object:
+$post->data = new MyDataClass();
+
+//Our custom field serializes the data before save it
+$post->save();
+
+
+//Select a post:
+$post = $db->posts->selectBy(34);
+
+return ($post->data instanceOf MyDataClass); //Return true
+```
+
+If you create a Field in your namespace with the same name than any of the defaults fields (Date, Datetime, Set, etc), SimpleCrud will choose your custom Field instead the default, so this is useful to overwrite the default behaviours.
