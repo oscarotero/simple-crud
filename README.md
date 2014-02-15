@@ -83,7 +83,7 @@ This is usefull in early phases, when the database can change and you don't want
 
 #### Init the library
 
-Let's create a instance of the Manager, passing the PDO object with the database connection and a instance of EntityFactory to create the entities. The EntityFactory has some options used on create the entities
+Let's create an instance of the Manager, passing the PDO object with the database connection and an instance of EntityFactory to create the entities. The EntityFactory has some options used on create the entities
 
 ```php
 use SimpleCrud\Manager;
@@ -325,7 +325,7 @@ There are some special classes for manage fields. The purpose of these classes i
 * Date: Converts a string or Datetime instance to "Y-M-d"
 * Set: an array of values to a string. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
 
-As said at begining, if the fields in the entity are not specified, the EntityFactory use a "DESCRIBE `$table`" to get them and use the mysql Type to decide the Field class used ("date" fields use the Date class, "datetime" the Datetime, etc). If you have the fields defined in the entity, you can specify the format in this way:
+As said at begining, if the fields in the entity are not specified, the EntityFactory use a ```"DESCRIBE `{$table}`"``` to get them and use the mysql Type to decide the Field class used ("date" fields use the Date class, "datetime" the Datetime, etc). If you have the fields defined in the entity, you can specify the format in this way:
 
 ```php
 use SimpleCrud\Entity;
@@ -358,7 +358,7 @@ $post->save();
 
 #### Custom fields types
 
-You can create your own fields types or overwrite the existing ones. SimpleCrud will search in the namespace ```[entities-namespace]\\Fields\\``` for your custom classes. For example:
+You can create your own fields types or overwrite the existing ones. SimpleCrud will search in the namespace ```[entities-namespace]\Fields\``` for your custom classes. For example:
 
 ```php
 
