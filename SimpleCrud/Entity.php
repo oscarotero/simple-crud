@@ -400,25 +400,41 @@ class Entity {
 
 
 	/**
-	 * Execute a query and returns the statement object with the result
+	 * Execute a query and return the first row found
 	 * 
 	 * @param  string $query The Mysql query to execute
 	 * @param  array $marks The marks passed to the statement
-	 * @param  boolean $fetchOne Set true to returns only the first value
-	 * @param  boolean $expand Used to expand values in subrows on JOINs
+	 * @param  boolean $expand Used to expand values of rows in JOINs
 	 *
-	 * @return PDOStatement The result
+	 * @return SimpleCrud\Row or false
 	 */
-	public function fetch ($query, array $marks = null, $fetchOne = false, $expand = false) {
+	public function fetchOne ($query, array $marks = null, $expand = false) {
 		if (!($statement = $this->manager->execute($query, $marks))) {
 			return false;
 		}
 
 		$statement->setFetchMode(\PDO::FETCH_ASSOC);
 
-		if ($fetchOne === true) {
-			return ($row = $statement->fetch()) ? $this->createFromSelection($row, $expand) : false;
+		return ($row = $statement->fetch()) ? $this->createFromSelection($row, $expand) : false;
+	}
+
+
+
+	/**
+	 * Execute a query and return all rows found
+	 * 
+	 * @param  string $query The Mysql query to execute
+	 * @param  array $marks The marks passed to the statement
+	 * @param  boolean $expand Used to expand values in subrows on JOINs
+	 *
+	 * @return PDOStatement The result
+	 */
+	public function fetchAll ($query, array $marks = null, $expand = false) {
+		if (!($statement = $this->manager->execute($query, $marks))) {
+			return false;
 		}
+
+		$statement->setFetchMode(\PDO::FETCH_ASSOC);
 
 		$result = [];
 

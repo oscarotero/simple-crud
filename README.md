@@ -137,7 +137,10 @@ $post = $db->posts->select("id = :id", [':id' => 45], null, true);
 // (*) the difference between limit = 1 and limit = true is that true returns the fetched item and 1 returns an rowCollection with 1 element
 
 //Or build your own select query from scratch:
-$posts = $db->posts->fetch('SELECT * FROM posts WHERE users_id = :users_id', [':users_id' => 3]);
+$post = $db->posts->fetchOne('SELECT * FROM posts WHERE users_id  :users_id LIMIT 1', [':users_id' => 3]);
+
+//Simplecrud accepts arrays in the marks:
+$posts = $db->posts->fetchAll('SELECT * FROM posts WHERE users_id IN (:users_id)', [':users_id' => [3, 4, 5]]);
 
 //Delete
 $post->delete();
