@@ -18,10 +18,11 @@ Usage
 SimpleCrud has the following classes:
 
 * Manager: Is the main class that stores the database connection and manage all entities
-* Entity: Is a class that manage an entity (table) of the database: select, insert, update, delete rows.
-* EntityFactory: The class responsive for the creation of Entity instances.
+* Entity: Is a class that manage an entity (database table) to select, insert, update, delete rows.
+* EntityFactory: The class for the creation of Entity instances.
 * Row: Manage the data stored in a row of a table
 * RowCollection: Is a collection of rows
+* Fields: A class to manage a specific format of data stored in database (for example: in datetime values this class convert the value to mysql format before save)
 
 
 #### Define the entities:
@@ -65,7 +66,7 @@ class Users extends Entity {
 }
 ```
 
-SimpleCrud uses the foreignKey field to detect automatically the relation between two entities (RELATION_HAS_ONE / RELATION_HAS_MANY).
+SimpleCrud uses the foreignKey field to detect automatically the relation between two entities (RELATION_HAS_ONE / RELATION_HAS_MANY). For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (RELATION_HAS_ONE).
 
 You can define also entities with no values:
 
@@ -94,7 +95,7 @@ $db = new Manager($PDO, new EntityFactory([
 ]));
 
 //You can access to all entities, they will be instanced on demand:
-$db->posts; //Posts entities
+$db->posts; //Posts entity
 ```
 
 #### Using the library: Create, Read, Update, Delete
@@ -117,7 +118,7 @@ $post->save();
 //selectBy make selects by the primary key:
 
 $post = $db->posts->selectBy(45); //Select by id
-$posts = $db->posts->selectBy([45, 34, 98]); //Select various posts
+$posts = $db->posts->selectBy([45, 34, 98]); //Select various posts by id and returns a rowCollection
 
 //selectBy also can select related elements
 $post = $db->posts->selectBy(5);
@@ -135,7 +136,7 @@ $post = $db->posts->select("id = :id", [':id' => 45], null, true);
 //SELECT * FROM posts WHERE id = :id LIMIT 1
 // (*) the difference between limit = 1 and limit = true is that true returns the fetched item and 1 returns an rowCollection with 1 element
 
-//Or build your own select query:
+//Or build your own select query from scratch:
 $posts = $db->posts->fetch('SELECT * FROM posts WHERE users_id = :users_id', [':users_id' => 3]);
 
 //Delete

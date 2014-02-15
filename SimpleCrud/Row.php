@@ -18,8 +18,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	public function __construct (Entity $entity) {
 		$this->entity = $entity;
 		$this->manager = $entity->manager;
-
-		$this->values = $entity->defaults;
+		$this->values = $entity->getDefaults();
 	}
 
 
@@ -200,7 +199,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 */
 	public function set (array $data, $onlyDeclaredFields = false) {
 		if ($onlyDeclaredFields === true) {
-			$data = array_intersect_key($data, $this->entity->getFields());
+			$data = array_intersect_key($data, $this->entity->getFieldsNames());
 		}
 
 		foreach ($data as $name => $value) {
@@ -223,7 +222,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		$values = ($onlyChangedValues === true) ? array_intersect_key($this->values, $this->changes) : $this->values;
 
 		if ($name === true) {
-			return array_intersect_key($values, $this->entity->getFields());
+			return array_intersect_key($values, $this->entity->getFieldsNames());
 		}
 
 		if ($name === null) {

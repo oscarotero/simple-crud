@@ -9,24 +9,18 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 
 	//Init connection before start the test case
 	public static function setUpBeforeClass () {
-		if (getenv('TRAVIS')) {
-			$pdo = new PDO('mysql:dbname=simplecrud_test;host=127.0.0.1;charset=UTF8', 'travis', '');
-		} else {
-			$pdo = new PDO('mysql:dbname=simplecrud_test;host=localhost;charset=UTF8', 'root', '');
-		}
+		$pdo = new PDO('mysql:host=localhost;charset=UTF8', 'root', '');
+
+		$pdo->exec('DROP DATABASE IF EXISTS simplecrud_test');
+		$pdo->exec('CREATE DATABASE simplecrud_test');
+		$pdo->exec('USE simplecrud_test');
+
+		shell_exec('mysql -uroot simplecrud_test < '.__DIR__.'/db.sql');
 
 		$db = new Manager($pdo, new EntityFactory(['autocreate' => true]));
 
-		$db->execute('SET FOREIGN_KEY_CHECKS=0;');
-		$db->execute('TRUNCATE posts;');
-		$db->execute('TRUNCATE categories;');
-		$db->execute('TRUNCATE tags;');
-		$db->execute('TRUNCATE tags_in_posts;');
-		$db->execute('SET FOREIGN_KEY_CHECKS=1;');
-
 		self::$db = $db;
 	}
-
 
 	public function testAutocreate () {
 		$db = self::$db;
@@ -40,10 +34,10 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertFalse($db->unexisting_table);
 
 		//Instances have all fields?
-		$this->assertCount(3, $db->posts->getFields());
-		$this->assertCount(2, $db->categories->getFields());
-		$this->assertCount(2, $db->tags->getFields());
-		$this->assertCount(3, $db->tags_in_posts->getFields());
+		$this->assertCount(3, $db->posts->fields);
+		$this->assertCount(2, $db->categories->fields);
+		$this->assertCount(2, $db->tags->fields);
+		$this->assertCount(3, $db->tags_in_posts->fields);
 	}
 
 
@@ -189,5 +183,63 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertInstanceOf('SimpleCrud\\RowCollection', $tags);
 		$this->assertEquals(2, $tags->count());
 		$this->assertEquals(['1', '2'], $tags->id);
+	}
+
+	public function testDatetimeFields () {
+		$db = self::$db;
+
+		$this->assertInstanceOf('SimpleCrud\\Fields\\Datetime', $db->fields->fields['datetime']);
+
+		//Test with Datetime object
+		$datetime = new Datetime('now');
+		$row = $db->fields->create(['datetime' => $datetime])->save();
+
+		$row->reload();
+		$this->assertSame($datetime->format('Y-m-d H:i:s'), $row->datetime);
+
+		//Test with a string
+		$datetime = date(DATE_RFC2822);
+		$row->set(['datetime' => $datetime])->save();
+
+		$row->reload();
+		$this->assertSame(date('Y-m-d H:i:s', strtotime($datetime)), $row->datetime);
+	}
+
+	public function testDateFields () {
+		$db = self::$db;
+
+		$this->assertInstanceOf('SimpleCrud\\Fields\\Date', $db->fields->fields['date']);
+
+		//Test with Datetime object
+		$date = new Datetime('now');
+		$row = $db->fields->create(['date' => $date])->save();
+
+		$row->reload();
+		$this->assertSame($date->format('Y-m-d'), $row->date);
+
+		//Test with a string
+		$date = date(DATE_RFC2822);
+		$row->set(['date' => $date])->save();
+
+		$row->reload();
+		$this->assertSame(date('Y-m-d', strtotime($date)), $row->date);
+	}
+
+	public function testSetFields () {
+		$db = self::$db;
+
+		$this->assertInstanceOf('SimpleCrud\\Fields\\Set', $db->fields->fields['set']);
+
+		//Test with a string
+		$row = $db->fields->create(['set' => 'text'])->save();
+
+		$row->reload();
+		$this->assertSame(['text'], $row->set);
+
+		//Test with a string
+		$row->set(['set' =>['text', 'video']])->save();
+
+		$row->reload();
+		$this->assertSame(['text', 'video'], $row->set);
 	}
 }

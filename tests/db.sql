@@ -50,6 +50,15 @@ CREATE TABLE IF NOT EXISTS `tags_in_posts` (
   KEY `tags_id` (`tags_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+CREATE TABLE `fields` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `date` date DEFAULT NULL,
+  `datetime` datetime DEFAULT NULL,
+  `time` time DEFAULT NULL,
+  `set` set('text','image','video','audio') DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Restricións para os envorcados das táboas
 --

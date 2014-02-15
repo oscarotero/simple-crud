@@ -17,9 +17,9 @@ class Manager {
 
 
 	public function __construct (PDO $connection, EntityFactory $entityFactory) {
-		$entityFactory->setManager($this);
 		$this->entityFactory = $entityFactory;
 		$this->connection = $connection;
+		$this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	}
 
 
@@ -35,7 +35,7 @@ class Manager {
 			return $this->entities[$name];
 		}
 
-		return $this->entities[$name] = $this->entityFactory->create($name);
+		return $this->entities[$name] = $this->entityFactory->create($this, $name);
 	}
 
 
@@ -70,21 +70,13 @@ class Manager {
 
 		try {
 			$statement = $this->connection->prepare($query);
-
-			if ($statement === false) {
-				throw new \Exception('MySQL error: '.implode(' / ', $this->connection->errorInfo()));
-			}
-
-			if ($statement->execute($marks) === false) {
-				throw new \Exception('MySQL statement error: '.implode(' / ', $statement->errorInfo()));
-			}
+			$statement->execute($marks);
 		} catch (\Exception $exception) {
 			if (is_array($this->debug)) {
 				$this->debug[] = [
-					'error' => $exception->getMessage(),
+					'error' => $exception,
 					'statement' => $statement,
-					'marks' => $marks,
-					'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 20)
+					'marks' => $marks
 				];
 			}
 
@@ -175,34 +167,6 @@ class Manager {
 			$this->connection->rollBack();
 			$this->inTransaction = false;
 		}
-	}
-
-
-	/**
-	 * Escape the values before use them into the sql queries
-	 * 
-	 * @param string/array $data Value or values to scape
-	 * 
-	 * @return string/array
-	 */
-	public function quote ($data, $type = PDO::PARAM_STR) {
-		if (is_array($data)) {
-			if (is_array($type)) {
-				foreach ($data as $k => &$value) {
-					$value = ($value === null) ? 'null' : $this->connection->quote($value, $type[$k]);
-				}
-
-				return $data;
-			}
-
-			foreach ($data as &$value) {
-				$value = ($value === null) ? 'null' : $this->connection->quote($value, $type);
-			}
-
-			return $data;
-		}
-
-		return ($data === null) ? 'null' : $this->connection->quote($data, $type);
 	}
 
 

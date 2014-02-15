@@ -13,22 +13,20 @@ class Entity {
 	const RELATION_HAS_ONE = 1;
 	const RELATION_HAS_MANY = 2;
 
-	const FIELDS = 0;
-	const FIELDS_SQL = 1;
-	const FIELDS_SQL_SELECT = 2;
-	const FIELDS_SQL_JOIN = 3;
-	const FIELDS_DATA_TYPE = 4;
-
 	public $manager;
-
-	public $rowClass;
-	public $rowCollectionClass;
 
 	public $name;
 	public $table;
 	public $fields;
 	public $defaults;
 	public $foreignKey;
+
+	public $rowClass;
+	public $rowCollectionClass;
+
+	private $fieldsInfo = [];
+
+
 
 
 	/**
@@ -63,62 +61,108 @@ class Entity {
 	}
 
 
+
 	/**
-	 * Set the configuration for this entity (used by Manager)
-	 * 
-	 * @param string $table The database table name
-	 * @param array  $fields The fields in the table name
-	 * @param string $foreignKey The foreign key name used to relate with other entities
-	 * @param string $rowClass The class name used for rows
-	 * @param string $rowCollectionClass The class name used for row collections
+	 * init callback
 	 */
-	public function setConfig ($table, array $fields, $foreignKey, $rowClass, $rowCollectionClass) {
-		$this->table = $table;
-		$this->foreignKey = $foreignKey;
-		$this->rowClass = $rowClass;
-		$this->rowCollectionClass = $rowCollectionClass;
+	public function init () {}
 
-		$this->fields = $this->defaults = [];
 
-		foreach ($fields as $field => $type) {
-			$this->defaults[$field] = null;
-			$this->fields[$field] = [$field, "`$field`", "`$table`.`$field`", "`$table`.`$field` as `$this->name.$field`", $type];
+
+	/**
+	 * Returns an array with the fields names
+	 *
+	 * @return array in the format [name => name]
+	 */
+	public function getFieldsNames () {
+		if (!isset($this->fieldsInfo['names'])) {
+			$keys = array_keys($this->fields);
+			$this->fieldsInfo['names'] = array_combine($keys, $keys);
 		}
+
+		return $this->fieldsInfo['names'];
 	}
 
 
-	/**
-	 * Callback onInit
-	 */
-	public function onInit () {}
-
 
 	/**
-	 * Returns the fields of the entity
-	 * 
-	 * @param  integer $mode One of the FIELD_* contants values
-	 * @param  array $filter Filter the fields
-	 * 
-	 * @return array
+	 * Returns an array with the fields defaults values of all fields
+	 *
+	 * @return array in the format [name => value]
 	 */
-	public function getFields ($mode = 0, array $filter = null) {
+	public function getDefaults () {
+		if (!isset($this->fieldsInfo['defaults'])) {
+			$this->fieldsInfo['defaults'] = array_fill_keys($this->getFieldsNames(), null);
+		}
+
+		return $this->fieldsInfo['defaults'];
+	}
+
+
+
+	/**
+	 * Returns an array with the fields names ready for select queries
+	 *
+	 * @param array $filter Fields names to retrieve.
+	 *
+	 * @return array in the format [name => escapedName]
+	 */
+	public function getEscapedFieldsForSelect (array $filter = null) {
+		if (!isset($this->fieldsInfo['select'])) {
+			$this->fieldsInfo['select'] = [];
+
+			foreach ($this->fields as $name => $field) {
+				$this->fieldsInfo['select'][$name] = $field->getEscapedNameForSelect();
+			}
+		}
+
 		if ($filter === null) {
-			return array_column($this->fields, $mode, 0);
+			return $this->fieldsInfo['select'];
 		}
 
-		return array_column(array_intersect_key($this->fields, array_flip($filter)), $mode, 0);
+		return array_intersect_key($this->fieldsInfo['select'], array_flip($filter));
 	}
+
+
+
+	/**
+	 * Returns an array with the fields names ready for join queries
+	 *
+	 * @param array $filter Fields names to retrieve.
+	 *
+	 * @return array in the format [name => escapedName]
+	 */
+	public function getEscapedFieldsForJoin (array $filter = null) {
+		if (!isset($this->fieldsInfo['join'])) {
+			$this->fieldsInfo['join'] = [];
+
+			foreach ($this->fields as $name => $field) {
+				$this->fieldsInfo['join'][$name] = $field->getEscapedNameForJoin();
+			}
+		}
+
+		if ($filter === null) {
+			return $this->fieldsInfo['join'];
+		}
+
+		return array_intersect_key($this->fieldsInfo['join'], array_flip($filter));
+	}
+
 
 
 	/**
 	 * Create a row instance from the result of a select query
 	 * 
-	 * @param array $row The select values
-	 * @param boolean $expand True to expand the results
+	 * @param array $row The selected values
+	 * @param boolean $expand True to expand the results (used if the select has joins)
 	 * 
 	 * @return SimpleCrud\Row
 	 */
-	protected function createFromSelection (array $row, $expand) {
+	public function createFromSelection (array $row, $expand = false) {
+		foreach ($row as $key => &$value) {
+			$value = $this->fields[$key]->dataFromDatabase($value);
+		}
+
 		if ($expand === false) {
 			return ($row = $this->dataFromDatabase($row)) ? $this->create($row)->emptyChanges() : false;
 		}
@@ -131,7 +175,7 @@ class Entity {
 				continue;
 			}
 
-			list($name, $fieldName) = explode('.', $name);
+			list($name, $fieldName) = explode('.', $name, 2);
 
 			if (!isset($joinFields[$name])) {
 				$joinFields[$name] = [];
@@ -147,18 +191,19 @@ class Entity {
 		$row = $this->create($row)->emptyChanges();
 
 		foreach ($joinFields as $name => $values) {
-			$row->$name = empty($values['id']) ? null : $this->manager->$name->create($values)->emptyChanges();
+			$row->$name = empty($values['id']) ? null : $this->manager->$name->createFromSelection($values);
 		}
 
 		return $row;
 	}
 
 
+
 	/**
 	 * Creates a new row instance
 	 * 
 	 * @param array $data The values of the row
-	 * @param boolean $onlyDeclaredFields Set true to only set declared fields
+	 * @param boolean $onlyDeclaredFields Set true to discard values in undeclared fields
 	 * 
 	 * @return SimpleCrud\Row
 	 */
@@ -171,6 +216,7 @@ class Entity {
 
 		return $row;
 	}
+
 
 
 	/**
@@ -191,6 +237,7 @@ class Entity {
 	}
 
 
+
 	/**
 	 * Executes a SELECT in the database
 	 * 
@@ -208,7 +255,7 @@ class Entity {
 			return $this->createCollection();
 		}
 
-		$fields = implode(', ', $this->getFields(self::FIELDS_SQL_SELECT));
+		$fields = implode(', ', $this->getEscapedFieldsForSelect());
 		$query = '';
 		$load = [];
 
@@ -228,7 +275,7 @@ class Entity {
 				$relation = $this->getRelation($entity);
 
 				if ($relation === self::RELATION_HAS_ONE) {
-					$fields .= ', '.implode(', ', $entity->getFields(self::FIELDS_SQL_JOIN));
+					$fields .= ', '.implode(', ', $entity->getEscapedFieldsForJoin());
 					$on = "`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`";
 
 					if (!empty($options['where'])) {
@@ -270,6 +317,7 @@ class Entity {
 
 		return $result;
 	}
+
 
 
 	/**
@@ -330,6 +378,7 @@ class Entity {
 	}
 
 
+
 	/**
 	 * Execute a count query in the database
 	 * 
@@ -347,6 +396,7 @@ class Entity {
 		
 		return (int)$result[0];
 	}
+
 
 
 	/**
@@ -382,6 +432,7 @@ class Entity {
 	}
 
 
+
 	/**
 	 * Default data converter/validator from database
 	 * 
@@ -390,6 +441,7 @@ class Entity {
 	public function dataToDatabase (array $data, $new) {
 		return $data;
 	}
+
 
 
 	/**
@@ -402,46 +454,53 @@ class Entity {
 	}
 
 
+
 	/**
 	 * Prepare the data before save into database (used by update and insert)
 	 *
-	 * @param array $data The data to save
+	 * @param array &$data The data to save
 	 * @param bool $new True if it's a new value (insert)
-	 * @param array $changedFields Array of changed fields. If isn't specified, all fields are changed
 	 */
-	private function getDataToSave (array $data, $new, array $changedFields = null) {
-		if (array_diff_key($data, $this->fields)) {
-			throw new \Exception("Invalid fields");
-		}
-
-		if (!($newData = $this->dataToDatabase($data, $new))) {
+	private function prepareDataToDatabase (array &$data, $new) {
+		if (!is_array($data = $this->dataToDatabase($data, $new))) {
 			throw new \Exception("Data not valid");
 		}
 
-		if ($changedFields === null) {
-			return [$data, $data];
+		if (array_diff_key($data, $this->getFieldsNames())) {
+			throw new \Exception("Invalid fields");
 		}
 
-		//Implodes the array values for ENUM/SET fields
-		foreach ($newData as &$value) {
-			if (is_array($value)) {
-				$value = implode(',', $value);
-			}
+		//Transform data before save to database
+		$dbData = [];
+
+		foreach ($data as $key => $value) {
+			$dbData[$key] = $this->fields[$key]->dataToDatabase($value);
 		}
 
-		$tmpData = $data;
-
-		foreach ($tmpData as &$value) {
-			if (is_array($value)) {
-				$value = implode(',', $value);
-			}
-		}
-
-		return [
-			$data,
-			array_diff_assoc($newData, $tmpData) + array_intersect_key($newData, $changedFields)
-		];
+		return $dbData;
 	}
+
+
+
+	/**
+	 * Removes unchanged data before save into database (used by update and insert)
+	 *
+	 * @param array $data The original data
+	 * @param array $prepared The prepared data
+	 * @param array $changedFields Array of changed fields.
+	 */
+	private function filterDataToSave (array $data, array $prepared, array $changedFields) {
+		$filtered = [];
+
+		foreach ($data as $name => $value) {
+			if (isset($changedFields[$name]) || ($value !== $prepared[$name])) {
+				$filtered[$name] = $prepared[$name];
+			}
+		}
+
+		return $filtered;
+	}
+
 
 
 	/**
@@ -453,44 +512,46 @@ class Entity {
 	 * @return array The new values of the inserted row
 	 */
 	public function insert (array $data, $duplicateKey = false, array $changedFields = null) {
-		list($fullData, $data) = $this->getDataToSave($data, true, $changedFields);
+		$preparedData = $this->prepareDataToDatabase($data, true);
 
-		if (empty($data['id'])) {
-			unset($data['id']);
+		if ($changedFields !== null) {
+			$preparedData = $this->filterDataToSave($data, $preparedData, $changedFields);
 		}
 
-		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
+		unset($preparedData['id']);
 
-		$fields = $values = [];
+		if (empty($preparedData)) {
+			$query = "INSERT INTO `{$this->table}` (`id`) VALUES (NULL)";
+			$marks = null;
+		} else {
+			$fields = array_keys($preparedData);
 
-		foreach ($this->getFields(self::FIELDS_SQL, array_keys($quoted)) as $name => $field) {
-			$fields[] = $field;
-			$values[] = $quoted[$name];
-		}
+			$query = 'INSERT INTO `'.$this->table.'` (`'.implode('`, `', $fields).'`) VALUES (:'.implode(', :', $fields).')';
+			$marks = [];
 
-		$queryFields = implode(', ', $fields);
-		$queryValues = implode(', ', $values);
-
-		$query = "INSERT INTO `{$this->table}` ($queryFields) VALUES ($queryValues)";
-
-		if ($duplicateKey) {
-			$update = ['id = LAST_INSERT_ID(id)'];
-
-			foreach ($fields as $k => $field) {
-				$update[] = "$field = ".$values[$k];
+			foreach ($preparedData as $key => $value) {
+				$marks[":$key"] = $value;
 			}
 
-			$query .= ' ON DUPLICATE KEY UPDATE '.implode(', ', $update);
+			if ($duplicateKey) {
+				$query .= ' ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)';
+
+				foreach ($fields as $name) {
+					$query .= ", {$name} = :{$name}";
+				}
+			}
+
 		}
 
-		$fullData['id'] = $this->manager->executeTransaction(function () use ($query) {
-			$this->manager->execute($query);
+		$data['id'] = $this->manager->executeTransaction(function () use ($query, $marks) {
+			$this->manager->execute($query, $marks);
 
 			return $this->manager->lastInsertId();
 		});
 
-		return $this->dataFromDatabase($fullData);
+		return $data;
 	}
+
 
 
 	/**
@@ -504,30 +565,36 @@ class Entity {
 	 * @return array The new values of the updated row
 	 */
 	public function update (array $data, $where = '', $marks = null, $limit = null, array $changedFields = null) {
-		list($fullData, $data) = $this->getDataToSave($data, false, $changedFields);
+		$preparedData = $this->prepareDataToDatabase($data, true);
 
-		unset($data['id']);
+		if ($changedFields !== null) {
+			$preparedData = $this->filterDataToSave($data, $preparedData, $changedFields);
+		}
 
-		if (!$data) {
+		unset($preparedData['id']);
+
+		if (empty($preparedData)) {
 			return $data;
 		}
 
-		$quoted = $this->manager->quote($data, $this->getFields(self::FIELDS_DATA_TYPE));
-		$set = [];
+		$query = [];
+		$marks = $marks ?: [];
 
-		foreach ($this->getFields(self::FIELDS_SQL, array_keys($quoted)) as $name => $field) {
-			$set[] = "$field = ".$quoted[$name];
+		foreach ($preparedData as $key => $value) {
+			$marks[":__{$key}"] = $value;
+			$query[] = "`{$key}` = :__{$key}";
 		}
 
-		$set = implode(', ', $set);
-		$query = self::generateQuery("UPDATE `{$this->table}` SET $set", $where, null, $limit);
+		$query = implode(', ', $query);
+		$query = self::generateQuery("UPDATE `{$this->table}` SET {$query}", $where, null, $limit);
 
 		$this->manager->executeTransaction(function () use ($query, $marks) {
 			$this->manager->execute($query, $marks);
 		});
 
-		return $this->dataFromDatabase($fullData);
+		return $data;
 	}
+
 
 
 	/**
@@ -546,6 +613,7 @@ class Entity {
 	}
 
 
+
 	/**
 	 * Check if this entity is related with other
 	 * 
@@ -560,6 +628,7 @@ class Entity {
 
 		return ($this->getRelation($entity) !== null);
 	}
+
 
 
 	/**
