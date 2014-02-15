@@ -6,6 +6,14 @@ namespace CustomEntities {
 			'field' => 'json'
 		];
 	}
+
+	class Testing extends \SimpleCrud\Entity {
+		public function dataToDatabase (array $data, $new) {
+			$data['field2'] = $data['field1'];
+
+			return $data;
+		}
+	}
 }
 
 namespace CustomEntities\Fields {

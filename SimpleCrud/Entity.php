@@ -533,10 +533,11 @@ class Entity {
 	 * @return array The new values of the inserted row
 	 */
 	public function insert (array $data, $duplicateKey = false, array $changedFields = null) {
+		$originalData = $data;
 		$preparedData = $this->prepareDataToDatabase($data, true);
 
 		if ($changedFields !== null) {
-			$preparedData = $this->filterDataToSave($data, $preparedData, $changedFields);
+			$preparedData = $this->filterDataToSave($originalData, $preparedData, $changedFields);
 		}
 
 		unset($preparedData['id']);
@@ -586,10 +587,11 @@ class Entity {
 	 * @return array The new values of the updated row
 	 */
 	public function update (array $data, $where = '', $marks = null, $limit = null, array $changedFields = null) {
+		$originalData = $data;
 		$preparedData = $this->prepareDataToDatabase($data, true);
 
 		if ($changedFields !== null) {
-			$preparedData = $this->filterDataToSave($data, $preparedData, $changedFields);
+			$preparedData = $this->filterDataToSave($originalData, $preparedData, $changedFields);
 		}
 
 		unset($preparedData['id']);

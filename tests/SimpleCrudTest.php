@@ -190,6 +190,20 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(['1', '2'], $tags->id);
 	}
 
+	public function testDataToDatabase () {
+		$db = self::$db;
+
+		$row = $db->testing->create(['field1' => 'hello'])->save();
+		$this->assertSame($row->field1, $row->field2);
+
+
+		$row->reload();
+		$this->assertSame($row->field1, $row->field2);
+
+		$row->set(['field1' => 'bye'])->save();
+		$this->assertSame($row->field1, $row->field2);
+	}
+
 	public function testDatetimeFields () {
 		$db = self::$db;
 
