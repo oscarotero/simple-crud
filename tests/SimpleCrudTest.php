@@ -67,6 +67,20 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 	}
 
 
+	public function testSelect () {
+		$db = self::$db;
+
+		$result = $db->posts->select();
+		$this->assertInstanceOf('SimpleCrud\\RowCollection', $result);
+		$this->assertSame(1, $result->count());
+
+		//Renamed fields
+		$result = $db->posts->fetchOne('SELECT title as title2 FROM posts LIMIT 1');
+		$this->assertInstanceOf('SimpleCrud\\Row', $result);
+		$this->assertEquals('First post', $result->title2);
+	}
+
+
 	public function testRow () {
 		$db = self::$db;
 

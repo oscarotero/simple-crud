@@ -160,7 +160,9 @@ class Entity {
 	 */
 	public function createFromSelection (array $row, $expand = false) {
 		foreach ($row as $key => &$value) {
-			$value = $this->fields[$key]->dataFromDatabase($value);
+			if (isset($this->fields[$key])) {
+				$value = $this->fields[$key]->dataFromDatabase($value);
+			}
 		}
 
 		if ($expand === false) {

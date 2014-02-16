@@ -128,8 +128,8 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			throw new \Exception("This row does not exist in database");
 		}
 
-		$this->set($row->get());
-		$this->emptyChanges();
+		$this->changes = [];
+		$this->values = $row->get();
 	}
 
 
