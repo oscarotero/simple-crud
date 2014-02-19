@@ -23,7 +23,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			$data = array_intersect_key($data, $this->entity->getFieldsNames());
 		}
 
-		$this->values = ($data === null) ? $entity->getDefaults() : $data;
+		$this->values = ($data ?: array()) + $entity->getDefaults();
 	}
 
 
