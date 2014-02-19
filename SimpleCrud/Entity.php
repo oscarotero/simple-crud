@@ -32,7 +32,7 @@ class Entity {
 	/**
 	 * Private function to generate the mysql queries
 	 */
-	static private function generateQuery ($query, $where = '', $orderBy = null, $limit = null) {
+	static private function generateQuery ($query, $where = null, $orderBy = null, $limit = null) {
 		if ($where) {
 			if (is_array($where)) {
 				$where = implode(') AND (', $where);
@@ -166,7 +166,7 @@ class Entity {
 		}
 
 		if ($expand === false) {
-			return ($row = $this->dataFromDatabase($row)) ? $this->create($row)->emptyChanges() : false;
+			return ($row = $this->dataFromDatabase($row)) ? $this->create($row) : false;
 		}
 
 		$fields = $joinFields = [];
@@ -190,7 +190,7 @@ class Entity {
 			return false;
 		}
 
-		$row = $this->create($row)->emptyChanges();
+		$row = $this->create($row);
 
 		foreach ($joinFields as $name => $values) {
 			$row->$name = empty($values['id']) ? null : $this->manager->$name->createFromSelection($values);
@@ -210,13 +210,7 @@ class Entity {
 	 * @return SimpleCrud\Row
 	 */
 	public function create (array $data = null, $onlyDeclaredFields = false) {
-		$row = new $this->rowClass($this);
-
-		if ($data !== null) {
-			$row->set($data, $onlyDeclaredFields);
-		}
-
-		return $row;
+		return new $this->rowClass($this, $data, $onlyDeclaredFields);
 	}
 
 
@@ -268,38 +262,25 @@ class Entity {
 					$options = [];
 				}
 
-				if (!empty($options['join'])) {
-					$load[$name] = $options;
-					continue;
-				}
-
 				$entity = $this->manager->$name;
 				$relation = $this->getRelation($entity);
 
-				if ($relation === self::RELATION_HAS_ONE) {
-					$fields .= ', '.implode(', ', $entity->getEscapedFieldsForJoin());
-					$on = "`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`";
+				if ($relation !== self::RELATION_HAS_ONE) {
+					throw new \Exception("The items '{$this->table}' and '{$entity->table}' are no related or cannot be joined");
+				}
 
-					if (!empty($options['where'])) {
-						$on .= ' AND ('.$options['where'].')';
+				$fields .= ', '.implode(', ', $entity->getEscapedFieldsForJoin());
+				$on = "`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`";
 
-						if (!empty($options['marks'])) {
-							$marks = array_replace($marks, $options['marks']);
-						}
+				if (!empty($options['on'])) {
+					$on .= ' AND ('.$options['on'].')';
+
+					if (!empty($options['marks'])) {
+						$marks = array_replace($marks, $options['marks']);
 					}
-
-					$query .= " LEFT JOIN `{$entity->table}` ON ($on)";
-
-					continue;
 				}
 
-				if ($relation === self::RELATION_HAS_MANY) {
-					$load[$name] = $options;
-
-					continue;
-				}
-
-				throw new \Exception("The items '{$this->table}' and '{$entity->table}' are no related");
+				$query .= " LEFT JOIN `{$entity->table}` ON ($on)";
 			}
 		}
 
@@ -316,10 +297,6 @@ class Entity {
 			$result = $this->fetchOne($query, $marks, (bool)$joins);
 		} else {
 			$result = $this->fetchAll($query, $marks, (bool)$joins);
-		}
-
-		if ($load && $result) {
-			$result->load($load);
 		}
 
 		return $result;
@@ -339,7 +316,7 @@ class Entity {
 	 * 
 	 * @return mixed The row or rowcollection with the result or null
 	 */
-	public function selectBy ($id, $where = '', $marks = null, $orderBy = null, $limit = null, array $joins = null) {
+	public function selectBy ($id, $where = null, $marks = null, $orderBy = null, $limit = null, array $joins = null, array $from = null) {
 		if (empty($id)) {
 			return is_array($id) ? $this->createCollection() : false;
 		}
@@ -363,14 +340,14 @@ class Entity {
 			}
 
 			if (empty($ids)) {
-				return $id->isCollection() ? $this->createCollection() : null;
+				return ($id instanceof RowCollection) ? $this->createCollection() : null;
 			}
 
 			$where[] = "`{$this->table}`.`$foreignKey` IN (:id)";
 			$marks[':id'] = $ids;
 
 			if ($limit === null) {
-				$limit = ($id->isCollection() && $fetch) ? count($ids) : $fetch;
+				$limit = (($id instanceof RowCollection) && $fetch) ? count($ids) : $fetch;
 			}
 		} else {
 			$where[] = 'id IN (:id)';
@@ -381,7 +358,7 @@ class Entity {
 			}
 		}
 
-		return $this->select($where, $marks, $orderBy, $limit, $joins);
+		return $this->select($where, $marks, $orderBy, $limit, $joins, $from);
 	}
 
 
@@ -395,7 +372,7 @@ class Entity {
 	 * 
 	 * @return int 
 	 */
-	public function count ($where = '', $marks = null, $limit = null) {
+	public function count ($where = null, $marks = null, $limit = null) {
 		$query = self::generateQuery("SELECT COUNT(*) FROM `{$this->table}`", $where, null, $limit);
 
 		$statement = $this->manager->execute($query, $marks);
@@ -534,13 +511,8 @@ class Entity {
 	 * 
 	 * @return array The new values of the inserted row
 	 */
-	public function insert (array $data, $duplicateKey = false, array $changedFields = null) {
-		$originalData = $data;
+	public function insert (array $data, $duplicateKey = false) {
 		$preparedData = $this->prepareDataToDatabase($data, true);
-
-		if ($changedFields !== null) {
-			$preparedData = $this->filterDataToSave($originalData, $preparedData, $changedFields);
-		}
 
 		unset($preparedData['id']);
 
@@ -588,7 +560,7 @@ class Entity {
 	 * 
 	 * @return array The new values of the updated row
 	 */
-	public function update (array $data, $where = '', $marks = null, $limit = null, array $changedFields = null) {
+	public function update (array $data, $where = null, $marks = null, $limit = null, array $changedFields = null) {
 		$originalData = $data;
 		$preparedData = $this->prepareDataToDatabase($data, true);
 
@@ -596,7 +568,7 @@ class Entity {
 			$preparedData = $this->filterDataToSave($originalData, $preparedData, $changedFields);
 		}
 
-		unset($preparedData['id']);
+		unset($originalData, $preparedData['id']);
 
 		if (empty($preparedData)) {
 			return $data;

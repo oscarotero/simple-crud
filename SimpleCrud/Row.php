@@ -15,10 +15,15 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	public $entity;
 	public $manager;
 
-	public function __construct (Entity $entity) {
+	public function __construct (Entity $entity, array $data = null, $onlyDeclaredFields = false) {
 		$this->entity = $entity;
 		$this->manager = $entity->manager;
-		$this->values = $entity->getDefaults();
+
+		if ($onlyDeclaredFields === true) {
+			$data = array_intersect_key($data, $this->entity->getFieldsNames());
+		}
+
+		$this->values = ($data === null) ? $entity->getDefaults() : $data;
 	}
 
 
@@ -39,9 +44,9 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		}
 
 		if ($this->entity->isRelated($name)) {
-			$this->load([$name]);
+			$fn = "get$name";
 
-			return $this->values[$name];
+			return $this->values[$name] = $this->$fn();
 		}
 
 		return null;
@@ -73,6 +78,29 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
+	 * Magic method to execute get[whatever] and load automatically related stuff
+	 * 
+	 * @param string $name
+	 * @param string $arguments
+	 */
+	public function __call ($name, $arguments) {
+		if ((strpos($name, 'get') === 0) && ($name = lcfirst(substr($name, 3)))) {
+			if (!$arguments && array_key_exists($name, $this->values)) {
+				return $this->values[$name];
+			}
+
+			if (($entity = $this->manager->$name)) {
+				array_unshift($arguments, $this);
+
+				return call_user_func_array([$entity, 'selectBy'], $arguments);
+			}
+		}
+
+		throw new \Exception("The method $name does not exists");
+	}
+
+
+	/**
 	 * Magic method to print the row values (and subvalues)
 	 * 
 	 * @return string
@@ -93,27 +121,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 
 	/**
-	 * Returns true if is a collection, false if isn't
-	 * 
-	 * @return boolean
-	 */
-	public function isCollection () {
-		return false;
-	}
-
-
-	/**
-	 * Empty the changes array
-	 */
-	public function emptyChanges () {
-		$this->changes = [];
-
-		return $this;
-	}
-
-
-	/**
-	 * Return if the row values has been changed or not
+	 * Return whether the row values has been changed or not
 	 */
 	public function changed () {
 		return !empty($this->changes);
@@ -130,6 +138,8 @@ class Row implements HasEntityInterface, \JsonSerializable {
 
 		$this->changes = [];
 		$this->values = $row->get();
+
+		return $this;
 	}
 
 
@@ -157,8 +167,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			throw new \Exception('Rows without id value cannot be related');
 		}
 
-		$foreignKey = $row->entity->foreignKey;
-		$this->$foreignKey = $row->id;
+		$this->{$row->entity->foreignKey} = $row->id;
 
 		return $this;
 	}
@@ -237,18 +246,17 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 * Saves this row in the database
 	 * 
 	 * @param boolean $duplicateKey Set true to detect duplicates index
-	 * @param boolean $onlyChangedValues Set false to save all values instead only the changed
+	 * @param boolean $onlyChangedValues Set false to save all values instead only the changed (only for updates)
 	 * 
 	 * @return $this
 	 */
 	public function save ($duplicateKey = false, $onlyChangedValues = true) {
 		$data = $this->get(true);
-		$onlyChangedValues = $onlyChangedValues ? $this->changes : null;
 
 		if (empty($this->id)) {
-			$data = $this->entity->insert($data, $duplicateKey, $onlyChangedValues);
+			$data = $this->entity->insert($data, $duplicateKey);
 		} else {
-			$data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1, $onlyChangedValues);
+			$data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1, ($onlyChangedValues ? $this->changes : null));
 		}
 
 		$this->set($data);
@@ -269,34 +277,6 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		}
 
 		$this->entity->delete('id = :id', [':id' => $this->id], 1);
-
-		return $this;
-	}
-
-
-	/**
-	 * Load related elements from the database
-	 * 
-	 * @param array $entities The entities names
-	 * 
-	 * @return $this
-	 */
-	public function load (array $entities) {
-		foreach ($entities as $name => $options) {
-			if (!is_array($options)) {
-				$this->$options = $this->manager->$options->selectBy($this);
-
-				continue;
-			}
-
-			$this->$name = $this->manager->$name->selectBy($this,
-				isset($options['join']) ? $options['join'] : null,
-				isset($options['where']) ? $options['where'] : '',
-				isset($options['marks']) ? $options['marks'] : null,
-				isset($options['orderBy']) ? $options['orderBy'] : null,
-				isset($options['limit']) ? $options['limit'] : null
-			);
-		}
 
 		return $this;
 	}

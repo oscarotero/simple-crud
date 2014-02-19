@@ -39,28 +39,18 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 
 
 	/**
-	 * Returns true if is a collection, false if isn't
-	 * 
-	 * @return boolean
-	 */
-	public function isCollection () {
-		return true;
-	}
-
-
-	/**
 	 * ArrayAcces interface
 	 */
 	public function offsetSet ($offset, $value) {
-		if (is_null($offset)) {
-			$offset = $value->id;
+		if (!($value instanceof Row)) {
+			throw new \Exception('Only instances of SimpleCrud\\Row must be added to collections');
 		}
 
-		if (is_null($offset)) {
-			$this->rows[] = $value;
-		} else {
-			$this->rows[$offset] = $value;
+		if (!($offset = $value->id)) {
+			throw new \Exception('Only rows with the defined id must be added to collections');
 		}
+
+		$this->rows[$offset] = $value;
 	}
 
 
@@ -264,7 +254,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 * @param array/HasEntityInterface $rows The new rows
 	 */
 	public function add ($rows) {
-		if (is_array($rows) || (($rows instanceof HasEntityInterface) && $rows->isCollection())) {
+		if (is_array($rows) || ($rows instanceof RowCollection)) {
 			foreach ($rows as $row) {
 				$this->offsetSet(null, $row);
 			}
@@ -309,22 +299,15 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 * 
 	 * @return $this
 	 */
-	public function load (array $entities) {
-		foreach ($entities as $name => $options) {
-			if (!is_array($options)) {
-				$result = $this->manager->$options->selectBy($this);
-			} else {
-				$result = $this->manager->$name->selectBy($this,
-					isset($options['join']) ? $options['join'] : null,
-					isset($options['where']) ? $options['where'] : '',
-					isset($options['marks']) ? $options['marks'] : null,
-					isset($options['orderBy']) ? $options['orderBy'] : null,
-					isset($options['limit']) ? $options['limit'] : null
-				);
-			}
-
-			$this->distribute($result);
+	public function load ($entity) {
+		if (!($entity = $this->manager->$entity)) {
+			throw new \Exception("The entity $entity does not exists");
 		}
+
+		$arguments[0] = $this;
+		$result = call_user_func_array([$entity, 'selectBy'], $arguments);
+
+		$this->distribute($result);
 
 		return $this;
 	}
@@ -338,7 +321,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 * 
 	 * @return $this
 	 */
-	public function distribute ($data, $bidirectional = true) {
+	public function distribute (HasEntityInterface $data, $bidirectional = true) {
 		if ($data instanceof Row) {
 			$data = $data->entity->createCollection([$data]);
 		}

@@ -142,6 +142,18 @@ $post = $db->posts->fetchOne('SELECT * FROM posts WHERE users_id  :users_id LIMI
 //Simplecrud accepts arrays in the marks:
 $posts = $db->posts->fetchAll('SELECT * FROM posts WHERE users_id IN (:users_id)', [':users_id' => [3, 4, 5]]);
 
+//selectBy accepts also the same arguments than select ($where, $marks, $orderBy, $limit)
+$db->comments->selectBy($post, 'pubdate < :pubdate', [':pubdate' => date('Y-m-d H:i:s')], 'pubdate DESC', 10); //Returns all comments related with the post older than now, sorted by pubdate and limit 10
+
+
+//select and selectBy accepts also two more arguments: $join and $from.
+//$join allows select more data for each row.
+//$from allows add more tables used, for example in "where"
+
+$posts = $db->posts->select('active = 1', null, 'id DESC', 10, ['users']);
+//SELECT {all fields from posts and users} FROM posts LEFT JOIN users ON posts.users_id = users.id WHERE active = 1 ORDER BY id DESC LIMIT 10
+
+
 //Delete
 $post->delete();
 
@@ -271,7 +283,7 @@ foreach ($post->comments as $comment) {
 $comments = $db->comments->selectBy($post);
 ```
 
-This allows make things like this:
+This allows make awesome (and dangerous :D) things like this:
 
 ```php
 $post = $db->posts->selectBy(34);
@@ -313,7 +325,12 @@ $post = $db->posts->selectBy(4);
 $post->comments; //Execute getComments() methods and save the result in $post->comments
 $post->comments; //Access to the cached result instead execute getComments() again
 $post->lowercaseTitle; //Execute getLowercaseTitle() and save the result in $post->lowercaseTitle;
+
+//You can execute also non defined "getWhatever" methods, if they match with a related entity:
+$users = $post->getUsers(); //This is the same than $users->selectBy($post);
 ```
+
+The difference between execute ```$post->getUsers()``` or call directly ```$post->users``` is that the second save the result in the property "users" so only is executed the first time. $post->getUsers() accepts also the same arguments than $users->selectBy($post) ($where, $marks, $orderBy, etc).
 
 
 #### Fields
