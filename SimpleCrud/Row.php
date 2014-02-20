@@ -9,7 +9,7 @@ namespace SimpleCrud;
 use SimpleCrud\Entity;
 
 class Row implements HasEntityInterface, \JsonSerializable {
-	private $values;
+	private $values = [];
 	private $changes = [];
 
 	public $entity;
@@ -19,11 +19,15 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		$this->entity = $entity;
 		$this->manager = $entity->manager;
 
-		if ($onlyDeclaredFields === true) {
-			$data = array_intersect_key($data, $this->entity->getFieldsNames());
+		if ($data) {
+			if ($onlyDeclaredFields === true) {
+				$data = array_intersect_key($data, $this->entity->getFieldsNames());
+			}
+
+			$this->values = $data;
 		}
 
-		$this->values = ($data ?: array()) + $entity->getDefaults();
+		$this->values += $entity->getDefaults();
 	}
 
 

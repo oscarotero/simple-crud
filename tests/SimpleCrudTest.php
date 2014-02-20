@@ -216,6 +216,10 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 
 		$row->set(['field1' => 'bye'])->save();
 		$this->assertSame($row->field1, $row->field2);
+
+		//Empty value
+		$row = $db->testing->create()->save();
+		$this->assertSame($row->field1, $row->field2);
 	}
 
 	public function testDatetimeFields () {
