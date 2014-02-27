@@ -43,11 +43,11 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 */
 	public function offsetSet ($offset, $value) {
 		if (!($value instanceof Row)) {
-			throw new \Exception('Only instances of SimpleCrud\\Row must be added to collections');
+			throw new SimpleCrudException('Only instances of SimpleCrud\\Row must be added to collections');
 		}
 
 		if (!($offset = $value->id)) {
-			throw new \Exception('Only rows with the defined id must be added to collections');
+			throw new SimpleCrudException('Only rows with the defined id must be added to collections');
 		}
 
 		$this->rows[$offset] = $value;
@@ -301,7 +301,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 	 */
 	public function load ($entity) {
 		if (!($entity = $this->manager->$entity)) {
-			throw new \Exception("The entity $entity does not exists");
+			throw new SimpleCrudException("The entity $entity does not exists");
 		}
 
 		$arguments[0] = $this;
@@ -367,7 +367,7 @@ class RowCollection implements \ArrayAccess, \Iterator, \Countable, \JsonSeriali
 					return $this;
 			}
 
-			throw new \Exception("Cannot set '$name' and '{$this->entity->name}' because is not related or does not exists");
+			throw new SimpleCrudException("Cannot set '$name' and '{$this->entity->name}' because is not related or does not exists");
 		}
 	}
 }

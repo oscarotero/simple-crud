@@ -45,7 +45,7 @@ class Manager {
 	 * @param string $query The Mysql query to execute
 	 * @param array $marks The marks passed to the statement
 	 *
-	 * @throws Exception On error preparing or executing the statement
+	 * @throws PDOException On error preparing or executing the statement
 	 * 
 	 * @return PDOStatement The result
 	 */

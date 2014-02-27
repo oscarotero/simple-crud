@@ -266,7 +266,7 @@ class Entity {
 				$relation = $this->getRelation($entity);
 
 				if ($relation !== self::RELATION_HAS_ONE) {
-					throw new \Exception("The items '{$this->table}' and '{$entity->table}' are no related or cannot be joined");
+					throw new SimpleCrudException("The items '{$this->table}' and '{$entity->table}' are no related or cannot be joined");
 				}
 
 				$fields .= ', '.implode(', ', $entity->getEscapedFieldsForJoin());
@@ -326,7 +326,7 @@ class Entity {
 
 		if ($id instanceof HasEntityInterface) {
 			if (!($relation = $this->getRelation($id->entity))) {
-				throw new \Exception("The items {$this->table} and {$id->entity->table} are no related");
+				throw new SimpleCrudException("The items {$this->table} and {$id->entity->table} are no related");
 			}
 
 			if ($relation === self::RELATION_HAS_ONE) {
@@ -463,11 +463,11 @@ class Entity {
 	 */
 	private function prepareDataToDatabase (array &$data, $new) {
 		if (!is_array($data = $this->dataToDatabase($data, $new))) {
-			throw new \Exception("Data not valid");
+			throw new SimpleCrudException("Data not valid");
 		}
 
 		if (array_diff_key($data, $this->getFieldsNames())) {
-			throw new \Exception("Invalid fields");
+			throw new SimpleCrudException("Invalid fields");
 		}
 
 		//Transform data before save to database

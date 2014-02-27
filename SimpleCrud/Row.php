@@ -100,7 +100,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 			}
 		}
 
-		throw new \Exception("The method $name does not exists");
+		throw new SimpleCrudException("The method $name does not exists");
 	}
 
 
@@ -137,7 +137,7 @@ class Row implements HasEntityInterface, \JsonSerializable {
 	 */
 	public function reload () {
 		if (!$this->id || !($row = $this->entity->selectBy($this->id))) {
-			throw new \Exception("This row does not exist in database");
+			throw new SimpleCrudException("This row does not exist in database");
 		}
 
 		$this->changes = [];
@@ -164,11 +164,11 @@ class Row implements HasEntityInterface, \JsonSerializable {
 		}
 
 		if ($this->entity->getRelation($row->entity) !== Entity::RELATION_HAS_ONE) {
-			throw new \Exception("Not valid relation");
+			throw new SimpleCrudException("Not valid relation");
 		}
 
 		if (empty($row->id)) {
-			throw new \Exception('Rows without id value cannot be related');
+			throw new SimpleCrudException('Rows without id value cannot be related');
 		}
 
 		$this->{$row->entity->foreignKey} = $row->id;
