@@ -12,6 +12,7 @@ class EntityFactory {
 	protected $entityNamespace;
 	protected $fieldsNamespace;
 	protected $autocreate;
+	protected $tables;
 
 	public function __construct (array $config = null) {
 		$this->entityNamespace = isset($config['namespace']) ? $config['namespace'] : '';
@@ -137,12 +138,18 @@ class EntityFactory {
 	 * @return array The table names
 	 */
 	private function getTables (Manager $manager) {
-		static $tables;
-
-		if ($tables !== null) {
-			return $tables;
+		if ($this->tables !== null) {
+			return $this->tables;
 		}
 
-		return $tables = $manager->execute("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN, 0);
+		return $this->tables = $manager->execute("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN, 0);
+	}
+
+
+	/**
+	 * Refresh the tables cache (useful after insert or drop tables in the database)
+	 */
+	public function clearCache () {
+		$this->tables = null;
 	}
 }
