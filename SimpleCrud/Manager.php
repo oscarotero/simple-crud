@@ -16,7 +16,11 @@ class Manager {
 	protected $entities = [];
 
 
-	public function __construct (PDO $connection, EntityFactory $entityFactory) {
+	public function __construct (PDO $connection, EntityFactory $entityFactory = null) {
+		if ($entityFactory === null) {
+			$entityFactory = new EntityFactory(['autocreate' => true]);
+		}
+
 		$this->entityFactory = $entityFactory;
 		$this->connection = $connection;
 		$this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -35,7 +39,23 @@ class Manager {
 			return $this->entities[$name];
 		}
 
-		return $this->entities[$name] = $this->entityFactory->create($this, $name);
+		$entities = $this->entityFactory->create($this, $name);
+
+		if ($entities) {
+			$this->entities[$name] = $this->entityFactory->create($this, $name);
+		}
+
+		return $entities;
+	}
+
+
+	/**
+	 * Remove all entity instances.
+	 * Useful when database scheme changes have made (create/drop tables or fields)
+	 */
+	public function refreshEntities () {
+		$this->entityFactory->clearCache();
+		$this->entities = [];
 	}
 
 
@@ -45,7 +65,7 @@ class Manager {
 	 * @param string $query The Mysql query to execute
 	 * @param array $marks The marks passed to the statement
 	 *
-	 * @throws PDOException On error preparing or executing the statement
+	 * @throws Exception On error preparing or executing the statement
 	 * 
 	 * @return PDOStatement The result
 	 */
