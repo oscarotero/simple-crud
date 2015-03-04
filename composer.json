@@ -1,10 +1,10 @@
 {
 	"name": "simple-crud/simple-crud",
 	"type": "library",
-	"description": "PHP mysql CRUD class",
-	"keywords": ["crud", "mysql"],
+	"description": "Create/Read/Update/Delete easily",
+	"keywords": ["crud", "mysql", "sqli"],
 	"homepage": "https://github.com/oscarotero/simplecrud",
-	"license": "AGPL-3.0",
+	"license": "MIT",
 	"authors": [
 		{
 			"name": "Oscar Otero",
@@ -21,8 +21,8 @@
 		"php": ">=5.4"
 	},
 	"autoload": {
-		"psr-0": {
-			"SimpleCrud": ""
+		"psr-4": {
+			"SimpleCrud\\": "src"
 		}
 	}
 }
