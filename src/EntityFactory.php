@@ -2,6 +2,7 @@
 namespace SimpleCrud;
 
 use SimpleCrud\Fieds\FieldInterface;
+use SimpleCrud\Adapters\AdapterInterface;
 
 /**
  * Class to create entity instances.
@@ -21,9 +22,21 @@ class EntityFactory
         $this->autocreate = isset($config['autocreate']) ? (bool) $config['autocreate'] : false;
     }
 
-    public function setAdapter(Adapter $adapter)
+    public function setAdapter(AdapterInterface $adapter)
     {
         $this->adapter = $adapter;
+    }
+
+    /**
+     * Check whether or not an Entity is instantiable.
+     *
+     * @param string $name
+     *
+     * @return boolean
+     */
+    public function has($name)
+    {
+        return in_array($name, $this->getAvailableTables()) || class_exists($this->entityNamespace.ucfirst($name));
     }
 
     /**
@@ -31,21 +44,15 @@ class EntityFactory
      *
      * @param string $name
      *
-     * @return Entity
+     * @return Entity|false
      */
-    public function create($name)
+    public function get($name)
     {
         $class = $this->entityNamespace.ucfirst($name);
 
         if (!class_exists($class)) {
-            if ($this->autocreate) {
-                if ($this->tables === null) {
-                    $this->tables = $this->adapter->getTables();
-                }
-
-                if (!in_array($name, $this->tables)) {
-                    return false;
-                }
+            if (!in_array($name, $this->getAvailableTables())) {
+                return false;
             }
 
             $class = 'SimpleCrud\\Entity';
@@ -88,6 +95,18 @@ class EntityFactory
         $entity->init();
 
         return $entity;
+    }
+
+    /**
+     * Returns all available tables in the database
+     */
+    private function getAvailableTables()
+    {
+        if ($this->tables !== null) {
+            return $this->tables;
+        }
+
+        return $this->tables = $this->autocreate ? $this->adapter->getTables() : [];
     }
 
     /**

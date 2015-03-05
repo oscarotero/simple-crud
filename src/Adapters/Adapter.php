@@ -2,6 +2,8 @@
 namespace SimpleCrud\Adapters;
 
 use SimpleCrud\EntityFactory;
+use SimpleCrud\SimpleCrudException;
+use Exception;
 use PDO;
 
 /**
@@ -28,6 +30,8 @@ abstract class Adapter
         }
 
         $this->entityFactory = $entityFactory;
+        $this->entityFactory->setAdapter($this);
+
         $this->connection = $connection;
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
@@ -36,6 +40,8 @@ abstract class Adapter
      * Magic method to initialize the entities in lazy mode.
      *
      * @param string $name The entity name
+     * 
+     * @throws SimpleCrudException If the entity cannot be instantiated
      *
      * @return null|Entity
      */
@@ -45,13 +51,25 @@ abstract class Adapter
             return $this->entities[$name];
         }
 
-        $entities = $this->entityFactory->create($this, $name);
+        $entity = $this->entityFactory->get($name);
 
-        if ($entities) {
-            $this->entities[$name] = $this->entityFactory->create($this, $name);
+        if ($entity === false) {
+            throw new SimpleCrudException("The entity '{$name}' is not valid");
         }
+        
+        return $this->entities[$name] = $entity;
+    }
 
-        return $entities;
+    /**
+     * Magic method to check if a entity exists or not.
+     *
+     * @param string $name
+     *
+     * @return boolean
+     */
+    public function __isset($name)
+    {
+        return isset($this->entities[$name]) || $this->entityFactory->has($name);
     }
 
     /**

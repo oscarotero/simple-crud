@@ -12,9 +12,7 @@ interface FieldInterface {
      * 
      * @return mixed
      */
-    public function dataToDatabase ($data) {
-        return $data;
-    }
+    public function dataToDatabase ($data);
 
     /**
      * Convert the data after read from the database
@@ -23,7 +21,5 @@ interface FieldInterface {
      * 
      * @return mixed
      */
-    public function dataFromDatabase ($data) {
-        return $data;
-    }
+    public function dataFromDatabase ($data);
 }

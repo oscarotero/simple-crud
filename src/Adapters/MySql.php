@@ -11,9 +11,9 @@ class Mysql extends Adapter implements AdapterInterface {
     /**
      * {@inheritdoc}
      */
-    public function executeSelect(array $fields, array $joins = null, $where = null, array $marks = null, $orderBy = null, $limit = null);
+    public function executeSelect(array $fields, array $joins = null, $where = null, array $marks = null, $orderBy = null, $limit = null)
     {
-        $query = ['SELECT '.static::generateSelectFields($fields, $joins)];
+        $query = ['SELECT '.static::generateSelect($fields, $joins)];
 
         if (($joins = static::generateJoins($joins)) !== null) {
             $query[] = $joins;
@@ -59,7 +59,7 @@ class Mysql extends Adapter implements AdapterInterface {
     /**
      * {@inheritdoc}
      */
-    public function insert($table, array $data = null, $duplicateKeyErrors = false);
+    public function insert($table, array $data = null, $duplicateKeyErrors = false)
     {
         if (empty($data)) {
             return "INSERT INTO `{$table}` (`id`) VALUES (NULL)";
@@ -198,7 +198,7 @@ class Mysql extends Adapter implements AdapterInterface {
                 }
 
                 foreach ($join['fields'] as $field) {
-                    $escapedFields[] "`{$join['table']}`.`{$field}` as `{$join['name']}.{$field}`";
+                    $escapedFields[] = "`{$join['table']}`.`{$field}` as `{$join['name']}.{$field}`";
                 }
             }
         }

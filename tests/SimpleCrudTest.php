@@ -1,9 +1,5 @@
 <?php
-include_once __DIR__.'/../SimpleCrud/autoloader.php';
-include_once __DIR__.'/entities.php';
-
-use SimpleCrud\Entity;
-use SimpleCrud\Manager;
+use SimpleCrud\Adapters\Mysql;
 use SimpleCrud\EntityFactory;
 
 class SimpleCrudTest extends PHPUnit_Framework_TestCase {
@@ -12,14 +8,9 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 	//Init connection before start the test case
 	public static function setUpBeforeClass () {
 		$pdo = new PDO('mysql:host=localhost;charset=UTF8', 'root', '');
-
-		$pdo->exec('DROP DATABASE IF EXISTS simplecrud_test');
-		$pdo->exec('CREATE DATABASE simplecrud_test');
 		$pdo->exec('USE simplecrud_test');
 
-		shell_exec('mysql -uroot simplecrud_test < '.__DIR__.'/db.sql');
-
-		$db = new Manager($pdo, new EntityFactory([
+		$db = new Mysql($pdo, new EntityFactory([
 			'namespace' => 'CustomEntities',
 			'autocreate' => true
 		]));
@@ -31,20 +22,25 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$db = self::$db;
 
 		//Instances are created automatically?
-		$this->assertInstanceOf('SimpleCrud\\Manager', $db);
+		$this->assertInstanceOf('SimpleCrud\\Adapters\\AdapterInterface', $db);
 		$this->assertInstanceOf('SimpleCrud\\Entity', $db->posts);
 		$this->assertInstanceOf('SimpleCrud\\Entity', $db->categories);
 		$this->assertInstanceOf('SimpleCrud\\Entity', $db->tags);
 		$this->assertInstanceOf('SimpleCrud\\Entity', $db->tags_in_posts);
-		$this->assertFalse($db->unexisting_table);
+
+		try {
+			$db->unexisting_table;
+		} catch(Exception $exception) {
+			$this->assertInstanceOf('SimpleCrud\\SimpleCrudException', $exception);
+		}
 
 		//Instances have all fields?
 		$this->assertCount(3, $db->posts->fields);
 		$this->assertCount(2, $db->categories->fields);
 		$this->assertCount(2, $db->tags->fields);
 		$this->assertCount(3, $db->tags_in_posts->fields);
+		
 	}
-
 
 	public function testInsert () {
 		$db = self::$db;
@@ -204,6 +200,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(['1', '2'], $tags->id);
 	}
 
+	/*
 	public function testDataToDatabase () {
 		$db = self::$db;
 
@@ -292,4 +289,5 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$row->reload();
 		$this->assertSame(['red', 'blue', 'green'], $row->field);
 	}
+	*/
 }

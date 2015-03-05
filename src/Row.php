@@ -1,7 +1,6 @@
 <?php
 namespace SimpleCrud;
 
-use SimpleCrud\Adapters\AdapterInterface;
 use JsonSerializable;
 
 /**
@@ -20,10 +19,10 @@ class Row implements RowInterface, JsonSerializable
     /**
      * Row constructor.
      *
-     * @param AdapterInterface $adapter
+     * @param Entity $entity
      * @param array|null       $data
      */
-    public function __construct(AdapterInterface $adapter, array $data = null)
+    public function __construct(Entity $entity, array $data = null)
     {
         $this->entity = $entity;
         $this->adapter = $entity->adapter;
@@ -242,7 +241,7 @@ class Row implements RowInterface, JsonSerializable
         $values = ($onlyChangedValues === true) ? array_intersect_key($this->values, $this->changes) : $this->values;
 
         if ($name === true) {
-            return array_intersect_key($values, $this->entity->getFieldsNames());
+            return array_intersect_key($values, $this->entity->fields);
         }
 
         if ($name === null) {

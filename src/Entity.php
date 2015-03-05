@@ -1,6 +1,7 @@
 <?php
 namespace SimpleCrud;
 
+use SimpleCrud\Adapters\AdapterInterface;
 use PDOStatement;
 use PDO;
 
@@ -154,7 +155,7 @@ class Entity
         }
 
         $selectFields = [
-            $this->table => $this->getFields(),
+            $this->table => array_keys($this->fields),
         ];
 
         if ($from) {
@@ -181,7 +182,7 @@ class Entity
                 $currentJoin = [
                     'table' => $entity->table,
                     'name' => $entity->name,
-                    'fields' => $entity->getFields(),
+                    'fields' => array_keys($entity->fields),
                     'on' => ["`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`"],
                 ];
 
@@ -275,11 +276,7 @@ class Entity
      */
     public function count($where = null, $marks = null, $limit = null)
     {
-        $query = $this->queryBuilder->count($this->table, $where, $limit);
-        $statement = $this->manager->execute($query, $marks);
-        $result = $statement->fetch(\PDO::FETCH_NUM);
-
-        return (int) $result[0];
+        return $this->adapter->count($this->table, $where, $marks, $limit);
     }
 
     /**
@@ -382,7 +379,7 @@ class Entity
             throw new SimpleCrudException("Data not valid");
         }
 
-        if (array_diff_key($data, $this->getFieldsNames())) {
+        if (array_diff_key($data, $this->fields)) {
             throw new SimpleCrudException("Invalid fields");
         }
 
@@ -494,8 +491,12 @@ class Entity
      */
     public function isRelated($entity)
     {
-        if (!($entity instanceof Entity) && !($entity = $this->manager->$entity)) {
-            return false;
+        if (!($entity instanceof Entity)) {
+            if (!isset($this->adapter->$entity)) {
+                return false;
+            }
+
+            $entity = $this->adapter->$entity;
         }
 
         return ($this->getRelation($entity) !== null);
