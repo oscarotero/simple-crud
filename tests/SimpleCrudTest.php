@@ -11,7 +11,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$pdo->exec('USE simplecrud_test');
 
 		$db = new Mysql($pdo, new EntityFactory([
-			'namespace' => 'CustomEntities',
+			'namespace' => 'CustomEntities\\',
 			'autocreate' => true
 		]));
 
@@ -200,9 +200,10 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals(['1', '2'], $tags->id);
 	}
 
-	/*
 	public function testDataToDatabase () {
 		$db = self::$db;
+
+		$this->assertInstanceOf('CustomEntities\\Testing', $db->testing);
 
 		$row = $db->testing->create(['field1' => 'hello'])->save();
 		$this->assertSame($row->field1, $row->field2);
@@ -289,5 +290,4 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase {
 		$row->reload();
 		$this->assertSame(['red', 'blue', 'green'], $row->field);
 	}
-	*/
 }
