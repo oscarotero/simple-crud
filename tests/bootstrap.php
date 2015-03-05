@@ -8,7 +8,7 @@ include_once __DIR__.'/entities.php';
 $pdo = new PDO('mysql:host=localhost;charset=UTF8', 'root', '');
 
 $pdo->exec('DROP DATABASE IF EXISTS simplecrud_test');
-$pdo->exec('CREATE DATABASE simplecrud_test');
+$pdo->exec('CREATE DATABASE simplecrud_test DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci');
 
 unset($pdo);
 
