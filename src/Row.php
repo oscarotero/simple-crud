@@ -41,20 +41,14 @@ class Row implements RowInterface, JsonSerializable
      */
     public function __get($name)
     {
-        $method = "get$name";
-
         if (array_key_exists($name, $this->values)) {
             return $this->values[$name];
         }
 
-        if (method_exists($this, $method)) {
+        $method = "get$name";
+
+        if (method_exists($this, $method) || $this->entity->isRelated($name)) {
             return $this->values[$name] = $this->$method();
-        }
-
-        if ($this->entity->isRelated($name)) {
-            $fn = "get$name";
-
-            return $this->values[$name] = $this->$fn();
         }
     }
 
@@ -92,7 +86,9 @@ class Row implements RowInterface, JsonSerializable
      */
     public function __call($name, $arguments)
     {
-        if ((strpos($name, 'get') === 0) && ($name = lcfirst(substr($name, 3)))) {
+        if (strpos($name, 'get') === 0) {
+            $name = lcfirst(substr($name, 3));
+
             if (!$arguments && array_key_exists($name, $this->values)) {
                 return $this->values[$name];
             }

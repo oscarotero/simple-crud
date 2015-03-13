@@ -133,17 +133,27 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     }
 
     /**
-     * Magic method to execute the same function in all rows.
+     * Magic method to execute get[whatever] and load automatically related stuff or execute the same function in all rows
      *
-     * @param string $name The function name
-     * @param string $args Array with all arguments passed to the function
+     * @param string $name      The function name
+     * @param string $arguments Array with all arguments passed to the function
      *
      * @return $this
      */
-    public function __call($name, $args)
+    public function __call($name, $arguments)
     {
+        if (strpos($name, 'get') === 0) {
+            $name = lcfirst(substr($name, 3));
+
+            if (($entity = $this->adapter->$name)) {
+                array_unshift($arguments, $this);
+
+                return call_user_func_array([$entity, 'selectBy'], $arguments);
+            }
+        }
+
         foreach ($this->rows as $row) {
-            call_user_func_array([$row, $name], $args);
+            call_user_func_array([$row, $name], $arguments);
         }
 
         return $this;
