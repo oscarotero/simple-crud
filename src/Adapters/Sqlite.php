@@ -38,7 +38,8 @@ class Sqlite extends MySql implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function getFields ($table) {
+    public function getFields($table)
+    {
         $result = $this->execute("pragma table_info({$table})")->fetchAll(PDO::FETCH_ASSOC);
         $fields = [];
 
@@ -52,7 +53,8 @@ class Sqlite extends MySql implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function getTables () {
+    public function getTables()
+    {
         return $this->execute("SELECT name FROM sqlite_master WHERE type='table'")->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
@@ -82,7 +84,7 @@ class Sqlite extends MySql implements AdapterInterface
 
     /**
      * Check whether or not the sqlite database allows LIMIT on UPDATE and DELETE queries
-     * 
+     *
      * @return boolean
      */
     public function hasUpdateDeleteLimit()

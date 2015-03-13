@@ -4,22 +4,23 @@ namespace SimpleCrud\Fields;
 /**
  * Interface used by all fields
  */
-interface FieldInterface {
+interface FieldInterface
+{
     /**
      * Convert the data before insert into the database
-     * 
+     *
      * @param mixed $data
-     * 
+     *
      * @return mixed
      */
-    public function dataToDatabase ($data);
+    public function dataToDatabase($data);
 
     /**
      * Convert the data after read from the database
-     * 
+     *
      * @param mixed $data
-     * 
+     *
      * @return mixed
      */
-    public function dataFromDatabase ($data);
+    public function dataFromDatabase($data);
 }

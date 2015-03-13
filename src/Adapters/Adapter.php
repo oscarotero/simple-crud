@@ -40,7 +40,7 @@ abstract class Adapter
      * Magic method to initialize the entities in lazy mode.
      *
      * @param string $name The entity name
-     * 
+     *
      * @throws SimpleCrudException If the entity cannot be instantiated
      *
      * @return null|Entity
@@ -56,7 +56,7 @@ abstract class Adapter
         if ($entity === false) {
             throw new SimpleCrudException("The entity '{$name}' is not valid");
         }
-        
+
         return $this->entities[$name] = $entity;
     }
 

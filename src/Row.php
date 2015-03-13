@@ -19,8 +19,8 @@ class Row implements RowInterface, JsonSerializable
     /**
      * Row constructor.
      *
-     * @param Entity $entity
-     * @param array|null       $data
+     * @param Entity     $entity
+     * @param array|null $data
      */
     public function __construct(Entity $entity, array $data = null)
     {

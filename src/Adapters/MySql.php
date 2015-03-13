@@ -1,13 +1,12 @@
 <?php
 namespace SimpleCrud\Adapters;
 
-use PDOStatement;
 
 /**
  * Adapter class for MySql databases
  */
-class MySql extends Adapter implements AdapterInterface {
-
+class MySql extends Adapter implements AdapterInterface
+{
     /**
      * {@inheritdoc}
      */
@@ -53,7 +52,7 @@ class MySql extends Adapter implements AdapterInterface {
         $statement = $this->execute(implode(' ', $query), $marks);
         $result = $statement->fetch(\PDO::FETCH_NUM);
 
-        return (int)$result[0];
+        return (int) $result[0];
     }
 
     /**
@@ -132,7 +131,8 @@ class MySql extends Adapter implements AdapterInterface {
     /**
      * {@inheritdoc}
      */
-    public function getFields ($table) {
+    public function getFields($table)
+    {
         $fields = [];
 
         foreach ($this->execute("DESCRIBE `{$table}`")->fetchAll() as $field) {
@@ -147,16 +147,17 @@ class MySql extends Adapter implements AdapterInterface {
     /**
      * {@inheritdoc}
      */
-    public function getTables () {
+    public function getTables()
+    {
         return $this->execute('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN, 0);
     }
 
     /**
      * Generates the code for the fields in an update/insert query
-     * 
+     *
      * @param array  $fields
      * @param string $markPrefix
-     * 
+     *
      * @return string
      */
     protected static function generateUpdateFields(array $fields, $markPrefix = '')
@@ -172,10 +173,10 @@ class MySql extends Adapter implements AdapterInterface {
 
     /**
      * Generates the fields/tables part of a SELECT query
-     * 
+     *
      * @param array      $selectFields
      * @param array|null $joins
-     * 
+     *
      * @return string
      */
     protected static function generateSelect(array $selectFields, array $joins = null)
@@ -208,9 +209,9 @@ class MySql extends Adapter implements AdapterInterface {
 
     /**
      * Generate a LEFT JOIN clause
-     * 
+     *
      * @param mixed $joins
-     * 
+     *
      * @return string|null
      */
     protected static function generateJoins($joins)
@@ -237,9 +238,9 @@ class MySql extends Adapter implements AdapterInterface {
 
     /**
      * Generate a WHERE clause
-     * 
+     *
      * @param mixed $where
-     * 
+     *
      * @return string|null
      */
     protected static function generateWhere($where, $clause = 'WHERE')
@@ -257,9 +258,9 @@ class MySql extends Adapter implements AdapterInterface {
 
     /**
      * Generate an ORDER BY clause
-     * 
+     *
      * @param mixed $orderBy
-     * 
+     *
      * @return string|null
      */
     protected static function generateOrderBy($orderBy)
@@ -273,9 +274,9 @@ class MySql extends Adapter implements AdapterInterface {
 
     /**
      * Generate a LIMIT clause
-     * 
+     *
      * @param mixed $limit
-     * 
+     *
      * @return string|null
      */
     protected static function generateLimit($limit)

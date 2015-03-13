@@ -139,7 +139,7 @@ class EntityFactory
 
     /**
      * Get the row or rowcollection class
-     * 
+     *
      * @param string $class
      * @param string $entityClassName
      */
