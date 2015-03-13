@@ -70,8 +70,13 @@ class EntityFactory
             $entity->foreignKey = "{$entity->table}_id";
         }
 
-        $entity->rowClass = $this->getCustomClass('Row', $className);
-        $entity->rowCollectionClass = $this->getCustomClass('RowCollection', $className);
+        if (empty($entity->rowClass)) {
+            $entity->rowClass = $this->getCustomClass('Row', $className);
+        }
+
+        if (empty($entity->rowCollectionClass)) {
+            $entity->rowCollectionClass = $this->getCustomClass('RowCollection', $className);
+        }
 
         //Define fields
         $fields = [];

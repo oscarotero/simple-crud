@@ -30,7 +30,7 @@ SimpleCrud has the following classes:
 Create a new entity for each table in the database in a common namespace:
 
 ```php
-namespace MyApp\Entities;
+namespace MyModels;
 
 use SimpleCrud\Entity;
 
@@ -66,7 +66,7 @@ class Users extends Entity {
 }
 ```
 
-SimpleCrud uses the foreignKey field to detect automatically the relation between two entities (RELATION_HAS_ONE / RELATION_HAS_MANY). For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (RELATION_HAS_ONE).
+SimpleCrud uses the foreignKey field to detect automatically the relationship between two entities (RELATION_HAS_ONE / RELATION_HAS_MANY). For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (RELATION_HAS_ONE).
 
 You can define also entities with no values:
 
@@ -83,14 +83,14 @@ This is usefull in early phases, when the database can change and you don't want
 
 #### Init the library
 
-Let's create an instance of the Manager, passing the PDO object with the database connection and an instance of EntityFactory to create the entities. The EntityFactory has some options used on create the entities
+Let's create an instance of the Adapter, passing the PDO object with the database connection and an instance of EntityFactory to create the entities. Currently there are two adapters: for MySql adn Sqlite databases. The EntityFactory has some options used on create the entities. 
 
 ```php
-use SimpleCrud\Manager;
+use SimpleCrud\Adapters\MySql;
 use SimpleCrud\EntityFactory;
 
-$db = new Manager($PDO, new EntityFactory([
-	'namespace' => 'MyApp\\Entities' //The namespace where my entities classes are defined
+$db = new MySql($PDO, new EntityFactory([
+	'namespace' => 'MyModels\\' //The namespace where my entities classes are defined
 	'autocreate' => true //Set true to create automatically non defined entities.
 ]));
 
@@ -175,6 +175,10 @@ $id = $db->posts->insert(['text' => 'Hello world']);
 SimpleCrud provides two methods to convert or validate data before push to database and after pull from the database. You can define this methods in the entity class:
 
 ```php
+namespace MyModels;
+
+use SimpleCrud\Entity;
+
 class Posts extends Entity {
 	public $table = 'posts';
 	public $fields = [
@@ -209,9 +213,11 @@ class Posts extends Entity {
 
 #### Set custom rows and rowCollection classes
 
-The entities can use custom Row or RowCollection classes to create custom methods. You need to configurate the entity and create the classes extending SimpleCrud\Row and SimpleRow\CollectionRow:
+The entities can use custom Row or RowCollection classes to create custom methods. You need to configure the entity and create the classes extending SimpleCrud\Row and SimpleRow\CollectionRow:
 
 ```php
+namespace MyModels;
+
 use SimpleCrud\Entity;
 use SimpleCrud\Row;
 use SimpleCrud\RowCollection;
@@ -246,25 +252,33 @@ $posts->escapeText(); //Execute escapeText in each row
 $total = $posts->getSumIds(); //Returns 6
 ```
 
-If there is a class in the same namespace than the entity and with the same name ending by Row or RowCollection, this class will be taken as Row/RowCollection custom class. For example:
+You can set these classes automatically creating classes with the same name than the entity class but in a subnamespace called "Rows" or "RowCollections":
 
+The custom Row class for Posts entity:
 
 ```php
-use SimpleCrud\Entity;
+namespace MyModels\Rows;
+
 use SimpleCrud\Row;
-use SimpleCrud\RowCollection;
 
-class Posts extends Entity {
-}
-
-class PostsRow extends Row {
+class Posts extends Row {
 	//row custom methods
 }
+```
 
-class PostsRowCollection extends Row {
-	//collection custom methods
+The custom RowCollection class for Posts entity:
+
+```php
+namespace MyModels\RowCollections;
+
+use SimpleCrud\RowCollection;
+
+class Posts extends RowCollection {
+	//row custom methods
 }
 ```
+
+You can define also the classes `MyModels\Rows\Row` and `MyModels\RowCollections\RowCollection` to be used as default classes instead `SimpleCrud\Row` and `SimpleCrud\RowCollection`.
 
 
 #### Lacy loads
@@ -300,17 +314,14 @@ You can define the way of the lacy loads are executed, creating methods starting
 Lacy loads not only works with relations, but also with any property you want. Just create a method named get[NameOfTheProperty] and that is all.
 
 ```php
-use SimpleCrud\Entity;
+namespace MyModels\Rows;
+
 use SimpleCrud\Row;
 
-class Posts extends Entity {
-	//Entity methods
-}
-
-class PostsRow extends Row {
+class Posts extends Row {
 	public function getComments () {
-		//Use $this->manager to access to the manager
-		return $this->manager->comments->selectBy($this, "validated = 1");
+		//Use $this->adapter to access to the database adapter
+		return $this->adapter->comments->selectBy($this, "validated = 1");
 	}
 
 	public function getLowercaseTitle () {
@@ -335,16 +346,18 @@ The difference between execute ```$post->getUsers()``` or call directly ```$post
 
 #### Fields
 
-There are some special classes for manage fields. The purpose of these classes is convert the data between the database and the entity. For example, in mysql the format used to store datetime values is "Y-m-d H:i:s", so the class SimpleCrud\Fields\Datetime converts any string or Datetime instance to this format. This not overwrite the value of the row (you will keep the Datetime instance), only converts the data to be stored. The available fields are:
+There are some special classes for manage fields. The purpose of these classes is convert the data between the database and the entity. For example, in MySql the format used to store datetime values is "Y-m-d H:i:s", so the class SimpleCrud\Fields\Datetime converts any string or Datetime instance to this format. This not overwrite the value of the row (you will keep the Datetime instance), only converts the data to be stored. The available fields are:
 
 * Field: It's the default field.
 * Datetime: Converts a string or Datetime instance to "Y-M-d H:i:s"
 * Date: Converts a string or Datetime instance to "Y-M-d"
 * Set: an array of values to a string. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
 
-As said at begining, if the fields in the entity are not specified, the EntityFactory use a ```"DESCRIBE `{$table}`"``` to get them and use the mysql Type to decide the Field class used ("date" fields use the Date class, "datetime" the Datetime, etc). If you have the fields defined in the entity, you can specify the format in this way:
+If the fields in the entity are not specified, the EntityFactory use a ```"DESCRIBE `{$table}`"``` (or similar command in other databases) to get them and decide the Field class used ("date" fields use the Date class, "datetime" the Datetime, etc). If you prefer define the field types by yourself, you can do it in this way:
 
 ```php
+namespace MyModels;
+
 use SimpleCrud\Entity;
 
 class Posts extends Entity {
@@ -358,10 +371,7 @@ class Posts extends Entity {
 	];
 }
 
-//Init the SimpleCrud library
-// ...
-
-//Now check the post:
+//Init the library and select a post
 $post = $db->posts->create([
 	'title' => 'My post'
 	'text' => 'My post text'
@@ -378,12 +388,11 @@ $post->save();
 You can create your own fields types or overwrite the existing ones. SimpleCrud will search in the namespace ```[entities-namespace]\Fields\``` for your custom classes. For example:
 
 ```php
+namespace MyModels\Fields;
 
-// - Define the custom fields in the namespace "MyModels\Fields"
+use SimpleCrud\Fields\FieldInterface;
 
-use SimpleCrud\Fields;
-
-class Serializable extends Fields\Field {
+class Serializable implements FieldInterface {
 	public function dataToDatabase ($data) {
 		return serialize($data);
 	}
@@ -392,9 +401,12 @@ class Serializable extends Fields\Field {
 		return unserialize($data);
 	}
 }
+```
 
+Register the new "serializable" field type in your entities:
 
-// - Define entities in the namespace "MyModels"
+```php
+namespace MyModels;
 
 use SimpleCrud\Entity;
 
@@ -407,33 +419,24 @@ class Posts extends Entity {
 		'data' => 'serializable'
 	];
 }
+```
 
+Use it:
 
-// - Init the SimpleCrud library providing the namespace where our entities and fields are.
-
-use SimpleCrud\Manager;
-use SimpleCrud\EntityFactory;
-
-$db = new Manager($PDO, new EntityFactory([
-	'namespace' => 'MyModels'
-]));
-
-
-// - Use it
-
+```
 $post = $db->posts->create();
 
-//Add serializable data, for example an object:
-$post->data = new MyDataClass();
+//Add serializable data, for example an array:
+$post->data = ['foo', 'bar'];
 
 //Our custom field serializes the data before save it
 $post->save();
 
 
 //Select a post:
-$post = $db->posts->selectBy(34);
+$post = $db->posts->selectBy(1);
 
-return ($post->data instanceOf MyDataClass); //Return true
+var_dump($post->data); //array('foo', 'bar')
 ```
 
 If you create a Field in your namespace with the same name than any of the defaults fields (Date, Datetime, Set, etc), SimpleCrud will choose your custom Field instead the default, so this is useful to overwrite the default behaviours.
