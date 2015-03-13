@@ -48,7 +48,8 @@ class EntityFactory
      */
     public function get($name)
     {
-        $class = $this->entityNamespace.ucfirst($name);
+        $className = ucfirst($name);
+        $class = $this->entityNamespace.$className;
 
         if (!class_exists($class)) {
             if (!in_array($name, $this->getAvailableTables())) {
@@ -69,8 +70,8 @@ class EntityFactory
             $entity->foreignKey = "{$entity->table}_id";
         }
 
-        $entity->rowClass = class_exists("{$class}Row") ? "{$class}Row" : 'SimpleCrud\\Row';
-        $entity->rowCollectionClass = class_exists("{$class}RowCollection") ? "{$class}RowCollection" : 'SimpleCrud\\RowCollection';
+        $entity->rowClass = $this->getCustomClass('Row', $className);
+        $entity->rowCollectionClass = $this->getCustomClass('RowCollection', $className);
 
         //Define fields
         $fields = [];
@@ -129,5 +130,28 @@ class EntityFactory
         }
 
         return new $class();
+    }
+
+    /**
+     * Get the row or rowcollection class
+     * 
+     * @param string $class
+     * @param string $entityClassName
+     */
+    private function getCustomClass($class, $entityClassName)
+    {
+        $className = "{$this->entityNamespace}{$class}s\\{$entityClassName}";
+
+        if (class_exists($className)) {
+            return $className;
+        }
+
+        $className = "{$this->entityNamespace}{$class}s\\{$class}";
+
+        if (class_exists($className)) {
+            return $className;
+        }
+
+        return "SimpleCrud\\{$class}";
     }
 }

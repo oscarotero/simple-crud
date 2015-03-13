@@ -73,13 +73,13 @@ interface AdapterInterface
      *
      * @param string  $table
      * @param array   $data
-     * @param boolean $duplicateErrors
+     * @param boolean $handleDuplications
      *
      * @throws Exception On error
      *
      * @return boolean
      */
-    public function insert($table, array $data, $duplicateKeyErrors = false);
+    public function insert($table, array $data, $handleDuplications = false);
 
     /**
      * Executes an UPDATE.

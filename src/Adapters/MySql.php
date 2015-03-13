@@ -6,7 +6,7 @@ use PDOStatement;
 /**
  * Adapter class for MySql databases
  */
-class Mysql extends Adapter implements AdapterInterface {
+class MySql extends Adapter implements AdapterInterface {
 
     /**
      * {@inheritdoc}
@@ -59,7 +59,7 @@ class Mysql extends Adapter implements AdapterInterface {
     /**
      * {@inheritdoc}
      */
-    public function insert($table, array $data = null, $duplicateKeyErrors = false)
+    public function insert($table, array $data = null, $handleDuplications = false)
     {
         if (empty($data)) {
             return "INSERT INTO `{$table}` (`id`) VALUES (NULL)";
@@ -72,7 +72,7 @@ class Mysql extends Adapter implements AdapterInterface {
         $query[] = 'VALUES';
         $query[] = '(:'.implode(', :', $fields).')';
 
-        if (!$duplicateKeyErrors) {
+        if ($handleDuplications) {
             $query[] = 'ON DUPLICATE KEY UPDATE';
             $query[] = 'id = LAST_INSERT_ID(id), '.static::generateUpdateFields($fields);
         }

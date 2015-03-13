@@ -254,17 +254,17 @@ class Row implements RowInterface, JsonSerializable
     /**
      * Saves this row in the database.
      *
-     * @param boolean $duplicateKey      Set true to detect duplicates index
-     * @param boolean $onlyChangedValues Set false to save all values instead only the changed (only for updates)
+     * @param boolean $handleDuplications Set true to detect duplicates index
+     * @param boolean $onlyChangedValues  Set false to save all values instead only the changed (only for updates)
      *
      * @return $this
      */
-    public function save($duplicateKey = false, $onlyChangedValues = true)
+    public function save($handleDuplications = false, $onlyChangedValues = true)
     {
         $data = $this->get(true);
 
         if (empty($this->id)) {
-            $data = $this->entity->insert($data, $duplicateKey);
+            $data = $this->entity->insert($data, $handleDuplications);
         } else {
             $data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1, ($onlyChangedValues ? $this->changes : null));
         }

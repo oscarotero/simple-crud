@@ -13,6 +13,31 @@ class Sqlite extends MySql implements AdapterInterface
     /**
      * {@inheritdoc}
      */
+    public function insert($table, array $data = null, $handleDuplications = false)
+    {
+        if (!$handleDuplications || empty($data)) {
+            return parent::insert($table, $data, $handleDuplications);
+        }
+
+        $fields = array_keys($data);
+
+        $query = ["INSERT OR REPLACE INTO `{$table}`"];
+        $query[] = '(`'.implode('`, `', $fields).'`)';
+        $query[] = 'VALUES';
+        $query[] = '(:'.implode(', :', $fields).')';
+
+        $marks = [];
+
+        foreach ($data as $field => $value) {
+            $marks[":{$field}"] = $value;
+        }
+
+        return $this->execute(implode(' ', $query), $marks);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function getFields ($table) {
         $result = $this->execute("pragma table_info({$table})")->fetchAll(PDO::FETCH_ASSOC);
         $fields = [];
