@@ -1,53 +1,56 @@
 <?php
 use SimpleCrud\Adapters\Mysql;
+use SimpleCrud\Adapters\AdapterInterface;
 use SimpleCrud\EntityFactory;
 
-class SimpleCrudTest extends PHPUnit_Framework_TestCase
+class MysqlAutocreateTest extends PHPUnit_Framework_TestCase
 {
     protected static $db;
 
-    //Init connection before start the test case
-    public static function setUpBeforeClass()
+    public function testConnection()
     {
-        $pdo = new PDO('mysql:host=localhost;charset=UTF8', 'root', '');
-        $pdo->exec('USE simplecrud_test');
-
-        $db = new Mysql($pdo, new EntityFactory([
-            'namespace' => 'CustomEntities\\',
+        $db = new Mysql(initMysqlPdo(), new EntityFactory([
             'autocreate' => true,
         ]));
 
-        self::$db = $db;
+        $this->assertInstanceOf('SimpleCrud\\Adapters\\AdapterInterface', $db);
+
+        return $db;
     }
 
-    public function testAutocreate()
+    /**
+     * @depends testConnection
+     */
+    public function testAutocreate(AdapterInterface $db)
     {
-        $db = self::$db;
-
         //Instances are created automatically?
-        $this->assertInstanceOf('SimpleCrud\\Adapters\\AdapterInterface', $db);
         $this->assertInstanceOf('SimpleCrud\\Entity', $db->posts);
         $this->assertInstanceOf('SimpleCrud\\Entity', $db->categories);
         $this->assertInstanceOf('SimpleCrud\\Entity', $db->tags);
         $this->assertInstanceOf('SimpleCrud\\Entity', $db->tags_in_posts);
 
-        try {
-            $db->unexisting_table;
-        } catch (Exception $exception) {
-            $this->assertInstanceOf('SimpleCrud\\SimpleCrudException', $exception);
-        }
-
         //Instances have all fields?
-        $this->assertCount(3, $db->posts->fields);
+        $this->assertCount(7, $db->posts->fields);
         $this->assertCount(2, $db->categories->fields);
         $this->assertCount(2, $db->tags->fields);
         $this->assertCount(3, $db->tags_in_posts->fields);
+
+        return $db;
     }
 
-    public function testInsert()
-    {
-        $db = self::$db;
+    /**
+     * @depends testAutocreate
+     * @expectedException SimpleCrud\SimpleCrudException
+     */
+    public function testUnexistingTable(AdapterInterface $db) {
+        $db->unexisting_table;
+    }
 
+    /**
+     * @depends testAutocreate
+     */
+    public function testInsert(AdapterInterface $db)
+    {
         //Tables are empty?
         $this->assertSame(0, $db->posts->count());
         $this->assertSame(0, $db->categories->count());
@@ -58,20 +61,39 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase
         $db->posts->insert(['title' => 'First post']);
         $db->categories->insert(['name' => 'Category 1']);
         $db->tags->insert(['name' => 'Tag 1']);
+        $db->tags_in_posts->insert(['tags_id' => 1, 'posts_id' => 1]);
 
         //Each tables must have 1 row
         $this->assertSame(1, $db->posts->count());
         $this->assertSame(1, $db->categories->count());
         $this->assertSame(1, $db->tags->count());
+        $this->assertSame(1, $db->tags_in_posts->count());
+
+        return $db;
     }
 
-    public function testSelect()
+    /**
+     * @depends testInsert
+     */
+    public function testSelect(AdapterInterface $db)
     {
-        $db = self::$db;
-
         $result = $db->posts->select();
         $this->assertInstanceOf('SimpleCrud\\RowCollection', $result);
         $this->assertSame(1, $result->count());
+
+        $result = $db->posts->select('id = 0');
+        $this->assertInstanceOf('SimpleCrud\\RowCollection', $result);
+        $this->assertSame(0, $result->count());
+
+        $result = $db->posts->select('id = :id', [':id' => 1]);
+        $this->assertInstanceOf('SimpleCrud\\RowCollection', $result);
+        $this->assertSame(1, $result->count());
+
+        $result = $db->posts->select('id = :id', [':id' => 1], null, true);
+        $this->assertInstanceOf('SimpleCrud\\Row', $result);
+
+        $result = $db->posts->select('id = :id', [':id' => 2], null, true);
+        $this->assertNull($result);
 
         //Renamed fields
         $result = $db->posts->fetchOne('SELECT title as title2 FROM posts LIMIT 1');
@@ -79,17 +101,17 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('First post', $result->title2);
     }
 
-    public function testRow()
+    /**
+     * @depends testInsert
+     */
+    public function testRow(AdapterInterface $db)
     {
-        $db = self::$db;
-
         //Create a post
         $post = $db->posts->create();
 
         $this->assertInstanceOf('SimpleCrud\\Row', $post);
 
-        //Check the post have 3 empty fields
-        $this->assertCount(3, $post->toArray());
+        $this->assertCount(7, $post->toArray());
 
         $this->assertNull($post->id);
         $this->assertNull($post->title);
@@ -139,7 +161,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase
 
         $this->assertFalse($post->changed());
         $this->assertCount(0, $post->get(true, true));
-        $this->assertCount(3, $post->get(true));
+        $this->assertCount(7, $post->get(true));
         $this->assertNull($post->categories_id);
         $this->assertEquals('Third post', $post->title);
 
@@ -150,12 +172,15 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase
         $post->set(['title' => 'New title']);
 
         $this->assertTrue($post->changed());
+
+        return $db;
     }
 
-    public function testRelations()
+    /**
+     * @depends testRow
+     */
+    public function testRelations(AdapterInterface $db)
     {
-        $db = self::$db;
-
         //Select the category id=1
         $category = $db->categories->selectBy(1);
 
@@ -187,7 +212,7 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('SimpleCrud\\Row', $tag1InPost);
         $this->assertEquals($post->id, $tag1InPost->posts_id);
         $this->assertEquals($tag1->id, $tag1InPost->tags_id);
-        $this->assertEquals(1, $tag1InPost->id);
+        $this->assertEquals(2, $tag1InPost->id);
 
         $tag2 = $db->tags->create(['name' => 'Tag 2'])->save();
         $tag2InPost = $db->tags_in_posts->create()->setRelation($post, $tag2)->save();
@@ -195,106 +220,11 @@ class SimpleCrudTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('SimpleCrud\\Row', $tag2InPost);
         $this->assertEquals($post->id, $tag2InPost->posts_id);
         $this->assertEquals($tag2->id, $tag2InPost->tags_id);
-        $this->assertEquals(2, $tag2InPost->id);
+        $this->assertEquals(3, $tag2InPost->id);
 
         $tags = $post->tags_in_posts->tags;
         $this->assertInstanceOf('SimpleCrud\\RowCollection', $tags);
         $this->assertEquals(2, $tags->count());
         $this->assertEquals(['1', '2'], $tags->id);
-    }
-
-    public function testDataToDatabase()
-    {
-        $db = self::$db;
-
-        $this->assertInstanceOf('CustomEntities\\Testing', $db->testing);
-
-        $row = $db->testing->create(['field1' => 'hello'])->save();
-        $this->assertSame($row->field1, $row->field2);
-
-        $row->reload();
-        $this->assertSame($row->field1, $row->field2);
-
-        $row->set(['field1' => 'bye'])->save();
-        $this->assertSame($row->field1, $row->field2);
-
-        //Empty value
-        $row = $db->testing->create()->save();
-        $this->assertSame($row->field1, $row->field2);
-    }
-
-    public function testDatetimeFields()
-    {
-        $db = self::$db;
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Datetime', $db->fields->fields['datetime']);
-
-        //Test with Datetime object
-        $datetime = new Datetime('now');
-        $row = $db->fields->create(['datetime' => $datetime])->save();
-
-        $row->reload();
-        $this->assertSame($datetime->format('Y-m-d H:i:s'), $row->datetime);
-
-        //Test with a string
-        $datetime = date(DATE_RFC2822);
-        $row->set(['datetime' => $datetime])->save();
-
-        $row->reload();
-        $this->assertSame(date('Y-m-d H:i:s', strtotime($datetime)), $row->datetime);
-    }
-
-    public function testDateFields()
-    {
-        $db = self::$db;
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Date', $db->fields->fields['date']);
-
-        //Test with Datetime object
-        $date = new Datetime('now');
-        $row = $db->fields->create(['date' => $date])->save();
-
-        $row->reload();
-        $this->assertSame($date->format('Y-m-d'), $row->date);
-
-        //Test with a string
-        $date = date(DATE_RFC2822);
-        $row->set(['date' => $date])->save();
-
-        $row->reload();
-        $this->assertSame(date('Y-m-d', strtotime($date)), $row->date);
-    }
-
-    public function testSetFields()
-    {
-        $db = self::$db;
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Set', $db->fields->fields['set']);
-
-        //Test with a string
-        $row = $db->fields->create(['set' => 'text'])->save();
-
-        $row->reload();
-        $this->assertSame(['text'], $row->set);
-
-        //Test with a string
-        $row->set(['set' => ['text', 'video']])->save();
-
-        $row->reload();
-        $this->assertSame(['text', 'video'], $row->set);
-    }
-
-    public function testCustomField()
-    {
-        $db = self::$db;
-
-        $this->assertInstanceOf('CustomEntities\\Fields\\Json', $db->customfield->fields['field']);
-
-        $row = $db->customfield->create([
-            'field' => ['red', 'blue', 'green'],
-        ])->save();
-
-        $row->reload();
-        $this->assertSame(['red', 'blue', 'green'], $row->field);
     }
 }

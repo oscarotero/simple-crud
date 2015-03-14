@@ -10,7 +10,7 @@ use PDO;
  * Base class extended by all adapters
  * and execute the queries in the database.
  */
-abstract class Adapter
+abstract class Adapter implements AdapterInterface
 {
     protected $connection;
     protected $inTransaction = false;

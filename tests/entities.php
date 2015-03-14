@@ -1,25 +1,52 @@
 <?php
-namespace CustomEntities {
-    class CustomField extends \SimpleCrud\Entity
+namespace Custom {
+    class Posts extends \SimpleCrud\Entity
     {
         public $fields = [
             'id',
-            'field' => 'json',
+            'title',
+            'categories_id',
+            'pubdate' => 'datetime',
+            'day' => 'date',
+            'time',
+            'type' => 'set',
         ];
     }
 
-    class Testing extends \SimpleCrud\Entity
+    class Categories extends \SimpleCrud\Entity
     {
+        public $fields = [
+            'id',
+            'name',
+        ];
+
         public function dataToDatabase(array $data, $new)
         {
-            $data['field2'] = $data['field1'];
+            $data['name'] = strtolower($data['name']);
 
             return $data;
         }
     }
+
+    class Tags extends \SimpleCrud\Entity
+    {
+        public $fields = [
+            'id',
+            'name' => 'json',
+        ];
+    }
+
+    class Tags_in_posts extends \SimpleCrud\Entity
+    {
+        public $fields = [
+            'id',
+            'posts_id',
+            'tags_id',
+        ];
+    }
 }
 
-namespace CustomEntities\Fields {
+namespace Custom\Fields {
     class Json extends \SimpleCrud\Fields\Field
     {
         public function dataToDatabase($data)

@@ -172,7 +172,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      */
     public function toArray($keysAsId = false, array $parentEntities = array())
     {
-        if ($parentEntities && in_array($this->entity->name, $parentEntities)) {
+        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
             return;
         }
 
@@ -318,6 +318,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             throw new SimpleCrudException("The entity $entity does not exists");
         }
 
+        $arguments = func_get_args();
         $arguments[0] = $this;
         $result = call_user_func_array([$entity, 'selectBy'], $arguments);
 

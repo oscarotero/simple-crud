@@ -6,8 +6,6 @@ use PDOStatement;
 use PDO;
 
 /**
- * SimpleCrud\Entity.
- *
  * Manages a database entity (table)
  */
 class Entity
@@ -95,7 +93,7 @@ class Entity
         $row = $this->create($row);
 
         foreach ($joinFields as $name => $values) {
-            $row->$name = empty($values['id']) ? null : $this->manager->$name->createFromSelection($values);
+            $row->$name = empty($values['id']) ? null : $this->adapter->$name->createFromSelection($values);
         }
 
         return $row;
@@ -139,12 +137,12 @@ class Entity
     /**
      * Executes a SELECT in the database.
      *
-     * @param string/array $where
-     * @param null|array   $marks
-     * @param string/array $orderBy
-     * @param int/array    $limit
-     * @param null|array   $joins   Optional entities to join
-     * @param null|array   $from    Extra tables used in the query
+     * @param string|array  $where
+     * @param null|array    $marks
+     * @param string|array  $orderBy
+     * @param integer|array $limit
+     * @param null|array    $joins   Optional entities to join
+     * @param null|array    $from    Extra tables used in the query
      *
      * @return mixed The row or rowcollection with the result or null
      */
@@ -210,14 +208,16 @@ class Entity
     /**
      * Executes a selection by id or by relation with other rows or collections.
      *
-     * @param mixed        $id      The id/ids, row or rowCollection used to select
-     * @param string/array $where
-     * @param array        $marks
-     * @param string/array $orderBy
-     * @param int/array    $limit
-     * @param array        $joins   Optional entities to join
+     * @param mixed         $id
+     * @param string|array  $where
+     * @param array         $marks
+     * @param string|array  $orderBy
+     * @param integer|array $limit
+     * @param array         $joins
      *
-     * @return mixed The row or rowcollection with the result or null
+     * @throws SimpleCrudException on error
+     * 
+     * @return Row|RowCollection|null
      */
     public function selectBy($id, $where = null, $marks = null, $orderBy = null, $limit = null, array $joins = null, array $from = null)
     {
@@ -229,18 +229,21 @@ class Entity
         $marks = empty($marks) ? [] : (array) $marks;
 
         if ($id instanceof RowInterface) {
-            if (!($relation = $this->getRelation($id->entity))) {
-                throw new SimpleCrudException("The items {$this->table} and {$id->entity->table} are no related");
-            }
+            switch ($this->getRelation($id->entity)) {
+                case self::RELATION_HAS_ONE:
+                    $ids = $id->get('id');
+                    $foreignKey = $id->entity->foreignKey;
+                    $fetch = null;
+                    break;
 
-            if ($relation === self::RELATION_HAS_ONE) {
-                $ids = $id->get('id');
-                $foreignKey = $id->entity->foreignKey;
-                $fetch = null;
-            } elseif ($relation === self::RELATION_HAS_MANY) {
-                $ids = $id->get($this->foreignKey);
-                $foreignKey = 'id';
-                $fetch = true;
+                case self::RELATION_HAS_MANY:
+                    $ids = $id->get($this->foreignKey);
+                    $foreignKey = 'id';
+                    $fetch = true;
+                    break;
+
+                default:
+                    throw new SimpleCrudException("The items {$this->table} and {$id->entity->table} are no related");
             }
 
             if (empty($ids)) {
@@ -268,11 +271,11 @@ class Entity
     /**
      * Execute a count query in the database.
      *
-     * @param string/array $where
-     * @param array        $marks
-     * @param int/array    $limit
+     * @param string|array  $where
+     * @param array         $marks
+     * @param integer|array $limit
      *
-     * @return int
+     * @return integer
      */
     public function count($where = null, $marks = null, $limit = null)
     {
@@ -439,10 +442,10 @@ class Entity
     /**
      * Executes an 'update' query in the database.
      *
-     * @param array        $data  The values to update
-     * @param string/array $where
-     * @param array        $marks
-     * @param int/array    $limit
+     * @param array         $data  The values to update
+     * @param string|array  $where
+     * @param array         $marks
+     * @param integer|array $limit
      *
      * @return array The new values of the updated row
      */
@@ -471,9 +474,9 @@ class Entity
     /**
      * Execute a delete query in the database.
      *
-     * @param string/array $where
-     * @param array        $marks
-     * @param int/array    $limit
+     * @param string|array  $where
+     * @param array         $marks
+     * @param integer|array $limit
      */
     public function delete($where = null, $marks = null, $limit = null)
     {
@@ -485,7 +488,7 @@ class Entity
     /**
      * Check if this entity is related with other.
      *
-     * @param SimpleCrud\Entity / string $entity The entity object or name
+     * @param Entity|string $entity The entity object or name
      *
      * @return boolean
      */
@@ -505,9 +508,9 @@ class Entity
     /**
      * Returns the relation type of this entity with other.
      *
-     * @param SimpleCrud\Entity $entity
+     * @param Entity $entity
      *
-     * @return int One of the RELATION_* constants values or null
+     * @return null|integer One of the RELATION_* constants values or null
      */
     public function getRelation(Entity $entity)
     {

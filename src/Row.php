@@ -187,7 +187,7 @@ class Row implements RowInterface, JsonSerializable
      */
     public function toArray($keysAsId = false, array $parentEntities = array())
     {
-        if ($parentEntities && in_array($this->entity->name, $parentEntities)) {
+        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
             return;
         }
 
@@ -214,7 +214,7 @@ class Row implements RowInterface, JsonSerializable
     public function set(array $data, $onlyDeclaredFields = false)
     {
         if ($onlyDeclaredFields === true) {
-            $data = array_intersect_key($data, $this->entity->getFieldsNames());
+            $data = array_intersect_key($data, $this->entity->fields);
         }
 
         foreach ($data as $name => $value) {
@@ -228,8 +228,9 @@ class Row implements RowInterface, JsonSerializable
     /**
      * Return one or all values of the row.
      *
-     * @param true|null|string $name The value name to recover. If it's not defined, returns all values. If it's true, returns only the fields values.
-     *
+     * @param boolean|null|string $name              The value name to recover. If it's not defined, returns all values. If it's true, returns only the fields values.
+     * @param boolean             $onlyChangedValues To return only the changed values instead all
+     * 
      * @return mixed
      */
     public function get($name = null, $onlyChangedValues = false)
@@ -278,11 +279,9 @@ class Row implements RowInterface, JsonSerializable
      */
     public function delete()
     {
-        if (empty($this->id)) {
-            return false;
+        if (!empty($this->id)) {
+            $this->entity->delete('id = :id', [':id' => $this->id], 1);
         }
-
-        $this->entity->delete('id = :id', [':id' => $this->id], 1);
 
         return $this;
     }

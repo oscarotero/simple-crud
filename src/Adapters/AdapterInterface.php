@@ -16,7 +16,7 @@ interface AdapterInterface
      *
      * @throws Exception On error
      *
-     * @return PDOStatement The result
+     * @return PDOStatement
      */
     public function execute($query, array $marks = null);
 
@@ -27,7 +27,7 @@ interface AdapterInterface
      *
      * @throws Exception On error
      *
-     * @return mixed The callable returned value
+     * @return mixed The value returned by the callable
      */
     public function executeTransaction(callable $callable);
 
@@ -50,7 +50,7 @@ interface AdapterInterface
      *
      * @throws Exception On error
      *
-     * @return PDOStatement The result
+     * @return PDOStatement
      */
     public function executeSelect(array $fields, array $joins = null, $where = null, array $marks = null, $orderBy = null, $limit = null);
 
@@ -77,7 +77,7 @@ interface AdapterInterface
      *
      * @throws Exception On error
      *
-     * @return boolean
+     * @return PDOStatement
      */
     public function insert($table, array $data, $handleDuplications = false);
 
@@ -92,7 +92,7 @@ interface AdapterInterface
      *
      * @throws Exception On error
      *
-     * @return boolean
+     * @return PDOStatement
      */
     public function update($table, array $data, $where = null, array $marks = null, $limit = null);
 
@@ -106,7 +106,7 @@ interface AdapterInterface
      *
      * @throws Exception On error
      *
-     * @return boolean
+     * @return PDOStatement
      */
     public function delete($table, $where = null, array $marks = null, $limit = null);
 
