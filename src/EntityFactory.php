@@ -17,8 +17,8 @@ class EntityFactory
 
     public function __construct(array $config = null)
     {
-        $this->entityNamespace = isset($config['namespace']) ? $config['namespace'] : '';
-        $this->fieldsNamespace = $this->entityNamespace.'Fields\\';
+        $this->entityNamespace = isset($config['namespace']) ? $config['namespace'] : null;
+        $this->fieldsNamespace = isset($this->entityNamespace) ? $this->entityNamespace.'Fields\\' : null;
         $this->autocreate = isset($config['autocreate']) ? (bool) $config['autocreate'] : false;
     }
 
@@ -51,7 +51,7 @@ class EntityFactory
         $className = ucfirst($name);
         $class = $this->entityNamespace.$className;
 
-        if (!class_exists($class)) {
+        if (($this->entityNamespace === null) || !class_exists($class)) {
             if (!in_array($name, $this->getAvailableTables())) {
                 return false;
             }
@@ -126,7 +126,7 @@ class EntityFactory
     {
         $class = $this->fieldsNamespace.ucfirst($type);
 
-        if (!class_exists($class)) {
+        if (($this->fieldsNamespace === null) || !class_exists($class)) {
             $class = 'SimpleCrud\\Fields\\'.ucfirst($type);
 
             if (!class_exists($class)) {
@@ -145,16 +145,18 @@ class EntityFactory
      */
     private function getCustomClass($class, $entityClassName)
     {
-        $className = "{$this->entityNamespace}{$class}s\\{$entityClassName}";
+        if ($this->entityNamespace !== null) {
+            $className = "{$this->entityNamespace}{$class}s\\{$entityClassName}";
 
-        if (class_exists($className)) {
-            return $className;
-        }
+            if (class_exists($className)) {
+                return $className;
+            }
 
-        $className = "{$this->entityNamespace}{$class}s\\{$class}";
+            $className = "{$this->entityNamespace}{$class}s\\{$class}";
 
-        if (class_exists($className)) {
-            return $className;
+            if (class_exists($className)) {
+                return $className;
+            }
         }
 
         return "SimpleCrud\\{$class}";

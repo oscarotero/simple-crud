@@ -222,6 +222,7 @@ class Entity
      * @param string|array  $orderBy
      * @param integer|array $limit
      * @param array         $joins
+     * @param array         $from
      *
      * @throws SimpleCrudException on error
      *
