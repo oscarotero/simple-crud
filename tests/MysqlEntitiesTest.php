@@ -5,8 +5,6 @@ use SimpleCrud\EntityFactory;
 
 class MysqlEntitiesTest extends PHPUnit_Framework_TestCase
 {
-    protected static $db;
-
     public function testConnection()
     {
         $db = new Mysql(initMysqlPdo(), new EntityFactory([
