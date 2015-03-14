@@ -149,11 +149,11 @@ abstract class Adapter implements AdapterInterface
     /**
      * Starts a transaction if it's not started yet.
      *
-     * @return boolean True if a the transaction is started or false if its not started
+     * @return boolean True if a the transaction is started or false if don't
      */
     public function beginTransaction()
     {
-        if (($this->inTransaction === false) && ($this->connection->inTransaction() === false)) {
+        if (!$this->inTransaction()) {
             $this->connection->beginTransaction();
 
             return $this->inTransaction = true;
@@ -167,7 +167,7 @@ abstract class Adapter implements AdapterInterface
      */
     public function commit()
     {
-        if (($this->inTransaction === true) && ($this->connection->inTransaction() === true)) {
+        if ($this->inTransaction()) {
             $this->connection->commit();
             $this->inTransaction = false;
         }
@@ -178,9 +178,17 @@ abstract class Adapter implements AdapterInterface
      */
     public function rollBack()
     {
-        if (($this->inTransaction === true) && ($this->connection->inTransaction() === true)) {
+        if ($this->inTransaction()) {
             $this->connection->rollBack();
             $this->inTransaction = false;
         }
+    }
+
+    /**
+     * Check if there is a transaction opened currently in this adapter
+     */
+    public function inTransaction()
+    {
+        return ($this->inTransaction === true) && ($this->connection->inTransaction() === true);
     }
 }

@@ -7,21 +7,17 @@ use Countable;
 use JsonSerializable;
 
 /**
- * SimpleCrud\RowCollection.
+ * Stores a collection of rows
  *
- * Stores a row collection of an entity
+ * @property array $id
  */
-class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializable, RowInterface
+class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable, JsonSerializable
 {
     private $rows = [];
 
-    public $entity;
-    public $adapter;
-
     public function __construct(Entity $entity)
     {
-        $this->entity = $entity;
-        $this->adapter = $entity->adapter;
+        $this->setEntity($entity);
     }
 
     /**
@@ -41,7 +37,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      */
     public function __toString()
     {
-        return "\n".$this->entity->name.":\n".print_r($this->toArray(), true)."\n";
+        return "\n".$this->getEntity()->name.":\n".print_r($this->toArray(), true)."\n";
     }
 
     /**
@@ -145,7 +141,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         if (strpos($name, 'get') === 0) {
             $name = lcfirst(substr($name, 3));
 
-            if (($entity = $this->adapter->$name)) {
+            if (($entity = $this->getAdapter()->$name)) {
                 array_unshift($arguments, $this);
 
                 return call_user_func_array([$entity, 'selectBy'], $arguments);
@@ -172,7 +168,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      */
     public function toArray($keysAsId = false, array $parentEntities = array())
     {
-        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
+        if (!empty($parentEntities) && in_array($this->getEntity()->name, $parentEntities)) {
             return;
         }
 
@@ -241,11 +237,11 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             }
         }
 
-        if ($this->entity->isRelated($name)) {
-            $entity = $this->adapter->$name;
+        if ($this->getEntity()->isRelated($name)) {
+            $entity = $this->getAdapter()->$name;
             $collection = $entity->createCollection();
 
-            if ($this->entity->getRelation($entity) === Entity::RELATION_HAS_ONE) {
+            if ($this->getEntity()->getRelation($entity) === Entity::RELATION_HAS_ONE) {
                 $collection->add($rows);
             } else {
                 foreach ($rows as $rows) {
@@ -302,7 +298,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             }
         }
 
-        return $first ? null : $this->entity->createCollection($rows);
+        return $first ? null : $this->getEntity()->createCollection($rows);
     }
 
     /**
@@ -314,7 +310,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      */
     public function load($entity)
     {
-        if (!($entity = $this->adapter->$entity)) {
+        if (!($entity = $this->getAdapter()->$entity)) {
             throw new SimpleCrudException("The entity $entity does not exists");
         }
 
@@ -338,19 +334,19 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     public function distribute(RowInterface $data, $bidirectional = true)
     {
         if ($data instanceof Row) {
-            $data = $data->entity->createCollection([$data]);
+            $data = $data->getEntity()->createCollection([$data]);
         }
 
         if ($data instanceof RowCollection) {
-            $name = $data->entity->name;
+            $name = $data->getEntity()->name;
 
-            switch ($this->entity->getRelation($data->entity)) {
+            switch ($this->getEntity()->getRelation($data->getEntity())) {
                 case Entity::RELATION_HAS_MANY:
-                    $foreignKey = $this->entity->foreignKey;
+                    $foreignKey = $this->getEntity()->foreignKey;
 
                     foreach ($this->rows as $row) {
                         if (!isset($row->$name)) {
-                            $row->$name = $data->entity->createCollection();
+                            $row->$name = $data->getEntity()->createCollection();
                         }
                     }
 
@@ -369,7 +365,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
                     return $this;
 
                 case Entity::RELATION_HAS_ONE:
-                    $foreignKey = $data->entity->foreignKey;
+                    $foreignKey = $data->getEntity()->foreignKey;
 
                     foreach ($this->rows as $row) {
                         $row->$name = (($id = $row->$foreignKey) && isset($data[$id])) ? $data[$id] : null;
@@ -382,7 +378,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
                     return $this;
             }
 
-            throw new SimpleCrudException("Cannot set '$name' and '{$this->entity->name}' because is not related or does not exists");
+            throw new SimpleCrudException("Cannot set '$name' and '{$this->getEntity()->name}' because is not related or does not exists");
         }
     }
 }

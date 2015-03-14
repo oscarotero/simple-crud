@@ -4,17 +4,14 @@ namespace SimpleCrud;
 use JsonSerializable;
 
 /**
- * SimpleCrud\Row.
- *
  * Stores the data of an entity row
+ * 
+ * @property mixed $id
  */
-class Row implements RowInterface, JsonSerializable
+class Row extends BaseRow implements JsonSerializable
 {
     private $values = [];
     private $changes = [];
-
-    public $entity;
-    public $adapter;
 
     /**
      * Row constructor.
@@ -24,10 +21,9 @@ class Row implements RowInterface, JsonSerializable
      */
     public function __construct(Entity $entity, array $data = null)
     {
-        $this->entity = $entity;
-        $this->adapter = $entity->adapter;
+        $this->setEntity($entity);
 
-        if ($data) {
+        if (!empty($data)) {
             $this->values = $data;
         }
 
@@ -47,7 +43,7 @@ class Row implements RowInterface, JsonSerializable
 
         $method = "get$name";
 
-        if (method_exists($this, $method) || $this->entity->isRelated($name)) {
+        if (method_exists($this, $method) || $this->getEntity()->isRelated($name)) {
             return $this->values[$name] = $this->$method();
         }
     }
@@ -93,7 +89,7 @@ class Row implements RowInterface, JsonSerializable
                 return $this->values[$name];
             }
 
-            if (($entity = $this->adapter->$name)) {
+            if (($entity = $this->getAdapter()->$name)) {
                 array_unshift($arguments, $this);
 
                 return call_user_func_array([$entity, 'selectBy'], $arguments);
@@ -110,17 +106,40 @@ class Row implements RowInterface, JsonSerializable
      */
     public function __toString()
     {
-        return "\n".$this->entity->name.":\n".print_r($this->toArray(), true)."\n";
+        return "\n".$this->getEntity()->name.":\n".print_r($this->toArray(), true)."\n";
     }
 
     /**
-     * jsonSerialize interface.
+     * @see JsonSerializable
      *
      * @return array
      */
     public function jsonSerialize()
     {
         return $this->toArray();
+    }
+
+    /**
+     * @see RowInterface
+     * 
+     * {@inheritdoc}
+     */
+    public function toArray($keysAsId = false, array $parentEntities = array())
+    {
+        if (!empty($parentEntities) && in_array($this->getEntity()->name, $parentEntities)) {
+            return;
+        }
+
+        $parentEntities[] = $this->getEntity()->name;
+        $data = $this->values;
+
+        foreach ($data as &$value) {
+            if ($value instanceof RowInterface) {
+                $value = $value->toArray($keysAsId, $parentEntities);
+            }
+        }
+
+        return $data;
     }
 
     /**
@@ -142,7 +161,7 @@ class Row implements RowInterface, JsonSerializable
      */
     public function reload()
     {
-        if (!$this->id || !($row = $this->entity->selectBy($this->id))) {
+        if (!$this->id || !($row = $this->getEntity()->selectBy($this->id))) {
             throw new SimpleCrudException("This row does not exist in database");
         }
 
@@ -169,7 +188,7 @@ class Row implements RowInterface, JsonSerializable
             return $this;
         }
 
-        if ($this->entity->getRelation($row->entity) !== Entity::RELATION_HAS_ONE) {
+        if ($this->getEntity()->getRelation($row->getEntity()) !== Entity::RELATION_HAS_ONE) {
             throw new SimpleCrudException("Not valid relation");
         }
 
@@ -177,30 +196,9 @@ class Row implements RowInterface, JsonSerializable
             throw new SimpleCrudException('Rows without id value cannot be related');
         }
 
-        $this->{$row->entity->foreignKey} = $row->id;
+        $this->{$row->getEntity()->foreignKey} = $row->id;
 
         return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function toArray($keysAsId = false, array $parentEntities = array())
-    {
-        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
-            return;
-        }
-
-        $parentEntities[] = $this->entity->name;
-        $data = $this->values;
-
-        foreach ($data as &$value) {
-            if ($value instanceof RowInterface) {
-                $value = $value->toArray($keysAsId, $parentEntities);
-            }
-        }
-
-        return $data;
     }
 
     /**
@@ -214,7 +212,7 @@ class Row implements RowInterface, JsonSerializable
     public function set(array $data, $onlyDeclaredFields = false)
     {
         if ($onlyDeclaredFields === true) {
-            $data = array_intersect_key($data, $this->entity->fields);
+            $data = array_intersect_key($data, $this->getEntity()->fields);
         }
 
         foreach ($data as $name => $value) {
@@ -238,7 +236,7 @@ class Row implements RowInterface, JsonSerializable
         $values = ($onlyChangedValues === true) ? array_intersect_key($this->values, $this->changes) : $this->values;
 
         if ($name === true) {
-            return array_intersect_key($values, $this->entity->fields);
+            return array_intersect_key($values, $this->getEntity()->fields);
         }
 
         if ($name === null) {
@@ -261,9 +259,9 @@ class Row implements RowInterface, JsonSerializable
         $data = $this->get(true);
 
         if (empty($this->id)) {
-            $data = $this->entity->insert($data, $handleDuplications);
+            $data = $this->getEntity()->insert($data, $handleDuplications);
         } else {
-            $data = $this->entity->update($data, 'id = :id', [':id' => $this->id], 1, ($onlyChangedValues ? $this->changes : null));
+            $data = $this->getEntity()->update($data, 'id = :id', [':id' => $this->id], 1, ($onlyChangedValues ? $this->changes : null));
         }
 
         $this->set($data);
@@ -280,7 +278,7 @@ class Row implements RowInterface, JsonSerializable
     public function delete()
     {
         if (!empty($this->id)) {
-            $this->entity->delete('id = :id', [':id' => $this->id], 1);
+            $this->getEntity()->delete('id = :id', [':id' => $this->id], 1);
         }
 
         return $this;

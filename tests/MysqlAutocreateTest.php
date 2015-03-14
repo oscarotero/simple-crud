@@ -109,6 +109,8 @@ class MysqlAutocreateTest extends PHPUnit_Framework_TestCase
         $post = $db->posts->create();
 
         $this->assertInstanceOf('SimpleCrud\\Row', $post);
+        $this->assertInstanceOf('SimpleCrud\\Entity', $post->getEntity());
+        $this->assertInstanceOf('SimpleCrud\\Adapters\\AdapterInterface', $post->getAdapter());
 
         $this->assertCount(7, $post->toArray());
 

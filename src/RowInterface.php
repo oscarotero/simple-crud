@@ -15,4 +15,18 @@ interface RowInterface
      * @return array
      */
     public function toArray($keysAsId = false, array $parentEntities = array());
+
+    /**
+     * Return the entity
+     * 
+     * @return Entity
+     */
+    public function getEntity();
+
+    /**
+     * Return the adapter
+     * 
+     * @return Adapters\AdapterInterface
+     */
+    public function getAdapter();
 }

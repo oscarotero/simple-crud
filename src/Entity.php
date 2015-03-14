@@ -24,8 +24,6 @@ class Entity
     public $rowClass;
     public $rowCollectionClass;
 
-    private $fieldsInfo = [];
-
     public function __construct(AdapterInterface $adapter, $name)
     {
         $this->adapter = $adapter;
@@ -171,7 +169,7 @@ class Entity
                     $options = [];
                 }
 
-                $entity = $this->manager->$name;
+                $entity = $this->adapter->$name;
                 $relation = $this->getRelation($entity);
 
                 if ($relation !== self::RELATION_HAS_ONE) {
