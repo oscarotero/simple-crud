@@ -40,7 +40,8 @@ class MysqlAutocreateTest extends PHPUnit_Framework_TestCase
      * @depends testAutocreate
      * @expectedException SimpleCrud\SimpleCrudException
      */
-    public function testUnexistingTable(AdapterInterface $db) {
+    public function testUnexistingTable(AdapterInterface $db)
+    {
         $db->unexisting_table;
     }
 

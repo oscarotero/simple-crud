@@ -1,7 +1,6 @@
 <?php
 namespace SimpleCrud\Adapters;
 
-
 /**
  * Adapter class for MySql databases
  */

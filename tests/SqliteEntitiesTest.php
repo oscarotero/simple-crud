@@ -9,7 +9,7 @@ class SqliteEntitiesTest extends MySqlEntitiesTest
     {
         $db = new Sqlite(initSqlitePdo(), new EntityFactory([
             'autocreate' => true,
-            'namespace' => 'Custom\\'
+            'namespace' => 'Custom\\',
         ]));
 
         $this->assertInstanceOf('SimpleCrud\\Adapters\\AdapterInterface', $db);

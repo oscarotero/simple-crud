@@ -216,7 +216,7 @@ class Entity
      * @param array         $joins
      *
      * @throws SimpleCrudException on error
-     * 
+     *
      * @return Row|RowCollection|null
      */
     public function selectBy($id, $where = null, $marks = null, $orderBy = null, $limit = null, array $joins = null, array $from = null)

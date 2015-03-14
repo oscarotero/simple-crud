@@ -9,7 +9,7 @@ class MysqlEntitiesTest extends PHPUnit_Framework_TestCase
     {
         $db = new Mysql(initMysqlPdo(), new EntityFactory([
             'autocreate' => true,
-            'namespace' => 'Custom\\'
+            'namespace' => 'Custom\\',
         ]));
 
         $this->assertInstanceOf('SimpleCrud\\Adapters\\AdapterInterface', $db);

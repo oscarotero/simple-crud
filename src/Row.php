@@ -230,7 +230,7 @@ class Row implements RowInterface, JsonSerializable
      *
      * @param boolean|null|string $name              The value name to recover. If it's not defined, returns all values. If it's true, returns only the fields values.
      * @param boolean             $onlyChangedValues To return only the changed values instead all
-     * 
+     *
      * @return mixed
      */
     public function get($name = null, $onlyChangedValues = false)
