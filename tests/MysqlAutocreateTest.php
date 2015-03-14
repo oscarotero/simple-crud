@@ -7,7 +7,7 @@ class MysqlAutocreateTest extends PHPUnit_Framework_TestCase
 {
     public function testConnection()
     {
-        $db = new Mysql(initMysqlPdo(), new EntityFactory([
+        $db = new MySql(initMysqlPdo(), new EntityFactory([
             'autocreate' => true,
         ]));
 
