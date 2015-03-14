@@ -1,10 +1,9 @@
 # SimpleCrud
 
 [![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
-
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
 
-PHP library to provide some CRUD functions (Create, Read, Update, Delete) in MySql/Sqlite databases.
+PHP library to provide some CRUD functions (Create, Read, Update, Delete) in Mysql/Sqlite databases.
 
 
 ## Usage
@@ -77,13 +76,13 @@ This is usefull in early phases, when the database can change and you don't want
 
 ### Init the library
 
-Let's create an instance of the Adapter, passing the PDO object with the database connection and an instance of EntityFactory to create the entities. Currently there are two adapters: for MySql adn Sqlite databases. The EntityFactory has some options used on create the entities. 
+Let's create an instance of the Adapter, passing the PDO object with the database connection and an instance of EntityFactory to create the entities. Currently there are two adapters: for Mysql adn Sqlite databases. The EntityFactory has some options used on create the entities. 
 
 ```php
-use SimpleCrud\Adapters\MySql;
+use SimpleCrud\Adapters\Mysql;
 use SimpleCrud\EntityFactory;
 
-$db = new MySql($PDO, new EntityFactory([
+$db = new Mysql($PDO, new EntityFactory([
 	'namespace' => 'MyModels\\' //The namespace where my entities classes are defined
 	'autocreate' => true //Set true to create automatically non defined entities.
 ]));
@@ -340,7 +339,7 @@ The difference between execute ```$post->getUsers()``` or call directly ```$post
 
 ### Fields
 
-There are some special classes for manage fields. The purpose of these classes is convert the data between the database and the entity. For example, in MySql the format used to store datetime values is "Y-m-d H:i:s", so the class SimpleCrud\Fields\Datetime converts any string or Datetime instance to this format. This not overwrite the value of the row (you will keep the Datetime instance), only converts the data to be stored. The available fields are:
+There are some special classes for manage fields. The purpose of these classes is convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class SimpleCrud\Fields\Datetime converts any string or Datetime instance to this format. This not overwrite the value of the row (you will keep the Datetime instance), only converts the data to be stored. The available fields are:
 
 * Field: It's the default field.
 * Datetime: Converts a string or Datetime instance to "Y-M-d H:i:s"

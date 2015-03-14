@@ -7,7 +7,7 @@ class MysqlEntitiesTest extends PHPUnit_Framework_TestCase
 {
     public function testConnection()
     {
-        $db = new MySql(initMysqlPdo(), new EntityFactory([
+        $db = new Mysql(initMysqlPdo(), new EntityFactory([
             'autocreate' => true,
             'namespace' => 'Custom\\',
         ]));

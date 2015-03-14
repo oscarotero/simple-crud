@@ -3,7 +3,7 @@ use SimpleCrud\Adapters\Sqlite;
 use SimpleCrud\Adapters\AdapterInterface;
 use SimpleCrud\EntityFactory;
 
-class SqliteEntitiesTest extends MySqlEntitiesTest
+class SqliteEntitiesTest extends MysqlEntitiesTest
 {
     public function testConnection()
     {

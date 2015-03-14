@@ -2,9 +2,9 @@
 namespace SimpleCrud\Adapters;
 
 /**
- * Adapter class for MySql databases
+ * Adapter class for Mysql databases
  */
-class MySql extends Adapter implements AdapterInterface
+class Mysql extends Adapter implements AdapterInterface
 {
     /**
      * {@inheritdoc}

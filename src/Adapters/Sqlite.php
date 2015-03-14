@@ -6,7 +6,7 @@ use PDO;
 /**
  * Adapter class for Sqlite databases
  */
-class Sqlite extends MySql implements AdapterInterface
+class Sqlite extends Mysql implements AdapterInterface
 {
     protected $updateDeleteLimit;
 
