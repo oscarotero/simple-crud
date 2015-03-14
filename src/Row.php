@@ -5,7 +5,7 @@ use JsonSerializable;
 
 /**
  * Stores the data of an entity row
- * 
+ *
  * @property mixed $id
  */
 class Row extends BaseRow implements JsonSerializable
@@ -89,10 +89,10 @@ class Row extends BaseRow implements JsonSerializable
                 return $this->values[$name];
             }
 
-            if (($entity = $this->getAdapter()->$name)) {
+            if (isset($this->getAdapter()->$name)) {
                 array_unshift($arguments, $this);
 
-                return call_user_func_array([$entity, 'selectBy'], $arguments);
+                return call_user_func_array([$this->getAdapter()->$name, 'selectBy'], $arguments);
             }
         }
 
@@ -111,7 +111,7 @@ class Row extends BaseRow implements JsonSerializable
 
     /**
      * @see RowInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function toArray($keysAsId = false, array $parentEntities = array())

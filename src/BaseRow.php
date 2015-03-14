@@ -10,17 +10,17 @@ abstract class BaseRow implements RowInterface
 
     /**
      * Set the row entity
-     * 
+     *
      * @param Entity $entity
      */
     protected function setEntity(Entity $entity)
     {
-         $this->entity = $entity;
+        $this->entity = $entity;
     }
 
     /**
      * @see RowInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function getEntity()
@@ -30,7 +30,7 @@ abstract class BaseRow implements RowInterface
 
     /**
      * @see RowInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function getAdapter()

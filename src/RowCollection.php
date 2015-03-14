@@ -26,7 +26,48 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function __get($name)
     {
+        $method = "get$name";
+
+        if (method_exists($this, $method) || $this->getEntity()->isRelated($name)) {
+            return $this->$method();
+        }
+
         return $this->get($name);
+    }
+
+    /**
+     * Magic method to execute get[whatever] and load automatically related stuff or execute the same function in all rows
+     *
+     * @param string $name      The function name
+     * @param string $arguments Array with all arguments passed to the function
+     *
+     * @return mixed
+     */
+    public function __call($name, $arguments)
+    {
+        if (strpos($name, 'get') === 0) {
+            $name = lcfirst(substr($name, 3));
+
+            if (isset($this->getAdapter()->$name)) {
+                array_unshift($arguments, $this);
+
+                return call_user_func_array([$this->getAdapter()->$name, 'selectBy'], $arguments);
+            }
+
+            $values = [];
+
+            foreach ($this->rows as $id => $row) {
+                $values[$id] = call_user_func_array([$row, $name], $arguments);
+            }
+
+            return $values;
+        }
+
+        foreach ($this->rows as $row) {
+            call_user_func_array([$row, $name], $arguments);
+        }
+
+        return $this;
     }
 
     /**
@@ -128,33 +169,6 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Magic method to execute get[whatever] and load automatically related stuff or execute the same function in all rows
-     *
-     * @param string $name      The function name
-     * @param string $arguments Array with all arguments passed to the function
-     *
-     * @return $this
-     */
-    public function __call($name, $arguments)
-    {
-        if (strpos($name, 'get') === 0) {
-            $name = lcfirst(substr($name, 3));
-
-            if (($entity = $this->getAdapter()->$name)) {
-                array_unshift($arguments, $this);
-
-                return call_user_func_array([$entity, 'selectBy'], $arguments);
-            }
-        }
-
-        foreach ($this->rows as $row) {
-            call_user_func_array([$row, $name], $arguments);
-        }
-
-        return $this;
-    }
-
-    /**
      * {@inheritdoc}
      */
     public function toArray($keysAsId = false, array $parentEntities = array())
@@ -178,18 +192,10 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      * @param string $name The value name. If it's not defined returns all values
      * @param string $key  The parameter name used for the keys. If it's not defined, returns a numeric array
      *
-     * @return array|RowCollection All values found. It generates a RowCollection if the values are rows.
+     * @return array All values found. It generates a RowCollection if the values are rows.
      */
     public function get($name = null, $key = null)
     {
-        if (is_int($name)) {
-            if ($key === true) {
-                return current(array_slice($this->rows, $name, 1));
-            }
-
-            return array_slice($this->rows, $name, $key, true);
-        }
-
         $rows = [];
 
         if ($name === null) {
@@ -228,22 +234,24 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
             }
         }
 
-        if ($this->getEntity()->isRelated($name)) {
-            $entity = $this->getAdapter()->$name;
-            $collection = $entity->createCollection();
+        return $rows;
+    }
 
-            if ($this->getEntity()->getRelation($entity) === Entity::RELATION_HAS_ONE) {
-                $collection->add($rows);
-            } else {
-                foreach ($rows as $rows) {
-                    $collection->add($rows);
-                }
-            }
-
-            return $collection;
+    /**
+     * Returns a slice of the content
+     *
+     * @param integer           $offset
+     * @param integer|null|true $length
+     *
+     * @return array
+     */
+    public function slice($offset = null, $length = null)
+    {
+        if ($length === true) {
+            return current(array_slice($this->rows, $offset, 1));
         }
 
-        return $rows;
+        return array_slice($this->rows, $offset, $length);
     }
 
     /**

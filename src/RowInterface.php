@@ -20,14 +20,14 @@ interface RowInterface extends JsonSerializable
 
     /**
      * Return the entity
-     * 
+     *
      * @return Entity
      */
     public function getEntity();
 
     /**
      * Return the adapter
-     * 
+     *
      * @return Adapters\AdapterInterface
      */
     public function getAdapter();
