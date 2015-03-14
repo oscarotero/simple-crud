@@ -11,10 +11,10 @@ PHP library to provide some CRUD functions (Create, Read, Update, Delete) in Mys
 SimpleCrud has the following classes:
 
 * **Adapters:** Manage the database connection, execute the queries and create all entities. Currently there are two adapters: for mysql and sqlite databases
-* **Entity:** Is a class that manages an entity (database table) to select, insert, update, delete rows.
-* Row: Stores/modifies the data of a row
-* RowCollection: Is a collection of rows
-* Fields: To manage specific formats of data stored in database (for example: convert datetime values to be compatible with mysql)
+* **Entity:** Manages an entity (database table) to select, insert, update, delete rows.
+* **Row:** Stores/modifies the data of a row
+* **RowCollection:** Is a collection of rows
+* **Fields:** Converts the values before save into the database (for example: convert datetime values to be compatible with mysql)
 
 
 ### Define the entities:
@@ -61,7 +61,7 @@ class Users extends Entity
 }
 ```
 
-SimpleCrud uses the foreignKey property to detect automatically the relationship between two entities `RELATION_HAS_ONE | RELATION_HAS_MANY`. For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (`RELATION_HAS_ONE`).
+SimpleCrud uses the `foreignKey property to detect automatically the relationship between two entities `RELATION_HAS_ONE | RELATION_HAS_MANY`. For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (`RELATION_HAS_ONE`).
 
 You can define also entities without these properties:
 
@@ -77,7 +77,7 @@ This is usefull in early phases, when the database can change and you don't want
 
 ### Init the library
 
-Let's create an instance of the Adapter, passing the PDO instance with the database connection and an instance of EntityFactory to create the entities. Currently there are two adapters: for Mysql adn Sqlite databases.
+Let's create an instance of the Adapter, passing the PDO instance with the database connection and an instance of EntityFactory to create the entities.
 
 ```php
 use SimpleCrud\Adapters\Mysql;
@@ -103,13 +103,12 @@ $db = new Mysql($PDO);
 $db->posts; //Posts entity
 ```
 
-### Using the library: Create, Read, Update, Delete
+### Using the library
 
-Create and edit values:
+#### Create and edit values:
 
 ```php
 //Create a new post
-
 $post = $db->posts->create([
     'title' => 'My first post',
     'text' => 'This is the text of the post'
@@ -117,6 +116,7 @@ $post = $db->posts->create([
 
 //Get/set values
 echo $post->title; //My first item
+
 $post->description = 'New description';
 
 //Or use an array for edit values
@@ -125,24 +125,26 @@ $post->set([
     'description' => 'Another description'
 ]);
 
-//Save (insert/update) the item in the database
+//Save (insert/update) the post in the database
 $post->save();
 
 //Delete the post in the database
 $post->delete();
 ```
 
-Select values by keys, using `selectBy`:
+#### selectBy
+
+`selectBy` is a function to select values by keys:
 
 ```php
-//Select by id=45 and return a Row
+//Select the post with id = 45
 $post = $db->posts->selectBy(45);
 
 //Or select various ids and returns a RowCollection
 $posts = $db->posts->selectBy([45, 34, 98]);
 ```
 
-`selectBy` can be used also with `Row` and `RowCollection` instances to select related rows:
+`selectBy` can be used with `Row` and `RowCollection` instances to select related rows:
 
 ```php
 //Get the post id=5
@@ -151,8 +153,6 @@ $post = $db->posts->selectBy(5);
 //Get all comments related with this post
 $comments = $db->comments->selectBy($post); 
 
-//Using a rowCollection:
-
 //Get a RowCollection with 4 posts
 $posts = $db->posts->selectBy([5, 6, 7, 8]);
 
@@ -160,7 +160,7 @@ $posts = $db->posts->selectBy([5, 6, 7, 8]);
 $comments = $db->comments->selectBy($posts);
 ```
 
-`selectBy` has more arguments to provide WHERE, ORDER BY and LIMIT clauses:
+`selectBy` has more arguments to define WHERE, ORDER BY and LIMIT clauses:
 
 ```php
 //Select a post:
@@ -178,6 +178,8 @@ $comments = $db->comments->selectBy($post, 'enable = :enable', [':enable' => 1],
 //And limit
 $comments = $db->comments->selectBy($post, 'enable = :enable', [':enable' => 1], 'pubdate DESC', 10);
 ```
+
+#### select
 
 The function `select` has the same arguments but the first:
 
@@ -199,6 +201,8 @@ Both `select` and `selectBy` functions accepts two more arguments:
 //SELECT {all fields from posts and users} FROM posts LEFT JOIN users ON posts.users_id = users.id WHERE active = 1 ORDER BY id DESC LIMIT 10
 $posts = $db->posts->select('active = 1', null, 'id DESC', 10, ['users']);
 ```
+
+#### Other methods
 
 `fetchOne` and `fetchAll` allows create the query yourself:
 
@@ -225,7 +229,7 @@ $id = $db->posts->insert(['text' => 'Hello world']);
 
 ### Validate data
 
-Each entity has two methods to convert/validate data before push to database and after pull from the database. You can use this methods to customize this behaviour:
+Each entity has two methods to convert/validate data before push to database and after pull from it. You can overwrite this methods to customize its behaviour:
 
 ```php
 namespace MyModels;
@@ -234,8 +238,6 @@ use SimpleCrud\Entity;
 
 class Posts extends Entity
 {
-    public $table = 'posts';
-    public $foreignKey = 'posts_id';
     public $fields = [
         'id',
         'title',
@@ -268,9 +270,9 @@ class Posts extends Entity
 }
 ```
 
-### Set custom `Row` and `RowCollection` classes
+### Customize the Row and RowCollection classes
 
-The entities can use its own `Row` or `RowCollection` classes instead the defaults, to create custom methods. You need to configure the entity and create the classes extending `SimpleCrud\Row` and `SimpleRow\CollectionRow`:
+Each entity can use its own `Row` or `RowCollection` classes instead the defaults, to create custom methods. You need to create classes extending `SimpleCrud\Row` and `SimpleRow\CollectionRow`:
 
 ```php
 namespace MyModels;
@@ -304,7 +306,7 @@ class MyCustomRowCollectionClass extends Row
 }
 ```
 
-Now, you can use this functions in the rows and collections:
+Now, you can use this functions in the rows and rowcollections:
 
 ```php
 $posts = $db->posts->selectBy([1, 2, 3]);
@@ -347,7 +349,7 @@ You can define also the classes `MyModels\Rows\Row` and `MyModels\RowCollections
 
 ### Lacy loads
 
-Both `Row` and `RowCollection` can loads automatically the related rows if you call them by the entity name:
+Both `Row` and `RowCollection` can load automatically the related rows if you call them by the entity name:
 
 ```php
 //Get posts by id=34
@@ -375,7 +377,7 @@ $title = $post->comments->users->posts->title;
 ```
 
 You can define the way of the lacy loads are executed, creating methods starting by "get" in the row class. The result of the method will be cached in the property.
-Lacy loads not only works with relations, but also with any property you want. Just create a method named get[NameOfTheProperty] and that is all.
+Lacy loads not only works with relations, but also with any property you want. Just create a method named get[NameOfTheProperty] and you get it.
 
 ```php
 namespace MyModels\Rows;
@@ -414,11 +416,11 @@ $post->comments; //Execute getComments() methods and save the result in $post->c
 $post->comments; //Access to the cached result instead execute getComments() again
 $post->lowercaseTitle; //Execute getLowercaseTitle() and save the result in $post->lowercaseTitle;
 ```
-The difference between execute `$post->getComments()` or call directly `$post->comments` is that the second saves the result in the property "users" so it's only executed the first time.
+The difference between execute `$post->getComments()` or call directly `$post->comments` is that the second saves the result in the property so it's only executed the first time.
 
-Note that all these `getWhatever` methods are available automatically even if you don't define them.
+Note that all these `getWhatever` methods that get relations are available automatically even if you don't define them.
 
-Let's see three ways to return the users related with a post:
+So, let's see three ways to return the users related with a post:
 
 ```php
 //select post id=4
@@ -439,7 +441,7 @@ $users = $post->getUsers('active = :active', [':active' => 1]);
 
 ### Fields
 
-The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class SimpleCrud\Fields\Datetime converts any string or Datetime instance to this format. This conversion will be done just before execute the query and wont change the value of the `Row` instance. The available fields are:
+The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime converts any string or `Datetime` instance to this format. This conversion will be done just before execute the query and wont change the value of the `Row` instance. The available fields are:
 
 * Field: It's the default field and keeps the value as is.
 * Datetime: Converts a string or Datetime instance to "Y-M-d H:i:s"
