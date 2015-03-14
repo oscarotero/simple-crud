@@ -320,8 +320,8 @@ use SimpleCrud\Row;
 
 class Posts extends Row {
 	public function getComments () {
-		//Use $this->adapter to access to the database adapter
-		return $this->adapter->comments->selectBy($this, "validated = 1");
+		//Use $this->getAdapter() to access to the database adapter
+		return $this->getAdapter()->comments->selectBy($this, "validated = 1");
 	}
 
 	public function getLowercaseTitle () {

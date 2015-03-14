@@ -37,4 +37,14 @@ abstract class BaseRow implements RowInterface
     {
         return $this->entity->adapter;
     }
+
+    /**
+     * @see JsonSerializable
+     *
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
+    }
 }

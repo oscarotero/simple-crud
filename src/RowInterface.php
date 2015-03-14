@@ -1,10 +1,12 @@
 <?php
 namespace SimpleCrud;
 
+use JsonSerializable;
+
 /**
  * Interface used by Row and RowCollection.
  */
-interface RowInterface
+interface RowInterface extends JsonSerializable
 {
     /**
      * Generate an array with all values and subvalues of the row.

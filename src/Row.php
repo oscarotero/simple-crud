@@ -110,16 +110,6 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * @see JsonSerializable
-     *
-     * @return array
-     */
-    public function jsonSerialize()
-    {
-        return $this->toArray();
-    }
-
-    /**
      * @see RowInterface
      * 
      * {@inheritdoc}

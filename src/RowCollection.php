@@ -4,14 +4,13 @@ namespace SimpleCrud;
 use ArrayAccess;
 use Iterator;
 use Countable;
-use JsonSerializable;
 
 /**
  * Stores a collection of rows
  *
  * @property array $id
  */
-class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable, JsonSerializable
+class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 {
     private $rows = [];
 
@@ -153,14 +152,6 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable,
         }
 
         return $this;
-    }
-
-    /**
-     * @see JsonSerialize
-     */
-    public function jsonSerialize()
-    {
-        return $this->toArray();
     }
 
     /**
