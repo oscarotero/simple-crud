@@ -361,7 +361,8 @@ class Entity
     /**
      * Default data converter/validator from database.
      *
-     * @param array $data The values before insert to database
+     * @param array   $data The values before insert to database
+     * @param boolean $new  True for inserts, false for updates
      */
     public function dataToDatabase(array $data, $new)
     {
@@ -438,7 +439,7 @@ class Entity
 
         unset($preparedData['id']);
 
-        $data['id'] = $this->getAdapter()->executeTransaction(function () use ($preparedData, $duplicateKey) {
+        $data['id'] = $this->getAdapter()->executeTransaction(function() use ($preparedData, $duplicateKey) {
             $this->getAdapter()->insert($this->table, $preparedData, $duplicateKey);
 
             return $this->getAdapter()->lastInsertId();
@@ -472,7 +473,7 @@ class Entity
             return $data;
         }
 
-        $this->getAdapter()->executeTransaction(function () use ($preparedData, $where, $marks, $limit) {
+        $this->getAdapter()->executeTransaction(function() use ($preparedData, $where, $marks, $limit) {
             $this->getAdapter()->update($this->table, $preparedData, $where, $marks, $limit);
         });
 
@@ -488,7 +489,7 @@ class Entity
      */
     public function delete($where = null, $marks = null, $limit = null)
     {
-        $this->getAdapter()->executeTransaction(function () use ($where, $marks, $limit) {
+        $this->getAdapter()->executeTransaction(function() use ($where, $marks, $limit) {
             $this->getAdapter()->delete($this->table, $where, $marks, $limit);
         });
     }

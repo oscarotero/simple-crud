@@ -139,7 +139,7 @@ abstract class Adapter implements AdapterInterface
     /**
      * Returns the last insert id.
      *
-     * @return integer
+     * @return string
      */
     public function lastInsertId()
     {
