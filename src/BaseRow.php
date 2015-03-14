@@ -35,7 +35,7 @@ abstract class BaseRow implements RowInterface
      */
     public function getAdapter()
     {
-        return $this->entity->adapter;
+        return $this->entity->getAdapter();
     }
 
     /**

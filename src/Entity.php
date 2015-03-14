@@ -13,7 +13,7 @@ class Entity
     const RELATION_HAS_ONE = 1;
     const RELATION_HAS_MANY = 2;
 
-    public $adapter;
+    protected $adapter;
 
     public $name;
     public $table;
@@ -45,6 +45,16 @@ class Entity
     public function getDefaults()
     {
         return array_fill_keys(array_keys($this->fields), null);
+    }
+
+    /**
+     * Returns the adapter associated with this entity
+     *
+     * @return AdapterInterface
+     */
+    public function getAdapter()
+    {
+        return $this->adapter;
     }
 
     /**
@@ -91,7 +101,7 @@ class Entity
         $row = $this->create($row);
 
         foreach ($joinFields as $name => $values) {
-            $row->$name = empty($values['id']) ? null : $this->adapter->$name->createFromSelection($values);
+            $row->$name = empty($values['id']) ? null : $this->getAdapter()->$name->createFromSelection($values);
         }
 
         return $row;
@@ -169,7 +179,7 @@ class Entity
                     $options = [];
                 }
 
-                $entity = $this->adapter->$name;
+                $entity = $this->getAdapter()->$name;
                 $relation = $this->getRelation($entity);
 
                 if ($relation !== self::RELATION_HAS_ONE) {
@@ -194,7 +204,7 @@ class Entity
             }
         }
 
-        $statement = $this->adapter->executeSelect($selectFields, $selectJoins, $where, $marks, $orderBy, $limit);
+        $statement = $this->getAdapter()->executeSelect($selectFields, $selectJoins, $where, $marks, $orderBy, $limit);
 
         if ($limit === true || (isset($limit[1]) && $limit[1] === true)) {
             return $this->createFromStatement($statement);
@@ -277,7 +287,7 @@ class Entity
      */
     public function count($where = null, $marks = null, $limit = null)
     {
-        return $this->adapter->count($this->table, $where, $marks, $limit);
+        return $this->getAdapter()->count($this->table, $where, $marks, $limit);
     }
 
     /**
@@ -331,7 +341,7 @@ class Entity
      */
     public function fetchOne($query, array $marks = null, $expand = false)
     {
-        return $this->createFromStatement($this->adapter->execute($query, $marks), $expand);
+        return $this->createFromStatement($this->getAdapter()->execute($query, $marks), $expand);
     }
 
     /**
@@ -345,7 +355,7 @@ class Entity
      */
     public function fetchAll($query, array $marks = null, $expand = false)
     {
-        return $this->createCollectionFromStatement($this->adapter->execute($query, $marks), $expand);
+        return $this->createCollectionFromStatement($this->getAdapter()->execute($query, $marks), $expand);
     }
 
     /**
@@ -428,10 +438,10 @@ class Entity
 
         unset($preparedData['id']);
 
-        $data['id'] = $this->adapter->executeTransaction(function () use ($preparedData, $duplicateKey) {
-            $this->adapter->insert($this->table, $preparedData, $duplicateKey);
+        $data['id'] = $this->getAdapter()->executeTransaction(function () use ($preparedData, $duplicateKey) {
+            $this->getAdapter()->insert($this->table, $preparedData, $duplicateKey);
 
-            return $this->adapter->lastInsertId();
+            return $this->getAdapter()->lastInsertId();
         });
 
         return $data;
@@ -462,8 +472,8 @@ class Entity
             return $data;
         }
 
-        $this->adapter->executeTransaction(function () use ($preparedData, $where, $marks, $limit) {
-            $this->adapter->update($this->table, $preparedData, $where, $marks, $limit);
+        $this->getAdapter()->executeTransaction(function () use ($preparedData, $where, $marks, $limit) {
+            $this->getAdapter()->update($this->table, $preparedData, $where, $marks, $limit);
         });
 
         return $data;
@@ -478,8 +488,8 @@ class Entity
      */
     public function delete($where = null, $marks = null, $limit = null)
     {
-        $this->adapter->executeTransaction(function () use ($where, $marks, $limit) {
-            $this->adapter->delete($this->table, $where, $marks, $limit);
+        $this->getAdapter()->executeTransaction(function () use ($where, $marks, $limit) {
+            $this->getAdapter()->delete($this->table, $where, $marks, $limit);
         });
     }
 
@@ -493,11 +503,11 @@ class Entity
     public function isRelated($entity)
     {
         if (!($entity instanceof Entity)) {
-            if (!isset($this->adapter->$entity)) {
+            if (!isset($this->getAdapter()->$entity)) {
                 return false;
             }
 
-            $entity = $this->adapter->$entity;
+            $entity = $this->getAdapter()->$entity;
         }
 
         return ($this->getRelation($entity) !== null);
