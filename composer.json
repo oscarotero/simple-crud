@@ -2,8 +2,8 @@
 	"name": "simple-crud/simple-crud",
 	"type": "library",
 	"description": "Create/Read/Update/Delete easily",
-	"keywords": ["crud", "mysql", "sqli"],
-	"homepage": "https://github.com/oscarotero/simplecrud",
+	"keywords": ["crud", "mysql", "sqlite"],
+	"homepage": "https://github.com/oscarotero/simple-crud",
 	"license": "MIT",
 	"authors": [
 		{
@@ -15,7 +15,7 @@
 	],
 	"support": {
 		"email": "oom@oscarotero.com",
-		"issues": "https://github.com/oscarotero/simplecrud/issues"
+		"issues": "https://github.com/oscarotero/simple-crud/issues"
 	},
 	"require": {
 		"php": ">=5.4"

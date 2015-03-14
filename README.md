@@ -1,31 +1,25 @@
-SimpleCrud
-==========
+# SimpleCrud
 
-[![Build Status](https://travis-ci.org/oscarotero/simplecrud.png?branch=master)](https://travis-ci.org/oscarotero/simplecrud)
+[![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
 
-Simple PHP library to provide some CRUD functions (Create, Read, Update, Delete) in MySql databases.
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
 
-Requirements
-------------
-
-* PHP 5.4 or newer
-* Tested only with MySql with InnoDB
+PHP library to provide some CRUD functions (Create, Read, Update, Delete) in MySql/Sqlite databases.
 
 
-Usage
------
+## Usage
 
 SimpleCrud has the following classes:
 
-* Manager: Is the main class that stores the database connection and manage all entities
-* Entity: Is a class that manage an entity (database table) to select, insert, update, delete rows.
+* Adapters: Store the database connection, execute the queries and manage all entities. Currently there are two adapters: for mysql and sqlite databases
+* Entity: Is a class that manages an entity (database table) to select, insert, update, delete rows.
 * EntityFactory: The class for the creation of Entity instances.
-* Row: Manage the data stored in a row of a table
+* Row: To store/modify the data of a row
 * RowCollection: Is a collection of rows
-* Fields: A class to manage a specific format of data stored in database (for example: in datetime values this class convert the value to mysql format before save)
+* Fields: To manage a specific formats of data stored in database (for example: in datetime values this class convert the value to mysql format before save)
 
 
-#### Define the entities:
+### Define the entities:
 
 Create a new entity for each table in the database in a common namespace:
 
@@ -78,10 +72,10 @@ class Tags extends Entity {
 }
 ```
 
-This is usefull in early phases, when the database can change and you don't want edit the entity all the time. You can also use this library with no entities classes and the "autocreate" option enabled (to created them automatically).
+This is usefull in early phases, when the database can change and you don't want edit the entity class all the time. You can also use this library with no entities classes and the "autocreate" option enabled (to created them automatically).
 
 
-#### Init the library
+### Init the library
 
 Let's create an instance of the Adapter, passing the PDO object with the database connection and an instance of EntityFactory to create the entities. Currently there are two adapters: for MySql adn Sqlite databases. The EntityFactory has some options used on create the entities. 
 
@@ -98,7 +92,7 @@ $db = new MySql($PDO, new EntityFactory([
 $db->posts; //Posts entity
 ```
 
-#### Using the library: Create, Read, Update, Delete
+### Using the library: Create, Read, Update, Delete
 
 ```php
 //Create a new post
@@ -170,7 +164,7 @@ $id = $db->posts->insert(['text' => 'Hello world']);
 ```
 
 
-#### Validate data
+### Validate data
 
 SimpleCrud provides two methods to convert or validate data before push to database and after pull from the database. You can define this methods in the entity class:
 
@@ -211,7 +205,7 @@ class Posts extends Entity {
 }
 ```
 
-#### Set custom rows and rowCollection classes
+### Set custom rows and rowCollection classes
 
 The entities can use custom Row or RowCollection classes to create custom methods. You need to configure the entity and create the classes extending SimpleCrud\Row and SimpleRow\CollectionRow:
 
@@ -281,7 +275,7 @@ class Posts extends RowCollection {
 You can define also the classes `MyModels\Rows\Row` and `MyModels\RowCollections\RowCollection` to be used as default classes instead `SimpleCrud\Row` and `SimpleCrud\RowCollection`.
 
 
-#### Lacy loads
+### Lacy loads
 
 SimpleCrud loads automatically the related rows if you call them by the entity name:
 
@@ -344,7 +338,7 @@ $users = $post->getUsers(); //This is the same than $users->selectBy($post);
 The difference between execute ```$post->getUsers()``` or call directly ```$post->users``` is that the second save the result in the property "users" so only is executed the first time. $post->getUsers() accepts also the same arguments than $users->selectBy($post) ($where, $marks, $orderBy, etc).
 
 
-#### Fields
+### Fields
 
 There are some special classes for manage fields. The purpose of these classes is convert the data between the database and the entity. For example, in MySql the format used to store datetime values is "Y-m-d H:i:s", so the class SimpleCrud\Fields\Datetime converts any string or Datetime instance to this format. This not overwrite the value of the row (you will keep the Datetime instance), only converts the data to be stored. The available fields are:
 
@@ -383,7 +377,7 @@ $post->pubdate = new Datetime('now');
 $post->save();
 ```
 
-#### Custom fields types
+### Custom fields types
 
 You can create your own fields types or overwrite the existing ones. SimpleCrud will search in the namespace ```[entities-namespace]\Fields\``` for your custom classes. For example:
 
