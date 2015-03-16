@@ -347,7 +347,7 @@ class Posts extends RowCollection
 You can define also the classes `MyModels\Rows\Row` and `MyModels\RowCollections\RowCollection` to be used as default instead `SimpleCrud\Row` and `SimpleCrud\RowCollection`.
 
 
-### Lacy loads
+### Lazy loads
 
 Both `Row` and `RowCollection` can load automatically the related rows if you call them by the entity name:
 
@@ -376,8 +376,8 @@ $title = $post->comments->users->posts->title;
 //And finally, the titles of all these posts
 ```
 
-You can define the way of the lacy loads are executed, creating methods starting by "get" in the row class. The result of the method will be cached in the property.
-Lacy loads not only works with relations, but also with any property you want. Just create a method named get[NameOfTheProperty] and you get it.
+You can define the way of the lazy loads are executed, creating methods starting by "get" in the row class. The result of the method will be cached in the property.
+Lazy loads not only works with relations, but also with any property you want. Just create a method named get[NameOfTheProperty] and you get it.
 
 ```php
 namespace MyModels\Rows;
