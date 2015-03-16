@@ -61,7 +61,7 @@ class Users extends Entity
 }
 ```
 
-SimpleCrud uses the `foreignKey property to detect automatically the relationship between two entities `RELATION_HAS_ONE | RELATION_HAS_MANY`. For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (`RELATION_HAS_ONE`).
+SimpleCrud uses the `foreignKey property` to detect automatically the relationship between two entities `RELATION_HAS_ONE | RELATION_HAS_MANY`. For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (`RELATION_HAS_ONE`).
 
 You can define also entities without these properties:
 
