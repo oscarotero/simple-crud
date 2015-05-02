@@ -551,4 +551,21 @@ var_dump($post->data); //array('foo', 'bar')
 
 If you create a Field in your namespace with the same name than any of the defaults fields (Date, Datetime, Set, etc), SimpleCrud will choose your custom Field instead the default, so this is useful to overwrite the default behaviours.
 
+### Shared attributes
+
+Sometimes, you want to share some values across all entities, rows and adapter. For example a language configuration, the basepath where the files are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
+
+```php
+//Save an attribute, for example, the language code:
+$db->setAttribute('language', 'en');
+
+//This value is accessible from all entitites:
+echo $db->posts->getAttribute('language'); //en
+
+//And rows
+$post = $db->posts->selectBy(2);
+$post->getAttribute('language'); //en
+```
+Only the adapter has the method `setAttribute`, so only it can create/modify attributes.
+
 Check the commented code to know full API.

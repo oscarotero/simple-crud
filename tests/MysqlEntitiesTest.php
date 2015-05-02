@@ -122,4 +122,21 @@ class MysqlEntitiesTest extends PHPUnit_Framework_TestCase
         $tag->reload();
         $this->assertSame(['red', 'blue', 'green'], $tag->name);
     }
+
+    /**
+     * @depends testAutocreate
+     */
+    public function testAttributes(AdapterInterface $db)
+    {
+        $db->setAttribute('language', 'gl');
+
+        $this->assertEquals('gl', $db->getAttribute('language'));
+        $this->assertNull($db->getAttribute('not-defined'));
+
+        $this->assertEquals('gl', $db->tags->getAttribute('language'));
+        $this->assertNull($db->tags->getAttribute('not-defined'));
+
+        $tag = $db->tags->selectBy(1);
+        $this->assertEquals('gl', $tag->getAttribute('language'));
+    }
 }

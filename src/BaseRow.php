@@ -39,6 +39,16 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
+     * @see RowInterface
+     * 
+     * {@inheritdoc}
+     */
+    public function getAttribute($name)
+    {
+        return $this->getAdapter()->getAttribute($name);
+    }
+
+    /**
      * @see JsonSerializable
      *
      * @return array

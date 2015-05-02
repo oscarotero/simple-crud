@@ -16,6 +16,7 @@ abstract class Adapter implements AdapterInterface
     protected $inTransaction = false;
     protected $entityFactory;
     protected $entities = [];
+    protected $attributes = [];
 
     /**
      * Set the connection and the entityFactory.
@@ -190,5 +191,27 @@ abstract class Adapter implements AdapterInterface
     public function inTransaction()
     {
         return ($this->inTransaction === true) && ($this->connection->inTransaction() === true);
+    }
+
+    /**
+     * @see AdapterInterface
+     * 
+     * {@inheritdoc}
+     */
+    public function setAttribute($name, $value)
+    {
+        $this->attributes[$name] = $value;
+
+        return $this;
+    }
+
+    /**
+     * @see AdapterInterface
+     * 
+     * {@inheritdoc}
+     */
+    public function getAttribute($name)
+    {
+        return isset($this->attributes[$name]) ? $this->attributes[$name] : null;
     }
 }

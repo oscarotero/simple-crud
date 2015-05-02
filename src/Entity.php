@@ -58,6 +58,18 @@ class Entity
     }
 
     /**
+     * Returns an attribute
+     * 
+     * @param string $name
+     * 
+     * @return null|mixed
+     */
+    public function getAttribute($name)
+    {
+        return $this->adapter->getAttribute($name);
+    }
+
+    /**
      * Create a row instance from the result of a select query.
      *
      * @param array   $row    The selected values

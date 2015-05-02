@@ -125,4 +125,23 @@ interface AdapterInterface
      * @return array
      */
     public function getTables();
+
+    /**
+     * Saves a new attribute
+     * 
+     * @param string $name
+     * @param mixed  $value
+     * 
+     * @return $this
+     */
+    public function setAttribute($name, $value);
+
+    /**
+     * Returns an attribute
+     * 
+     * @param string $name
+     * 
+     * @return null|mixed
+     */
+    public function getAttribute($name);
 }
