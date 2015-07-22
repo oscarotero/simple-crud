@@ -11,6 +11,7 @@ class EntityFactory
 {
     protected $entityNamespace;
     protected $fieldsNamespace;
+    protected $queriesNamespace;
     protected $autocreate;
     protected $tables;
     protected $adapter;
@@ -20,11 +21,16 @@ class EntityFactory
         $this->entityNamespace = isset($config['namespace']) ? $config['namespace'] : null;
         $this->fieldsNamespace = isset($this->entityNamespace) ? $this->entityNamespace.'Fields\\' : null;
         $this->autocreate = isset($config['autocreate']) ? (bool) $config['autocreate'] : false;
+        $this->queriesNamespace = isset($config['queries']) ? $config['queries'] : null;
     }
 
     public function setAdapter(AdapterInterface $adapter)
     {
         $this->adapter = $adapter;
+
+        if (!isset($this->queriesNamespace)) {
+            $this->queriesNamespace = (new ReflectionClass($adapter))->getNameSpaceName().'\\Queries';
+        }
     }
 
     /**
@@ -76,6 +82,10 @@ class EntityFactory
 
         if (empty($entity->rowCollectionClass)) {
             $entity->rowCollectionClass = $this->getCustomClass('RowCollection', $className);
+        }
+
+        if (empty($entity->queriesNamespace)) {
+            $entity->queriesNamespace = $this->queriesNamespace;
         }
 
         //Define fields

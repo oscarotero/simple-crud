@@ -23,11 +23,29 @@ class Entity
 
     public $rowClass;
     public $rowCollectionClass;
+    public $queriesNamespace;
 
     public function __construct(AdapterInterface $adapter, $name)
     {
         $this->adapter = $adapter;
         $this->name = $name;
+    }
+
+    /**
+     * Magic method to create queries
+     * 
+     * @param string $name
+     * @param array  $arguments
+     * 
+     * @throws SimpleCrudException
+     * 
+     * @return object
+     */
+    public function __call($name, $arguments)
+    {
+        $class = $this->queriesNamespace.'\\'.ucfirst($name);
+
+        return new $class($this);
     }
 
     /**
@@ -66,7 +84,7 @@ class Entity
      */
     public function getAttribute($name)
     {
-        return $this->adapter->getAttribute($name);
+        return $this->getAdapter()->getAttribute($name);
     }
 
     /**
@@ -155,77 +173,6 @@ class Entity
     }
 
     /**
-     * Executes a SELECT in the database.
-     *
-     * @param string|array  $where
-     * @param null|array    $marks
-     * @param string|array  $orderBy
-     * @param integer|array $limit
-     * @param null|array    $joins   Optional entities to join
-     * @param null|array    $from    Extra tables used in the query
-     *
-     * @return mixed The row or rowcollection with the result or null
-     */
-    public function select($where = '', array $marks = null, $orderBy = null, $limit = null, array $joins = null, array $from = null)
-    {
-        if ($limit === 0) {
-            return $this->createCollection();
-        }
-
-        $selectFields = [
-            $this->table => array_keys($this->fields),
-        ];
-
-        if ($from) {
-            foreach ($from as $table) {
-                $selectFields[$table] = [];
-            }
-        }
-
-        $selectJoins = [];
-
-        if ($joins !== null) {
-            foreach ($joins as $name => $options) {
-                if (!is_array($options)) {
-                    $name = $options;
-                    $options = [];
-                }
-
-                $entity = $this->getAdapter()->$name;
-                $relation = $this->getRelation($entity);
-
-                if ($relation !== self::RELATION_HAS_ONE) {
-                    throw new SimpleCrudException("The items '{$this->table}' and '{$entity->table}' are no related or cannot be joined");
-                }
-                $currentJoin = [
-                    'table' => $entity->table,
-                    'name' => $entity->name,
-                    'fields' => array_keys($entity->fields),
-                    'on' => ["`{$entity->table}`.`id` = `{$this->table}`.`{$entity->foreignKey}`"],
-                ];
-
-                if (!empty($options['on'])) {
-                    $currentJoin['on'][] = $options['on'];
-
-                    if (!empty($options['marks'])) {
-                        $marks = array_replace($marks, $options['marks']);
-                    }
-                }
-
-                $selectJoins[] = $currentJoin;
-            }
-        }
-
-        $statement = $this->getAdapter()->executeSelect($selectFields, $selectJoins, $where, $marks, $orderBy, $limit);
-
-        if ($limit === true || (isset($limit[1]) && $limit[1] === true)) {
-            return $this->createFromStatement($statement);
-        }
-
-        return $this->createCollectionFromStatement($statement);
-    }
-
-    /**
      * Executes a selection by id or by relation with other rows or collections.
      *
      * @param mixed         $id
@@ -289,59 +236,7 @@ class Entity
         return $this->select($where, $marks, $orderBy, $limit, $joins, $from);
     }
 
-    /**
-     * Execute a count query in the database.
-     *
-     * @param string|array  $where
-     * @param array         $marks
-     * @param integer|array $limit
-     *
-     * @return integer
-     */
-    public function count($where = null, $marks = null, $limit = null)
-    {
-        return $this->getAdapter()->count($this->table, $where, $marks, $limit);
-    }
-
-    /**
-     * Execute a query and return the first row found.
-     *
-     * @param PDOStatement $statement
-     * @param boolean      $expand    Used to expand values of rows in JOINs
-     *
-     * @return null|Row
-     */
-    public function createFromStatement(PDOStatement $statement, $expand = false)
-    {
-        $statement->setFetchMode(PDO::FETCH_ASSOC);
-
-        if (($data = $statement->fetch())) {
-            return $this->createFromSelection($data, $expand);
-        }
-    }
-
-    /**
-     * Execute a query and return the first row found.
-     *
-     * @param PDOStatement $statement
-     * @param boolean      $expand    Used to expand values of rows in JOINs
-     *
-     * @return RowCollection
-     */
-    public function createCollectionFromStatement(PDOStatement $statement, $expand = false)
-    {
-        $statement->setFetchMode(PDO::FETCH_ASSOC);
-
-        $result = [];
-
-        while (($row = $statement->fetch())) {
-            if (($row = $this->createFromSelection($row, $expand))) {
-                $result[] = $row;
-            }
-        }
-
-        return $this->createCollection($result);
-    }
+    
 
     /**
      * Execute a query and return the first row found.
@@ -439,103 +334,22 @@ class Entity
     }
 
     /**
-     * Executes an 'insert' query in the database.
+     * Returns the relation type of this entity with other.
      *
-     * @param array   $data         The values to insert
-     * @param boolean $duplicateKey Set true if you can avoid duplicate key errors
+     * @param Entity|string $entity
      *
-     * @return array The new values of the inserted row
+     * @return null|integer
      */
-    public function insert(array $data, $duplicateKey = false)
+    public function getRelation($entity)
     {
-        $preparedData = $this->prepareDataToDatabase($data, true);
-
-        unset($preparedData['id']);
-
-        $data['id'] = $this->getAdapter()->executeTransaction(function() use ($preparedData, $duplicateKey) {
-            $this->getAdapter()->insert($this->table, $preparedData, $duplicateKey);
-
-            return $this->getAdapter()->lastInsertId();
-        });
-
-        return $data;
-    }
-
-    /**
-     * Executes an 'update' query in the database.
-     *
-     * @param array         $data  The values to update
-     * @param string|array  $where
-     * @param array         $marks
-     * @param integer|array $limit
-     *
-     * @return array The new values of the updated row
-     */
-    public function update(array $data, $where = null, $marks = null, $limit = null, array $changedFields = null)
-    {
-        $originalData = $data;
-        $preparedData = $this->prepareDataToDatabase($data, true);
-
-        if ($changedFields !== null) {
-            $preparedData = $this->filterDataToSave($originalData, $preparedData, $changedFields);
-        }
-
-        unset($originalData, $preparedData['id']);
-
-        if (empty($preparedData)) {
-            return $data;
-        }
-
-        $this->getAdapter()->executeTransaction(function() use ($preparedData, $where, $marks, $limit) {
-            $this->getAdapter()->update($this->table, $preparedData, $where, $marks, $limit);
-        });
-
-        return $data;
-    }
-
-    /**
-     * Execute a delete query in the database.
-     *
-     * @param string|array  $where
-     * @param array         $marks
-     * @param integer|array $limit
-     */
-    public function delete($where = null, $marks = null, $limit = null)
-    {
-        $this->getAdapter()->executeTransaction(function() use ($where, $marks, $limit) {
-            $this->getAdapter()->delete($this->table, $where, $marks, $limit);
-        });
-    }
-
-    /**
-     * Check if this entity is related with other.
-     *
-     * @param Entity|string $entity The entity object or name
-     *
-     * @return boolean
-     */
-    public function isRelated($entity)
-    {
-        if (!($entity instanceof Entity)) {
+        if (is_string($entity)) {
             if (!isset($this->getAdapter()->$entity)) {
-                return false;
+                return;
             }
 
             $entity = $this->getAdapter()->$entity;
         }
 
-        return ($this->getRelation($entity) !== null);
-    }
-
-    /**
-     * Returns the relation type of this entity with other.
-     *
-     * @param Entity $entity
-     *
-     * @return null|integer One of the RELATION_* constants values or null
-     */
-    public function getRelation(Entity $entity)
-    {
         if (isset($entity->fields[$this->foreignKey])) {
             return self::RELATION_HAS_MANY;
         }
@@ -543,5 +357,29 @@ class Entity
         if (isset($this->fields[$entity->foreignKey])) {
             return self::RELATION_HAS_ONE;
         }
+    }
+
+    /**
+     * Returns whether the relation type of this entity with other is HAS_MANY.
+     *
+     * @param Entity|string $entity
+     *
+     * @return boolean
+     */
+    public function hasMany($entity)
+    {
+        return $this->getRelation($entity) === self::RELATION_HAS_MANY;
+    }
+
+    /**
+     * Returns whether the relation type of this entity with other is HAS_MANY.
+     *
+     * @param Entity|string $entity
+     *
+     * @return boolean
+     */
+    public function hasOne($entity)
+    {
+        return $this->getRelation($entity) === self::RELATION_HAS_ONE;
     }
 }

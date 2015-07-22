@@ -11,7 +11,6 @@ use JsonSerializable;
 class Row extends BaseRow implements JsonSerializable
 {
     private $values = [];
-    private $changes = [];
 
     /**
      * Row constructor.
@@ -56,7 +55,12 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function __set($name, $value)
     {
-        $this->changes[$name] = true;
+        $method = "set$name";
+
+        if (method_exists($this, $method) || $this->getEntity()->isRelated($name)) {
+            return $this->values[$name] = $this->$method();
+        }
+
         $this->values[$name] = $value;
     }
 
@@ -133,16 +137,6 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Return if the row values has been changed or not.
-     *
-     * @return boolean
-     */
-    public function changed()
-    {
-        return !empty($this->changes);
-    }
-
-    /**
      * Reload the row from the database.
      *
      * @throws SimpleCrudException
@@ -155,7 +149,6 @@ class Row extends BaseRow implements JsonSerializable
             throw new SimpleCrudException("This row does not exist in database");
         }
 
-        $this->changes = [];
         $this->values = $row->get();
 
         return $this;
@@ -168,17 +161,9 @@ class Row extends BaseRow implements JsonSerializable
      *
      * @return $this
      */
-    public function setRelation(RowInterface $row)
+    public function relateWith(RowInterface $row)
     {
-        if (func_num_args() > 1) {
-            foreach (func_get_args() as $row) {
-                $this->setRelation($row);
-            }
-
-            return $this;
-        }
-
-        if ($this->getEntity()->getRelation($row->getEntity()) !== Entity::RELATION_HAS_ONE) {
+        if (!$this->getEntity()->hasOne($row->getEntity())) {
             throw new SimpleCrudException("Not valid relation");
         }
 
@@ -195,7 +180,6 @@ class Row extends BaseRow implements JsonSerializable
      * Set new values to the row.
      *
      * @param array   $data               The new values
-     * @param boolean $onlyDeclaredFields Set true to only set declared fields
      *
      * @return $this
      */
@@ -205,57 +189,52 @@ class Row extends BaseRow implements JsonSerializable
             $data = array_intersect_key($data, $this->getEntity()->fields);
         }
 
-        foreach ($data as $name => $value) {
-            $this->changes[$name] = true;
-            $this->values[$name] = $value;
-        }
-
         return $this;
     }
 
     /**
      * Return one or all values of the row.
      *
-     * @param boolean|null|string $name              The value name to recover. If it's not defined, returns all values. If it's true, returns only the fields values.
-     * @param boolean             $onlyChangedValues To return only the changed values instead all
+     * @param null|string $name The value name to recover. If it's not defined, returns all values.
      *
      * @return mixed
      */
-    public function get($name = null, $onlyChangedValues = false)
+    public function get($name = null)
     {
-        $values = ($onlyChangedValues === true) ? array_intersect_key($this->values, $this->changes) : $this->values;
-
-        if ($name === true) {
-            return array_intersect_key($values, $this->getEntity()->fields);
-        }
-
         if ($name === null) {
-            return $values;
+            return $this->values;
         }
 
-        return isset($values[$name]) ? $values[$name] : null;
+        return isset($this->values[$name]) ? $this->values[$name] : null;
     }
 
     /**
      * Saves this row in the database.
      *
-     * @param boolean $handleDuplications Set true to detect duplicates index
-     * @param boolean $onlyChangedValues  Set false to save all values instead only the changed (only for updates)
+     * @param boolean $duplicate Set true to detect duplicates index
      *
      * @return $this
      */
-    public function save($handleDuplications = false, $onlyChangedValues = true)
+    public function save($duplicate = false)
     {
-        $data = $this->get(true);
+        $data = array_intersect_key($this->values, $this->getEntity()->fields);
 
         if (empty($this->id)) {
-            $data = $this->getEntity()->insert($data, $handleDuplications);
-        } else {
-            $data = $this->getEntity()->update($data, 'id = :id', [':id' => $this->id], 1, ($onlyChangedValues ? $this->changes : null));
+            $this->getEntity->insert()
+                ->data($data)
+                ->duplicate($duplicate)
+                ->run();
+
+            $this->id = $this->getAdapter()->lastInsertId();
+
+            return $this;
         }
 
-        $this->set($data);
-        $this->changes = [];
+        $this->getEntity()->update()
+            ->data($data)
+            ->where('id = :id', [':id' => $this->id])
+            ->limit(1)
+            ->run();
 
         return $this;
     }
@@ -268,7 +247,10 @@ class Row extends BaseRow implements JsonSerializable
     public function delete()
     {
         if (!empty($this->id)) {
-            $this->getEntity()->delete('id = :id', [':id' => $this->id], 1);
+            $this->getEntity()->delete()
+                ->where('id = :id', [':id' => $this->id])
+                ->limit(1)
+                ->run();
         }
 
         return $this;
