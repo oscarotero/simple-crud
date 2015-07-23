@@ -9,6 +9,13 @@ interface FieldInterface
     /**
      * Convert the data before insert into the database
      *
+     * @return FieldInterface
+     */
+    public static function getInstance();
+
+    /**
+     * Convert the data before insert into the database
+     *
      * @param mixed $data
      *
      * @return mixed

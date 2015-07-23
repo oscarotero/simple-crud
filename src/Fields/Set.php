@@ -4,7 +4,7 @@ namespace SimpleCrud\Fields;
 /**
  * Normalices "set" values, to work with them as arrays.
  */
-class Set implements FieldInterface
+class Set extends Field
 {
     /**
      * {@inheritdoc}

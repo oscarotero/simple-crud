@@ -1,7 +1,7 @@
 <?php
 namespace SimpleCrud;
 
-use SimpleCrud\Adapters\AdapterInterface;
+use SimpleCrud\SimpleCrud;
 use PDOStatement;
 use PDO;
 
@@ -13,7 +13,7 @@ class Entity
     const RELATION_HAS_ONE = 1;
     const RELATION_HAS_MANY = 2;
 
-    protected $adapter;
+    protected $db;
 
     public $name;
     public $table;
@@ -21,14 +21,35 @@ class Entity
     public $defaults;
     public $foreignKey;
 
-    public $rowClass;
-    public $rowCollectionClass;
-    public $queriesNamespace;
+    public $rowClass = 'SimpleCrud\\Row';
+    public $rowCollectionClass = 'SimpleCrud\\RowCollection';
 
-    public function __construct(AdapterInterface $adapter, $name)
+    public static function getInstance($name, SimpleCrud $db)
     {
-        $this->adapter = $adapter;
-        $this->name = $name;
+        $entity = new static($db);
+        $entity->name = $name;
+
+        if (empty($entity->table)) {
+            $entity->table = $name;
+        }
+
+        if (empty($entity->foreignKey)) {
+            $entity->foreignKey = "{$entity->table}_id";
+        }
+
+        $fields = $entity->fields ?: $entity->fields()->get();
+
+        foreach ($fields as $name => $type) {
+            $entity->fields[$name] = $db->getFactory()->getField($entity, $type);
+        }
+
+        return $entity;
+    }
+
+
+    public function __construct(SimpleCrud $db)
+    {
+        $this->db = $db;
     }
 
     /**
@@ -43,9 +64,7 @@ class Entity
      */
     public function __call($name, $arguments)
     {
-        $class = $this->queriesNamespace.'\\'.ucfirst($name);
-
-        return new $class($this);
+        return $this->db->getFactory()->getQuery($this, $name);
     }
 
     /**
@@ -66,13 +85,13 @@ class Entity
     }
 
     /**
-     * Returns the adapter associated with this entity
+     * Returns the SimpleCrud instance associated with this entity
      *
-     * @return AdapterInterface
+     * @return SimpleCrud
      */
-    public function getAdapter()
+    public function getDb()
     {
-        return $this->adapter;
+        return $this->db;
     }
 
     /**
@@ -84,7 +103,7 @@ class Entity
      */
     public function getAttribute($name)
     {
-        return $this->getAdapter()->getAttribute($name);
+        return $this->getDb()->getAttribute($name);
     }
 
     /**
@@ -131,7 +150,7 @@ class Entity
         $row = $this->create($row);
 
         foreach ($joinFields as $name => $values) {
-            $row->$name = empty($values['id']) ? null : $this->getAdapter()->$name->createFromSelection($values);
+            $row->$name = empty($values['id']) ? null : $this->getDb()->$name->createFromSelection($values);
         }
 
         return $row;
@@ -249,7 +268,7 @@ class Entity
      */
     public function fetchOne($query, array $marks = null, $expand = false)
     {
-        return $this->createFromStatement($this->getAdapter()->execute($query, $marks), $expand);
+        return $this->createFromStatement($this->getDb()->execute($query, $marks), $expand);
     }
 
     /**
@@ -263,7 +282,7 @@ class Entity
      */
     public function fetchAll($query, array $marks = null, $expand = false)
     {
-        return $this->createCollectionFromStatement($this->getAdapter()->execute($query, $marks), $expand);
+        return $this->createCollectionFromStatement($this->getDb()->execute($query, $marks), $expand);
     }
 
     /**
@@ -343,11 +362,11 @@ class Entity
     public function getRelation($entity)
     {
         if (is_string($entity)) {
-            if (!isset($this->getAdapter()->$entity)) {
+            if (!isset($this->getDb()->$entity)) {
                 return;
             }
 
-            $entity = $this->getAdapter()->$entity;
+            $entity = $this->getDb()->$entity;
         }
 
         if (isset($entity->fields[$this->foreignKey])) {

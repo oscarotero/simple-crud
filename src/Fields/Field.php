@@ -9,6 +9,14 @@ class Field implements FieldInterface
     /**
      * {@inheritdoc}
      */
+    public static function getInstance()
+    {
+        return new static();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function dataToDatabase($data)
     {
         return $data;

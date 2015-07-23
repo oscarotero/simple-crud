@@ -4,7 +4,7 @@ namespace SimpleCrud\Fields;
 /**
  * Normalices datetime values.
  */
-class Datetime implements FieldInterface
+class Datetime extends Field
 {
     protected $format = 'Y-m-d H:i:s';
 

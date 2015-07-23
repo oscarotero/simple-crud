@@ -1,20 +1,17 @@
 <?php
-namespace SimpleCrud\Adapters;
+namespace SimpleCrud;
 
-use SimpleCrud\EntityFactory;
+use SimpleCrud\Factory;
 use SimpleCrud\SimpleCrudException;
 use Exception;
 use PDO;
 
-/**
- * Base class extended by all adapters
- * and execute the queries in the database.
- */
-abstract class Adapter implements AdapterInterface
+
+class SimpleCrud
 {
     protected $connection;
     protected $inTransaction = false;
-    protected $entityFactory;
+    protected $factory;
     protected $entities = [];
     protected $attributes = [];
 
@@ -24,17 +21,17 @@ abstract class Adapter implements AdapterInterface
      * @param PDO           $connection
      * @param EntityFactory $entityFactory
      */
-    public function __construct(PDO $connection, EntityFactory $entityFactory = null)
+    public function __construct(PDO $connection, Factory $factory = null)
     {
-        if ($entityFactory === null) {
-            $entityFactory = new EntityFactory(['autocreate' => true]);
+        if ($factory === null) {
+            $factory = (new Factory())->autocreate();
         }
-
-        $this->entityFactory = $entityFactory;
-        $this->entityFactory->setAdapter($this);
 
         $this->connection = $connection;
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $this->factory = $factory;
+        $this->factory->init($this);
     }
 
     /**
@@ -52,9 +49,9 @@ abstract class Adapter implements AdapterInterface
             return $this->entities[$name];
         }
 
-        $entity = $this->entityFactory->get($name);
+        $entity = $this->factory->getEntity($name);
 
-        if ($entity === false) {
+        if (empty($entity)) {
             throw new SimpleCrudException("The entity '{$name}' is not valid");
         }
 
@@ -70,7 +67,7 @@ abstract class Adapter implements AdapterInterface
      */
     public function __isset($name)
     {
-        return isset($this->entities[$name]) || $this->entityFactory->has($name);
+        return isset($this->entities[$name]) || $this->factory->hasEntity($name);
     }
 
     /**
@@ -194,9 +191,12 @@ abstract class Adapter implements AdapterInterface
     }
 
     /**
-     * @see AdapterInterface
+     * Saves a new attribute
      * 
-     * {@inheritdoc}
+     * @param string $name
+     * @param mixed  $value
+     * 
+     * @return $this
      */
     public function setAttribute($name, $value)
     {
@@ -206,12 +206,28 @@ abstract class Adapter implements AdapterInterface
     }
 
     /**
-     * @see AdapterInterface
+     * Returns an attribute
      * 
-     * {@inheritdoc}
+     * @param string|int $name
+     * 
+     * @return null|mixed
      */
     public function getAttribute($name)
     {
+        if (is_int($name)) {
+            return $this->connection->getAttribute($name);
+        }
+
         return isset($this->attributes[$name]) ? $this->attributes[$name] : null;
+    }
+
+    /**
+     * Returns the factory instance
+     * 
+     * @return Factory
+     */
+    public function getFactory()
+    {
+        return $this->factory;
     }
 }

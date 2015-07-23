@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud\Query\Mysql;
+namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
@@ -23,6 +23,11 @@ class Select
     protected $orderBy = [];
     protected $limit;
     protected $offset;
+
+    public static function getInstance(Entity $entity)
+    {
+        return new static($entity);
+    }
 
     public function __construct(Entity $entity)
     {
@@ -157,7 +162,7 @@ class Select
      */
     public function run()
     {
-        $statement = $this->entity->getAdapter->execute((string) $this, $this->marks);
+        $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_ASSOC);
 
         return $statement;
@@ -174,7 +179,7 @@ class Select
         $result = $this->entity->createCollection();
 
         while (($row = $statement->fetch())) {
-            $result = $this->createFromSelection($row);
+            $result = $this->entity->createFromSelection($row);
         }
 
         return $result;
@@ -187,7 +192,11 @@ class Select
      */
     public function one()
     {
-        return $this->createFromSelection($this->run()->fetch());
+        $row = $this->run()->fetch();
+
+        if ($row !== false) {
+            return $this->entity->createFromSelection($row);
+        }
     }
 
     /**
@@ -214,7 +223,7 @@ class Select
             $query .= ' LEFT JOIN `'.$join['entity']->table.'`"';
 
             if (!empty($join['on'])) {
-                $query .= ' ON ('.$join['on'],')';
+                $query .= ' ON ('.$join['on'].')';
             }
         }
 
@@ -222,7 +231,7 @@ class Select
             $query .= ' WHERE ('.implode(') AND (', $this->where).')';
         }
 
-        if !(empty($this->orderBy)) {
+        if (!empty($this->orderBy)) {
             $query .= ' ORDER BY '.implode(', ', $this->orderBy);
         }
 

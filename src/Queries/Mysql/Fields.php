@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud\Query\Mysql;
+namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
@@ -15,6 +15,11 @@ class Fields
 {
     protected $entity;
 
+    public static function getInstance(Entity $entity)
+    {
+        return new static($entity);
+    }
+
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
@@ -23,15 +28,23 @@ class Fields
     /**
      * Run the query and return all values
      * 
-     * @return RowCollection
+     * @return PDOStatement
      */
     public function run()
     {
+        return $this->entity->getDb()->execute((string) $this);
+    }
+
+    /**
+     * Run the query and return the fields
+     * 
+     * @return array
+     */
+    public function get()
+    {
         $result = [];
 
-        $statement = $this->entity->getAdapter->execute((string) $this);
-
-        foreach ($statement->fetchAll() as $field) {
+        foreach ($this->run()->fetchAll() as $field) {
             preg_match('#^(\w+)#', $field['Type'], $matches);
 
             $result[$field['Field']] = $matches[1];

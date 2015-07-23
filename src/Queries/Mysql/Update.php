@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud\Query\Mysql;
+namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
@@ -9,20 +9,40 @@ use PDOStatement;
 use PDO;
 
 /**
- * Manages a database delete query in Mysql databases
+ * Manages a database update query in Mysql databases
  */
-class Delete
+class Update
 {
     protected $entity;
 
+    protected $data = [];
     protected $where = [];
     protected $marks = [];
     protected $limit;
     protected $offset;
 
+    public static function getInstance(Entity $entity)
+    {
+        return new static($entity);
+    }
+
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
+    }
+
+    /**
+     * Set the data to update
+     * 
+     * @param array $data
+     * 
+     * @return self
+     */
+    public function data(array $data)
+    {
+        $this->data = $data;
+
+        return $this;
     }
 
     /**
@@ -93,7 +113,13 @@ class Delete
      */
     public function run()
     {
-        return $this->entity->getAdapter->execute((string) $this, $this->marks);
+        $marks = [];
+
+        foreach ($this->data as $field => $value) {
+            $marks[":__{$field}"] = $value;
+        }
+
+        return $this->entity->getAdapter->execute((string) $this, $marks);
     }
 
     /**
@@ -103,7 +129,8 @@ class Delete
      */
     public function __toString()
     {
-        $query = "DELETE FROM `{$this->entity->table}`";
+        $query = "UPDATE `{$this->entity->table}`";
+        $query .= ' SET '.static::buildFields(array_keys($data));
 
         if (!empty($this->where)) {
             $query .= ' WHERE ('.implode(') AND (', $this->where).')';
@@ -120,5 +147,23 @@ class Delete
         }
 
         return $query;
+    }
+
+    /**
+     * Generates the data part of a UPDATE query
+     *
+     * @param array       $fields
+     *
+     * @return string
+     */
+    protected static function buildFields(array $fields)
+    {
+        $query = [];
+
+        foreach ($fields as $field) {
+            $query[] = "`{$field}` = :__{$field}";
+        }
+
+        return implode(', ', $query);
     }
 }

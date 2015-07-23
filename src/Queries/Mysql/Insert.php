@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud\Query\Mysql;
+namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
@@ -17,6 +17,11 @@ class Insert
 
     protected $data = [];
     protected $duplications;
+
+    public static function getInstance(Entity $entity)
+    {
+        return new static($entity);
+    }
 
     public function __construct(Entity $entity)
     {
