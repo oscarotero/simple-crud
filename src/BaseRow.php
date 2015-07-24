@@ -57,4 +57,34 @@ abstract class BaseRow implements RowInterface
     {
         return $this->toArray();
     }
+
+    /**
+     * Returns related stuff
+     * 
+     * @param Entity $entity
+     * @param string|null $where
+     * @param string|null $marks
+     * @param string|null $orderBy
+     * @param int|null $limit
+     *
+     * @return Queries\QueryInterface
+     */
+    protected function relationSelection(Entity $entity, $where = null, $marks = null, $orderBy = null, $limit = null)
+    {
+        $select = $entity->querySelect()->relatedWith($this);
+
+        if ($where !== null) {
+            $select->where($where, $marks);
+        }
+
+        if ($orderBy !== null) {
+            $select->orderBy($orderBy);
+        }
+
+        if ($limit) {
+            $select->limit($limit);
+        }
+
+        return $select;
+    }
 }

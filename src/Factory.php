@@ -143,6 +143,30 @@ class Factory
 
 
     /**
+     * Returns a Query class
+     *
+     * @param string $name
+     *
+     * @return string|null
+     */
+    public function getQueryClass($name)
+    {
+        $name = ucfirst($name);
+        $class = $this->queries.$name;
+
+        if (class_exists($class)) {
+            return $class;
+        }
+
+        $class = $this->default_queries.$name;
+
+        if (class_exists($class)) {
+            return $class;
+        }
+    }
+
+
+    /**
      * Creates a new instance of a Query for a entity
      *
      * @param Entity $entity
@@ -152,16 +176,9 @@ class Factory
      */
     public function getQuery(Entity $entity, $name)
     {
-        $name = ucfirst($name);
-        $class = $this->queries.$name;
+        $class = $this->getQueryClass($name);
 
-        if (class_exists($class)) {
-            return $class::getInstance($entity);
-        }
-
-        $class = $this->default_queries.$name;
-
-        if (class_exists($class)) {
+        if (!empty($class)) {
             return $class::getInstance($entity);
         }
     }
@@ -175,7 +192,7 @@ class Factory
     private function getTables()
     {
         if ($this->tables === null) {
-            $class = $this->default_queries.'Tables';
+            $class = $this->default_queries.'DbTables';
             $this->tables = $class::getInstance($this->db)->get();
         }
 

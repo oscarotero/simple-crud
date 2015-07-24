@@ -12,7 +12,7 @@ use PDO;
 /**
  * Manages a database query to get the table names in Mysql databases
  */
-class Tables
+class DbTables
 {
     protected $db;
 

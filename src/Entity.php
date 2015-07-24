@@ -37,7 +37,7 @@ class Entity
             $entity->foreignKey = "{$entity->table}_id";
         }
 
-        $fields = $entity->fields ?: $entity->fields()->get();
+        $fields = $entity->fields ?: $entity->fields();
 
         foreach ($fields as $name => $type) {
             $entity->fields[$name] = $db->getFactory()->getField($entity, $type);
@@ -60,18 +60,21 @@ class Entity
      * 
      * @throws SimpleCrudException
      * 
-     * @return object
+     * @return QueryInterface|mixed
      */
     public function __call($name, $arguments)
     {
-        return $this->db->getFactory()->getQuery($this, $name);
-    }
+        if (strpos($name, 'query')) {
+            $name = substr($name, 5);
 
-    /**
-     * init callback.
-     */
-    public function init()
-    {
+            return $this->db->getFactory()->getQuery($this, $name);
+        }
+
+        $class = $this->db->getFactory()->getQueryClass($name);
+
+        if ($class) {
+            return $class::execute($this, $arguments);
+        }
     }
 
     /**
@@ -107,56 +110,6 @@ class Entity
     }
 
     /**
-     * Create a row instance from the result of a select query.
-     *
-     * @param array   $row    The selected values
-     * @param boolean $expand True to expand the results (used if the select has joins)
-     *
-     * @return false|Row
-     */
-    public function createFromSelection(array $row, $expand = false)
-    {
-        foreach ($row as $key => &$value) {
-            if (isset($this->fields[$key])) {
-                $value = $this->fields[$key]->dataFromDatabase($value);
-            }
-        }
-
-        if ($expand === false) {
-            return ($row = $this->dataFromDatabase($row)) ? $this->create($row) : false;
-        }
-
-        $fields = $joinFields = [];
-
-        foreach ($row as $name => $value) {
-            if (strpos($name, '.') === false) {
-                $fields[$name] = $value;
-                continue;
-            }
-
-            list($name, $fieldName) = explode('.', $name, 2);
-
-            if (!isset($joinFields[$name])) {
-                $joinFields[$name] = [];
-            }
-
-            $joinFields[$name][$fieldName] = $value;
-        }
-
-        if (!($row = $this->dataFromDatabase($fields))) {
-            return false;
-        }
-
-        $row = $this->create($row);
-
-        foreach ($joinFields as $name => $values) {
-            $row->$name = empty($values['id']) ? null : $this->getDb()->$name->createFromSelection($values);
-        }
-
-        return $row;
-    }
-
-    /**
      * Creates a new row instance.
      *
      * @param array   $data               The values of the row
@@ -164,12 +117,8 @@ class Entity
      *
      * @return Row
      */
-    public function create(array $data = null, $onlyDeclaredFields = false)
+    public function create(array $data = null)
     {
-        if (!empty($data) && $onlyDeclaredFields === true) {
-            $data = array_intersect_key($data, $this->fields);
-        }
-
         return new $this->rowClass($this, $data);
     }
 
@@ -189,100 +138,6 @@ class Entity
         }
 
         return $collection;
-    }
-
-    /**
-     * Executes a selection by id or by relation with other rows or collections.
-     *
-     * @param mixed         $id
-     * @param string|array  $where
-     * @param array         $marks
-     * @param string|array  $orderBy
-     * @param integer|array $limit
-     * @param array         $joins
-     * @param array         $from
-     *
-     * @throws SimpleCrudException on error
-     *
-     * @return Row|RowCollection|null
-     */
-    public function selectBy($id, $where = null, $marks = null, $orderBy = null, $limit = null, array $joins = null, array $from = null)
-    {
-        if (empty($id)) {
-            return is_array($id) ? $this->createCollection() : false;
-        }
-
-        $where = empty($where) ? [] : (array) $where;
-        $marks = empty($marks) ? [] : (array) $marks;
-
-        if ($id instanceof RowInterface) {
-            switch ($this->getRelation($id->entity)) {
-                case self::RELATION_HAS_ONE:
-                    $ids = $id->get('id');
-                    $foreignKey = $id->entity->foreignKey;
-                    $fetch = null;
-                    break;
-
-                case self::RELATION_HAS_MANY:
-                    $ids = $id->get($this->foreignKey);
-                    $foreignKey = 'id';
-                    $fetch = true;
-                    break;
-
-                default:
-                    throw new SimpleCrudException("The items {$this->table} and {$id->entity->table} are no related");
-            }
-
-            if (empty($ids)) {
-                return ($id instanceof RowCollection) ? $this->createCollection() : null;
-            }
-
-            $where[] = "`{$this->table}`.`$foreignKey` IN (:id)";
-            $marks[':id'] = $ids;
-
-            if ($limit === null) {
-                $limit = (($id instanceof RowCollection) && $fetch) ? count($ids) : $fetch;
-            }
-        } else {
-            $where[] = 'id IN (:id)';
-            $marks[':id'] = $id;
-
-            if ($limit === null) {
-                $limit = is_array($id) ? count($id) : true;
-            }
-        }
-
-        return $this->select($where, $marks, $orderBy, $limit, $joins, $from);
-    }
-
-    
-
-    /**
-     * Execute a query and return the first row found.
-     *
-     * @param string  $query  The Mysql query to execute or the statement with the result
-     * @param array   $marks  The marks passed to the statement
-     * @param boolean $expand Used to expand values of rows in JOINs
-     *
-     * @return null|Row
-     */
-    public function fetchOne($query, array $marks = null, $expand = false)
-    {
-        return $this->createFromStatement($this->getDb()->execute($query, $marks), $expand);
-    }
-
-    /**
-     * Execute a query and return all rows found.
-     *
-     * @param string  $query  The Mysql query to execute
-     * @param array   $marks  The marks passed to the statement
-     * @param boolean $expand Used to expand values in subrows on JOINs
-     *
-     * @return RowCollection
-     */
-    public function fetchAll($query, array $marks = null, $expand = false)
-    {
-        return $this->createCollectionFromStatement($this->getDb()->execute($query, $marks), $expand);
     }
 
     /**
@@ -307,12 +162,60 @@ class Entity
     }
 
     /**
-     * Prepare the data before save into database (used by update and insert).
+     * Prepares the data from the result of a database selection
      *
-     * @param array &$data The data to save
-     * @param bool  $new   True if it's a new value (insert)
+     * @param array $data
+     *
+     * @return array
      */
-    private function prepareDataToDatabase(array &$data, $new)
+    public function prepareDataFromDatabase(array $data)
+    {
+        $joins = [];
+
+        foreach ($data as $key => &$value) {
+            if (isset($this->fields[$key])) {
+                $value = $this->fields[$key]->dataFromDatabase($value);
+                continue;
+            }
+
+            if (strpos($key, '.') !== false) {
+                list($name, $field) = explode('.', $key, 2);
+                
+                if (!isset($joins[$name])) {
+                    $joins[$name] = [];
+                }
+
+                $joins[$name][$field] = $value;
+
+                unset($data[$key]);
+            }
+        }
+
+        if (!is_array($data = $this->dataFromDatabase($data))) {
+            throw new SimpleCrudException("Data not valid");
+        }
+
+        $data = $this->dataFromDatabase($data);
+
+        //handle left-joins
+        foreach ($joins as $key => $values) {
+            $entity = $this->getDb()->$key;
+
+            $data[$key] = $entity->create($entity->prepareDataFromDatabase($values));
+        }
+
+        return $data;
+    }
+
+    /**
+     * Prepares the data before save into database (used by update and insert).
+     *
+     * @param array $data
+     * @param bool  $new
+     * 
+     * @return array
+     */
+    public function prepareDataToDatabase(array $data, $new)
     {
         if (!is_array($data = $this->dataToDatabase($data, $new))) {
             throw new SimpleCrudException("Data not valid");
@@ -323,33 +226,11 @@ class Entity
         }
 
         //Transform data before save to database
-        $dbData = [];
-
-        foreach ($data as $key => $value) {
-            $dbData[$key] = $this->fields[$key]->dataToDatabase($value);
+        foreach ($data as $key => &$value) {
+            $value = $this->fields[$key]->dataToDatabase($value);
         }
 
-        return $dbData;
-    }
-
-    /**
-     * Removes unchanged data before save into database (used by update and insert).
-     *
-     * @param array $data          The original data
-     * @param array $prepared      The prepared data
-     * @param array $changedFields Array of changed fields.
-     */
-    private function filterDataToSave(array $data, array $prepared, array $changedFields)
-    {
-        $filtered = [];
-
-        foreach ($data as $name => $value) {
-            if (isset($changedFields[$name]) || ($value !== $prepared[$name])) {
-                $filtered[$name] = $prepared[$name];
-            }
-        }
-
-        return $filtered;
+        return $data;
     }
 
     /**

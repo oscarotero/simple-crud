@@ -1,8 +1,10 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
+use SimpleCrud\Queries\QueryInterface;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
+use SimpleCrud\RowInterface;
 use SimpleCrud\Entity;
 use SimpleCrud\SimpleCrudException;
 use PDOStatement;
@@ -11,7 +13,7 @@ use PDO;
 /**
  * Manages a database select query in Mysql databases
  */
-class Select
+class Select implements QueryInterface
 {
     protected $entity;
 
@@ -24,11 +26,51 @@ class Select
     protected $limit;
     protected $offset;
 
+    /**
+     * @see QueryInterface
+     * 
+     * {@inheritdoc}
+     */
     public static function getInstance(Entity $entity)
     {
         return new static($entity);
     }
 
+    /**
+     * @see QueryInterface
+     * 
+     * $entity->select($where, $marks, $orderBy, $limit)
+     * 
+     * {@inheritdoc}
+     */
+    public static function execute(Entity $entity, array $args)
+    {
+        $select = self::getInstance($entity);
+
+        if (isset($args[0])) {
+            $select->where($args[0], isset($args[1]) ? $args[1] : null);
+        }
+
+        if (isset($args[2])) {
+            $select->orderBy($args[2]);
+        }
+
+        if (isset($args[3])) {
+            if ($args[3] === true) {
+                return $select->one();
+            }
+
+            $select->limit($args[3]);
+        }
+
+        return $select->all();
+    }
+
+    /**
+     * Constructor
+     * 
+     * @param Entity $entity
+     */
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
@@ -65,6 +107,57 @@ class Select
         }
 
         return $this;
+    }
+
+    /**
+     * Adds a WHERE according with the relation of other entity
+     * 
+     * @param RowInterface $id
+     * 
+     * @return self
+     */
+    public function relatedWith(RowInterface $row)
+    {
+        if ($this->entity->hasOne($row)) {
+            return $this->by($row->getEntity()->foreignKey, $id->get('id'));
+        }
+
+        if ($this->entity->hasMany($row)) {
+            return $this->byId($row->get($this->entity->foreignKey));
+        }
+
+        throw new SimpleCrudException("The tables {$this->entity->table} and {$id->getEntity()->table} are no related");
+    }
+
+    /**
+     * Adds a WHERE field = :value clause
+     * 
+     * @param string $field
+     * @param int|array $value
+     * 
+     * @return self
+     */
+    public function by($field, $value)
+    {
+        if (is_array($value)) {
+            return $this->where("`{$this->entity->table}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
+        }
+        
+        return $this->where("`{$this->entity->table}`.`{$field}` = :{$field}", [":{$field}" => $value]);
+    }
+
+    /**
+     * Adds a WHERE id = :id clause
+     * 
+     * @param int|array $id
+     * 
+     * @return self
+     */
+    public function byId($id)
+    {
+        $limit = is_array($id) ? count($id) : 1;
+
+        return $this->limit($limit)->by('id', $id);
     }
 
     /**
@@ -179,7 +272,7 @@ class Select
         $result = $this->entity->createCollection();
 
         while (($row = $statement->fetch())) {
-            $result = $this->entity->createFromSelection($row);
+            $result[] = $this->entity->create($this->entity->dataFromDatabase($row));
         }
 
         return $result;
@@ -195,7 +288,7 @@ class Select
         $row = $this->run()->fetch();
 
         if ($row !== false) {
-            return $this->entity->createFromSelection($row);
+            return $this->entity->create($this->entity->dataFromDatabase($row));
         }
     }
 

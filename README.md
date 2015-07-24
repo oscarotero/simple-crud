@@ -3,14 +3,16 @@
 [![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
 
-PHP library to provide some CRUD functions (Create, Read, Update, Delete) in Mysql/Sqlite databases.
+PHP library to provide CRUD functions (Create, Read, Update, Delete) in Mysql/Sqlite databases with some magic features.
 
 
 ## Components
 
 SimpleCrud has the following classes:
 
-* **Adapters:** Manage the database connection, execute the queries and create all entities. Currently there are two adapters: for mysql and sqlite databases
+* **SimpleCrud:** Manage the database connection, execute the queries and create all entities. 
+* **Query:** Generates all queries needed for select/insert/update/delete operations.
+Currently there are support for mysql and sqlite databases
 * **Entity:** Manages an entity (database table) to select, insert, update, delete rows.
 * **Row:** Stores/modifies the data of a row
 * **RowCollection:** Is a collection of rows
@@ -19,7 +21,7 @@ SimpleCrud has the following classes:
 
 ### Define the entities:
 
-Create a new entity for each table in the database in a common namespace:
+Create a new entity for each table in the database in a common namespace, for example `MyModels`:
 
 ```php
 namespace MyModels;
@@ -61,7 +63,7 @@ class Users extends Entity
 }
 ```
 
-SimpleCrud uses the `foreignKey property` to detect automatically the relationship between two entities `RELATION_HAS_ONE | RELATION_HAS_MANY`. For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment can have one related post (`RELATION_HAS_ONE`).
+SimpleCrud uses the `foreignKey` property to detect automatically the relationship between two entities `RELATION_HAS_ONE | RELATION_HAS_MANY`. For example: the foreignKey in Posts is "posts_id" and Comments has a field called "posts_id", so SimpleCrud knows that each comment belongs to one post (`RELATION_HAS_ONE`).
 
 You can define also entities without these properties:
 
@@ -73,31 +75,32 @@ class Tags extends Entity {
 }
 ```
 
-This is usefull in early phases, when the database can change and you don't want edit the entity class all the time. You even can use this library with no entities and the "autocreate" option enabled (to get all tables from the database and create the entities  automatically).
+This is usefull in early phases, when the database can change and you don't want edit the entity class all the time. You even can use this library with no entities and the "autocreate" option enabled (to get all tables from the database and create the entities automatically).
 
 ### Init the library
 
-Let's create an instance of the Adapter, passing the PDO instance with the database connection and an instance of EntityFactory to create the entities.
+Let's create an instance of `SimpleCrud\SimpleCrud`, passing the `PDO` instance and an instance of `SimpleCrud\Factory`, used to create the entities/fields/queries instances:
 
 ```php
-use SimpleCrud\Adapters\Mysql;
-use SimpleCrud\EntityFactory;
+use SimpleCrud\SimpleCrud;
+use SimpleCrud\Factory;
 
-$db = new Mysql($PDO, new EntityFactory([
-    'namespace' => 'MyModels\\' //The namespace where my entities classes are defined
-    'autocreate' => true //Set true to create automatically non defined entities.
-]));
+$factory = (new Factory())
+    ->entities('MyModels\\') //The namespace where my entities classes are defined
+    ->autocreate();          //Create automatically non defined entities.
 
-//You can access to all entities, they will be instanced on demand:
+$db = new SimpleCrud($PDO, $factory);
+
+//You can access to all entities, they will be created on demand:
 $db->posts; //Posts entity
 ```
 
-To init the library with no entities defined (and create it automatically):
+You can avoid the factory if you don't have entities classes defined and want to create them automatically
 
 ```php
-use SimpleCrud\Adapters\Mysql;
+use SimpleCrud\SimpleCrud;
 
-$db = new Mysql($PDO);
+$db = new SimpleCrud($PDO);
 
 //All entities will be created automatically using the database tables:
 $db->posts; //Posts entity
@@ -105,127 +108,216 @@ $db->posts; //Posts entity
 
 ### Using the library
 
-#### Create and edit values:
+#### Basic CRUD:
+
+You can work directly with the entities to insert/update/delete/select data:
 
 ```php
-//Create a new post
-$post = $db->posts->create([
+//Get the entity to work with the table `posts`:
+$posts = $db->posts;
+
+//insert new posts
+//$entity->insert(array $data)
+
+$db->insert([
     'title' => 'My first post',
     'text' => 'This is the text of the post'
 ]);
 
-//Get/set values
-echo $post->title; //My first item
+//Update a post
+//$entity->update(array $data, $where = null, $marks = null, $limit = null)
 
-$post->description = 'New description';
+$db->update(['title' => 'New title'], 'id = :id', [':id' => 23], 1);
+
+//Delete a post
+//$entity->delete($where = null, $marks = null, $limit = null)
+
+$db->delete('id = :id', [':id' => 23], 1);
+
+//Select posts
+//$entity->select($where = null, $marks = null, $orderBy = null, $limit = null)
+
+$posts = $posts->select('id > :id', [':id' => 10], 'id ASC', 100);
+
+//use limit = true to get just one post
+$post = $posts->select('id = :id', [':id' => 10], null, true);
+```
+
+#### Working with queries
+
+To work with more complicated queries, you can use the `query[whatever]` functions:
+
+```php
+//Insert data
+$posts->queryInsert()
+    ->data($myData)
+    ->run();
+
+//Update data
+$posts->queryUpdate()
+    ->data($myData)
+    ->where('id = :id', [':id' => 34])
+    ->limit(1)
+    ->run();
+
+//Delete data
+$posts->queryDelete()
+    ->where('active = 0')
+    ->where('pub_date < :pubdate', [':pubdate' => $my_pubdate])
+    ->limit(10)
+    ->offset(5)
+    ->run();
+
+//Select data
+$result = $posts->querySelect()
+    ->where('pub_date < :pubdate_max')
+    ->where('id < :id_max')
+    ->marks([
+        ':pubdate_max' => $pubdate,
+        ':id_max' => $id,
+    ])
+    ->limit(10)
+    ->orderBy('id DESC')
+    ->all();
+```
+
+This functions returns an instance of one of the `Queries` classes available. The `Select` class, used to read data from the database has some special methods:
+
+```php
+$result = $posts->querySelect()
+    ->withId(23) //select by id
+    ->with('slug', $my_slug) //select by slug also
+    ->one(); //get one result, instead all
+```
+
+You can also select rows related with other rows:
+
+```php
+//Select a post by id
+$post = $posts->querySelect()->withId(23)->one();
+
+//Select the comments related with this posts
+$comments = $posts->querySelect()->relatedWith($post)->all();
+```
+
+You can, also create your own `Queries` classes to extend the default behaviour with custom functionalities:
+
+```php
+namespace MyModels\Queries;
+
+class Select extends \SimpleCrud\Queries\Mysql\Select
+{
+    public function isActive()
+    {
+        return $this->where('active = 1');
+    }
+}
+```
+
+To use it, you must register your Queries namespace in the factory and that's all:
+
+```php
+$factory = (new Factory())
+    ->entities('MyModels\\Queries\\') //The namespace where my Queries classes are placed
+    ->autocreate();          //Create automatically non defined entities.
+
+$db = new SimpleCrud($PDO, $factory);
+
+$posts = $db->posts->querySelect()
+            ->withId(34)
+            ->isActive()
+            ->one();
+```
+
+#### Working with rows
+
+If you select a row from the database, it's saved in a `Row` instance. This class allows read the data and modify:
+
+```php
+$post = $db->posts->querySelect()->withId(25)->one();
+
+echo $post->title; //Get the post title
+
+$post->title = 'New title';
+
+$post->save(); //Save the data
+
+$post->delete(); //remove the row in the database
+
+//Create a new row
+$newPost = $db->posts->create(['title' => 'The title']);
+
+$newPost->description = 'Hello world';
 
 //Or use an array for edit values
-$post->set([
+$newPost->set([
     'title' => 'New title',
     'description' => 'Another description'
 ]);
 
-//Save (insert/update) the post in the database
-$post->save();
-
-//Delete the post in the database
-$post->delete();
+$newPost->save(); //save the posts in the database.
 ```
 
-#### selectBy
+#### Working with row collections
 
-`selectBy` is a function to select values by keys:
+If you select more than one row from the database, the rows are saved in a `RowCollection` instance.
 
 ```php
-//Select the post with id = 45
-$post = $db->posts->selectBy(45);
+$allPosts = $db->posts->querySelect()->all();
 
-//Or select various ids and returns a RowCollection
-$posts = $db->posts->selectBy([45, 34, 98]);
+foreach ($allPosts as $post) {
+    echo $post->title;
+}
+
+$allTitles = $allPosts->title; //array with all titles of all posts
 ```
 
-`selectBy` can be used with `Row` and `RowCollection` instances to select related rows:
+
+### Customize the Row and RowCollection classes
+
+Each entity can use its own `Row` or `RowCollection` classes instead the defaults, to use custom methods. You need to create classes extending `SimpleCrud\Row` and `SimpleRow\CollectionRow`:
 
 ```php
-//Get the post id=5
-$post = $db->posts->selectBy(5);
+namespace MyModels;
 
-//Get all comments related with this post
-$comments = $db->comments->selectBy($post); 
+use SimpleCrud\Entity;
+use SimpleCrud\Row;
+use SimpleCrud\RowCollection;
 
-//Get a RowCollection with 4 posts
-$posts = $db->posts->selectBy([5, 6, 7, 8]);
+class Posts extends Entity
+{
+    public $rowClass = 'MyCustomRowClass';
+    public $rowCollectionClass = 'MyCustomRowCollectionClass';
+}
 
-//Get all comments related with these 4 posts
-$comments = $db->comments->selectBy($posts);
+class MyCustomRowClass extends Row
+{
+    public function escapeText ()
+    {
+        $this->text = htmlspecialchars($this->text);
+    }
+}
+
+class MyCustomRowCollectionClass extends Row
+{
+    public function getSumIds ()
+    {
+        $ids = $this->get('id');
+
+        return array_sum($ids);
+    }
+}
 ```
 
-`selectBy` has more arguments to define WHERE, ORDER BY and LIMIT clauses:
+Now, you can use this functions in the rows and rowcollections:
 
 ```php
-//Select a post:
-$post = $db->posts->selectBy(5);
+$posts = $db->posts->querySelect()->byId([1, 2, 3])->all();
 
-//Select related comments where "enable = 1"
-$comments = $db->comments->selectBy($post, 'enable = 1');
+$posts->escapeText(); //Execute escapeText in each row
 
-//Or provide marks:
-$comments = $db->comments->selectBy($post, 'enable = :enable', [':enable' => 1]);
-
-//And sort the result
-$comments = $db->comments->selectBy($post, 'enable = :enable', [':enable' => 1], 'pubdate DESC');
-
-//And limit
-$comments = $db->comments->selectBy($post, 'enable = :enable', [':enable' => 1], 'pubdate DESC', 10);
+$total = $posts->getSumIds(); //Returns 6
 ```
-
-#### select
-
-The function `select` has the same arguments but the first:
-
-```php
-//SELECT * FROM posts WHERE slug = 'hello-world' ORDER BY id DESC LIMIT 10
-$post = $db->posts->select('slug = :slug', [':slug' => 'hello-world'], 'id DESC', 10);
-
-//SELECT * FROM posts WHERE id = :id LIMIT 1
-$post = $db->posts->select("id = :id", [':id' => 45], null, true);
-// (*) the difference between limit = 1 and limit = true is that true returns the fetched item and 1 returns an rowCollection with 1 element
-```
-
-Both `select` and `selectBy` functions accepts two more arguments:
-
-* `$join`: Allows select more entities in the same query (using LEFT JOIN)
-* `$from`: To add more tables that you can use in the WHERE clause
-
-```php
-//SELECT {all fields from posts and users} FROM posts LEFT JOIN users ON posts.users_id = users.id WHERE active = 1 ORDER BY id DESC LIMIT 10
-$posts = $db->posts->select('active = 1', null, 'id DESC', 10, ['users']);
-```
-
-#### Other methods
-
-`fetchOne` and `fetchAll` allows create the query yourself:
-
-```php
-$post = $db->posts->fetchOne('SELECT * FROM posts WHERE users_id  :users_id LIMIT 1', [':users_id' => 3]);
-
-//Simplecrud accepts arrays in the marks:
-$posts = $db->posts->fetchAll('SELECT * FROM posts WHERE users_id IN (:users_id)', [':users_id' => [3, 4, 5]]);
-```
-
-To insert, update or delete rows without select them, use directly the entity:
-
-```php
-$db->posts->delete('id > :id', [':id' => 23], 10);
-//DELETE FROM `posts` WHERE id > 23 LIMIT 10
-
-$db->posts->update(['text' => 'Hello world'], 'id = :id', [':id' => 23], 1);
-//UPDATE `posts` SET `text` = 'Hello world' WHERE id = 23 LIMIT 1
-
-$id = $db->posts->insert(['text' => 'Hello world']);
-//INSERT INTO `posts` (`text`) VALUES ('Hello world')
-```
-
 
 ### Validate data
 
@@ -270,96 +362,19 @@ class Posts extends Entity
 }
 ```
 
-### Customize the Row and RowCollection classes
-
-Each entity can use its own `Row` or `RowCollection` classes instead the defaults, to create custom methods. You need to create classes extending `SimpleCrud\Row` and `SimpleRow\CollectionRow`:
-
-```php
-namespace MyModels;
-
-use SimpleCrud\Entity;
-use SimpleCrud\Row;
-use SimpleCrud\RowCollection;
-
-class Posts extends Entity
-{
-    public $rowClass = 'MyCustomRowClass';
-    public $rowCollectionClass = 'MyCustomRowCollectionClass';
-}
-
-class MyCustomRowClass extends Row
-{
-    public function escapeText ()
-    {
-        $this->text = htmlspecialchars($this->text);
-    }
-}
-
-class MyCustomRowCollectionClass extends Row
-{
-    public function getSumIds ()
-    {
-        $ids = $this->get('id');
-
-        return array_sum($ids);
-    }
-}
-```
-
-Now, you can use this functions in the rows and rowcollections:
-
-```php
-$posts = $db->posts->selectBy([1, 2, 3]);
-
-$posts->escapeText(); //Execute escapeText in each row
-
-$total = $posts->getSumIds(); //Returns 6
-```
-
-You can set these classes automatically creating classes with the same name than the entity class but in a subnamespace called "Rows" or "RowCollections":
-
-The custom Row class for Posts entity:
-
-```php
-namespace MyModels\Rows;
-
-use SimpleCrud\Row;
-
-class Posts extends Row
-{
-    //row custom methods
-}
-```
-
-The custom RowCollection class for Posts entity:
-
-```php
-namespace MyModels\RowCollections;
-
-use SimpleCrud\RowCollection;
-
-class Posts extends RowCollection
-{
-    //row custom methods
-}
-```
-
-You can define also the classes `MyModels\Rows\Row` and `MyModels\RowCollections\RowCollection` to be used as default instead `SimpleCrud\Row` and `SimpleCrud\RowCollection`.
-
-
 ### Lazy loads
 
 Both `Row` and `RowCollection` can load automatically the related rows if you call them by the entity name:
 
 ```php
 //Get posts by id=34
-$post = $db->posts->selectBy(34);
+$post = $db->posts->selectQuery()->withId(34)->one();
 
 //Load the comments related with this post
 $comments = $post->comments;
 
 //This is equivalent to:
-$comments = $db->comments->selectBy($post);
+$comments = $db->comments->selectQuery->relatedWith($post)->all();
 ```
 
 This allows make awesome (and dangerous :D) things like this:
@@ -376,8 +391,8 @@ $title = $post->comments->users->posts->title;
 //And finally, the titles of all these posts
 ```
 
-You can define the way of the lazy loads are executed, creating methods starting by "get" in the row class. The result of the method will be cached in the property.
-Lazy loads not only works with relations, but also with any property you want. Just create a method named get[NameOfTheProperty] and you get it.
+You can define the way of the lazy loads are executed, creating methods starting by "get" in the row class. The result of the method will be cached in a property with the same name.
+Lazy loads not only works with relations, but also with any value you want. Just create a method named get[NameOfTheProperty] and you get it.
 
 ```php
 namespace MyModels\Rows;
@@ -392,8 +407,11 @@ class Posts extends Row
      */
     public function getComments ()
     {
-        //Use $this->getAdapter() to access to the database adapter
-        return $this->getAdapter()->comments->selectBy($this, "validated = 1");
+        //Use $this->getDb() to access to the SimpleCrud instance
+        return $this->getDb()->comments->querySelect()
+            ->relatedWith($this)
+            ->where('validated = 1')
+            ->all();
     }
 
     /**
@@ -410,7 +428,7 @@ Now, to use it:
 
 ```php
 //Select post id=4
-$post = $db->posts->selectBy(4);
+$post = $db->posts->querySelect()->byId(4)->one();
 
 $post->comments; //Execute getComments() methods and save the result in $post->comments
 $post->comments; //Access to the cached result instead execute getComments() again
@@ -418,30 +436,18 @@ $post->lowercaseTitle; //Execute getLowercaseTitle() and save the result in $pos
 ```
 The difference between execute `$post->getComments()` or call directly `$post->comments` is that the second saves the result in the property so it's only executed the first time.
 
-Note that all these `getWhatever` methods that get relations are available automatically even if you don't define them.
-
-So, let's see three ways to return the users related with a post:
+Note that all these `getWhatever` methods that get relations are available automatically even if they are not defined. For example:
 
 ```php
 //select post id=4
-$post = $db->posts->selectBy(4);
+$post = $db->posts->querySelect()->byId(4)->one();
 
-//1: Using selectBy
-$users = $db->users->selectBy($post);
-
-//2: Using the magic property
-$users = $post->users;
-
-//3: Using the magic method
-$users = $post->getUsers();
-
-//3a: The magic method allows arguments like selectBy:
 $users = $post->getUsers('active = :active', [':active' => 1]);
 ```
 
 ### Fields
 
-The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime converts any string or `Datetime` instance to this format. This conversion will be done just before execute the query and wont change the value of the `Row` instance. The available fields are:
+The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime converts any string or `Datetime` instance to this format. This conversion will be done just before execute the query and won't change the value of the `Row` instance. The available fields are:
 
 * Field: It's the default field and keeps the value as is.
 * Datetime: Converts a string or Datetime instance to "Y-M-d H:i:s"
@@ -460,9 +466,9 @@ class Posts extends Entity
     public $table = 'posts';
     public $foreignKey = 'posts_id';
     public $fields = [
-        'id',
-        'title',
-        'text',
+        'id' => 'field',
+        'title' => 'field',
+        'text' => 'field',
         'pubdate' => 'datetime',
         'types' => 'set'
     ];
@@ -485,7 +491,7 @@ $post->save();
 
 ### Custom fields types
 
-You can create your own fields types or overwrite the existing ones. SimpleCrud will search in the namespace ```[your-entities-namespace]\Fields\``` for your custom classes. All these classes must implements `SimpleCrud\Fields\FieldInterface`.
+You can create your own fields types or overwrite the existing ones. You have to register the namespace with your custom fields in the factory.
 
 Let's see an example:
 
@@ -523,8 +529,8 @@ class Posts extends Entity
     public $table = 'posts';
     public $foreignKey = 'posts_id';
     public $fields = [
-        'id',
-        'text',
+        'id' => 'field',
+        'text' => 'field',
         'data' => 'serializable'
     ];
 }
@@ -533,6 +539,13 @@ class Posts extends Entity
 Ready to use:
 
 ```php
+$factory = (new Factory())
+    ->fields('MyModels\\Fields\\') //The namespace where my Fields classes are placed
+    ->autocreate();          //Create automatically non defined entities.
+
+$db = new SimpleCrud($PDO, $factory);
+
+
 //Create a post with serializable data, for example an array:
 $post = $db->posts->create([
     'text' => 'My post',
@@ -566,6 +579,6 @@ echo $db->posts->getAttribute('language'); //en
 $post = $db->posts->selectBy(2);
 $post->getAttribute('language'); //en
 ```
-Only the adapter has the method `setAttribute`, so only it can create/modify attributes.
+Only the SimpleCrud instance has the method `setAttribute`, so only it can create/modify attributes. These values are inmutable for the rest.
 
 Check the commented code to know full API.

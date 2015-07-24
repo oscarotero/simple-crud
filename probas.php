@@ -9,7 +9,7 @@ $pdo = new PDO('mysql:host=localhost;dbname=dag;charset=UTF8', 'root');
 $factory = (new Factory())->autocreate();
 $db = new SimpleCrud($pdo, $factory);
 
-$result = $db->news->select()->one();
+$result = $db->news->count();
 
 var_dump($result);
 
@@ -32,7 +32,7 @@ $posts->select('pirolas verdes');  // Query\Insert::exec() -> all
 $posts->select('pirolas verdes', true);  // Query\Insert::exec() -> one
 
 $posts
-	->select()
+	->querySelect()
 	->byId()
 	->relatedWith()
 	->where()

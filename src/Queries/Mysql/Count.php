@@ -1,6 +1,7 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
+use SimpleCrud\Queries\QueryInterface;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -11,7 +12,7 @@ use PDO;
 /**
  * Manages a database select count query in Mysql databases
  */
-class Count
+class Count implements QueryInterface
 {
     protected $entity;
 
@@ -19,11 +20,40 @@ class Count
     protected $marks = [];
     protected $limit;
 
+    /**
+     * @see QueryInterface
+     * 
+     * {@inheritdoc}
+     */
     public static function getInstance(Entity $entity)
     {
         return new static($entity);
     }
 
+    /**
+     * @see QueryInterface
+     * 
+     * $entity->count($where, $marks)
+     * 
+     * {@inheritdoc}
+     */
+    public static function execute(Entity $entity, array $args)
+    {
+        $count = self::getInstance($entity);
+
+        if (isset($args[0])) {
+            $count->where($args[0], isset($args[1]) ? $args[1] : null);
+        }
+
+        return $count->get();
+    }
+
+
+    /**
+     * Constructor
+     * 
+     * @param Entity $entity
+     */
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
@@ -83,7 +113,7 @@ class Count
      */
     public function run()
     {
-        $statement = $this->entity->getAdapter->execute((string) $this, $this->marks);
+        $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_NUM);
 
         return $statement;
@@ -108,8 +138,7 @@ class Count
      */
     public function __toString()
     {
-        $query = 'SELECT COUNT(*)';
-        $query .= ' FROM `'.implode('`, `', $this->entity->table).'`';
+        $query = "SELECT COUNT(*) FROM `{$this->entity->table}`";
 
         if (!empty($this->where)) {
             $query .= ' WHERE ('.implode(') AND (', $this->where).')';

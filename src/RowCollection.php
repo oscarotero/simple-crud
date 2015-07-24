@@ -28,43 +28,56 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     {
         $method = "get$name";
 
-        if (method_exists($this, $method) || $this->getEntity()->isRelated($name)) {
-            return $this->$method();
-        }
-
-        return $this->get($name);
+        return $this->$method();
     }
 
     /**
      * Magic method to execute get[whatever] and load automatically related stuff or execute the same function in all rows
      *
-     * @param string $name      The function name
+     * @param string $fn_name      The function name
      * @param string $arguments Array with all arguments passed to the function
      *
      * @return mixed
      */
-    public function __call($name, $arguments)
+    public function __call($fn_name, $arguments)
     {
-        if (strpos($name, 'get') === 0) {
-            $name = lcfirst(substr($name, 3));
+        if (strpos($fn_name, 'get') === 0) {
+            $name = lcfirst(substr($fn_name, 3));
+            $first = current($this->rows);
 
-            if (isset($this->getAdapter()->$name)) {
-                array_unshift($arguments, $this);
-
-                return call_user_func_array([$this->getAdapter()->$name, 'selectBy'], $arguments);
+            if (!$first) {
+                return [];
             }
 
+            //Returns values
+            if ($first->has($name)) {
+                return $this->get($name, isset($arguments[0]) ? $arguments[0] : null);
+            }
+
+            //Returns related entities
+            if (isset($this->getAdapter()->$name)) {
+                $entity = $this->getAdapter()->$name;
+
+                array_unshift($arguments, $entity);
+
+                $result = call_user_func_array([$this, 'relationSelection'], $arguments)->all();
+                $this->distribute($result);
+
+                return $result;
+            }
+
+            //Execute getWhatever() in all rows and returns the result
             $values = [];
 
             foreach ($this->rows as $id => $row) {
-                $values[$id] = call_user_func_array([$row, $name], $arguments);
+                $values[$id] = call_user_func_array([$row, $fn_name], $arguments);
             }
 
             return $values;
         }
 
         foreach ($this->rows as $row) {
-            call_user_func_array([$row, $name], $arguments);
+            call_user_func_array([$row, $fn_name], $arguments);
         }
 
         return $this;
@@ -301,28 +314,6 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Load related elements from the database.
-     *
-     * @param string $entity The entity name
-     *
-     * @return $this
-     */
-    public function load($entity)
-    {
-        if (!($entity = $this->getAdapter()->$entity)) {
-            throw new SimpleCrudException("The entity $entity does not exists");
-        }
-
-        $arguments = func_get_args();
-        $arguments[0] = $this;
-        $result = call_user_func_array([$entity, 'selectBy'], $arguments);
-
-        $this->distribute($result);
-
-        return $this;
-    }
-
-    /**
      * Distribute a row or rowcollection througth all rows.
      *
      * @param RowInterface $data          The row or rowcollection to distribute
@@ -332,52 +323,53 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function distribute(RowInterface $data, $bidirectional = true)
     {
-        if ($data instanceof Row) {
-            $data = $data->getEntity()->createCollection([$data]);
+        $thisEntity = $this->getEntity();
+        $thatEntity = $data->getEntity();
+
+        if (!($data instanceof RowCollection)) {
+            $data = $thatEntity->createCollection([$data]);
         }
 
-        if ($data instanceof RowCollection) {
-            $name = $data->getEntity()->name;
+        $name = $thatEntity->name;
 
-            switch ($this->getEntity()->getRelation($data->getEntity())) {
-                case Entity::RELATION_HAS_MANY:
-                    $foreignKey = $this->getEntity()->foreignKey;
+        if ($thisEntity->hasOne($thatEntity)) {
+            $foreignKey = $thatEntity->foreignKey;
 
-                    foreach ($this->rows as $row) {
-                        if (!isset($row->$name)) {
-                            $row->$name = $data->getEntity()->createCollection();
-                        }
-                    }
-
-                    foreach ($data as $row) {
-                        $id = $row->$foreignKey;
-
-                        if (isset($this->rows[$id])) {
-                            $this->rows[$id]->$name->add($row);
-                        }
-                    }
-
-                    if ($bidirectional === true) {
-                        $data->distribute($this, false);
-                    }
-
-                    return $this;
-
-                case Entity::RELATION_HAS_ONE:
-                    $foreignKey = $data->getEntity()->foreignKey;
-
-                    foreach ($this->rows as $row) {
-                        $row->$name = (($id = $row->$foreignKey) && isset($data[$id])) ? $data[$id] : null;
-                    }
-
-                    if ($bidirectional === true) {
-                        $data->distribute($this, false);
-                    }
-
-                    return $this;
+            foreach ($this->rows as $row) {
+                $row->$name = (($id = $row->$foreignKey) && isset($data[$id])) ? $data[$id] : null;
             }
 
-            throw new SimpleCrudException("Cannot set '$name' and '{$this->getEntity()->name}' because is not related or does not exists");
+            if ($bidirectional === true) {
+                $data->distribute($this, false);
+            }
+
+            return $this;
         }
+
+        if ($thisEntity->hasMany($thatEntity)) {
+            $foreignKey = $thisEntity->foreignKey;
+
+            foreach ($this->rows as $row) {
+                if (!isset($row->$name)) {
+                    $row->$name = $thatEntity->createCollection();
+                }
+            }
+
+            foreach ($data as $row) {
+                $id = $row->$foreignKey;
+
+                if (isset($this->rows[$id])) {
+                    $this->rows[$id]->$name->add($row);
+                }
+            }
+
+            if ($bidirectional === true) {
+                $data->distribute($this, false);
+            }
+
+            return $this;
+        }
+
+        throw new SimpleCrudException("Cannot set '$name' and '{$thisEntity->name}' because is not related or does not exists");
     }
 }

@@ -1,6 +1,7 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
+use SimpleCrud\Queries\QueryInterface;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -11,18 +12,52 @@ use PDO;
 /**
  * Manages a database insert query in Mysql databases
  */
-class Insert
+class Insert implements QueryInterface
 {
     protected $entity;
 
     protected $data = [];
     protected $duplications;
 
+    /**
+     * @see QueryInterface
+     * 
+     * {@inheritdoc}
+     */
     public static function getInstance(Entity $entity)
     {
         return new static($entity);
     }
 
+    /**
+     * @see QueryInterface
+     * 
+     * $entity->insert($data, $duplications)
+     * 
+     * {@inheritdoc}
+     */
+    public static function execute(Entity $entity, array $args)
+    {
+        $insert = self::getInstance($entity);
+
+        if (isset($args[0])) {
+            $insert->data($args[0]);
+        }
+
+        if (isset($args[1])) {
+            $delete->duplications($args[1]);
+        }
+
+        $delete->run();
+
+        return $this->entity->getDb()->lastInsertId();
+    }
+
+    /**
+     * Constructor
+     * 
+     * @param Entity $entity
+     */
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
@@ -37,7 +72,7 @@ class Insert
      */
     public function data(array $data)
     {
-        $this->data = $data;
+        $this->data = $this->entity->prepareDataToDatabase($data, true);
 
         return $this;
     }

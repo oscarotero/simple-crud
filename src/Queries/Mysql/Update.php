@@ -1,6 +1,7 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
+use SimpleCrud\Queries\QueryInterface;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -11,7 +12,7 @@ use PDO;
 /**
  * Manages a database update query in Mysql databases
  */
-class Update
+class Update implements QueryInterface
 {
     protected $entity;
 
@@ -21,11 +22,45 @@ class Update
     protected $limit;
     protected $offset;
 
+    /**
+     * @see QueryInterface
+     * 
+     * {@inheritdoc}
+     */
     public static function getInstance(Entity $entity)
     {
         return new static($entity);
     }
 
+    /**
+     * @see QueryInterface
+     * 
+     * $entity->update($data, $where, $marks, $limit)
+     * 
+     * {@inheritdoc}
+     */
+    public static function execute(Entity $entity, array $args)
+    {
+        $update = self::getInstance($entity);
+
+        $update->data($args[0]);
+
+        if (isset($args[1])) {
+            $delete->where($args[1], isset($args[2]) ? $args[2] : null);
+        }
+
+        if (isset($args[3])) {
+            $select->limit($args[3]);
+        }
+
+        return $select->run();
+    }
+
+    /**
+     * Constructor
+     * 
+     * @param Entity $entity
+     */
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
@@ -40,7 +75,7 @@ class Update
      */
     public function data(array $data)
     {
-        $this->data = $data;
+        $this->data = $this->entity->prepareDataToDatabase($data);
 
         return $this;
     }

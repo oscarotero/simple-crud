@@ -30,9 +30,9 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to execute 'get' functions and save the result in a property.
+     * Magic method to return properties or load them automatically
      *
-     * @param string $name The property name
+     * @param string $name
      */
     public function __get($name)
     {
@@ -40,6 +40,7 @@ class Row extends BaseRow implements JsonSerializable
             return $this->values[$name];
         }
 
+        //execute getName()
         $method = "get$name";
 
         if (method_exists($this, $method) || $this->getEntity()->isRelated($name)) {
@@ -48,19 +49,13 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to execute 'set' function.
+     * Magic method to store properties
      *
-     * @param string $name  The property name
-     * @param mixed  $value The value
+     * @param string $name
+     * @param mixed  $value
      */
     public function __set($name, $value)
     {
-        $method = "set$name";
-
-        if (method_exists($this, $method) || $this->getEntity()->isRelated($name)) {
-            return $this->values[$name] = $this->$method();
-        }
-
         $this->values[$name] = $value;
     }
 
@@ -77,30 +72,51 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to execute get[whatever] and load automatically related stuff.
+     * Magic method to execute get[whatever] and set[whatever] and load/save automatically related stuff.
      *
-     * @param string $name
+     * @param string $fn_name
      * @param string $arguments
      *
      * @throws SimpleCrudException
      */
-    public function __call($name, $arguments)
+    public function __call($fn_name, $arguments)
     {
-        if (strpos($name, 'get') === 0) {
-            $name = lcfirst(substr($name, 3));
+        if (strpos($fn_name, 'get') === 0) {
+            $name = lcfirst(substr($fn_name, 3));
 
+            //Returns values
             if (!$arguments && array_key_exists($name, $this->values)) {
                 return $this->values[$name];
             }
 
+            //Returns related entities
             if (isset($this->getAdapter()->$name)) {
-                array_unshift($arguments, $this);
+                $entity = $this->getAdapter()->$name;
 
-                return call_user_func_array([$this->getAdapter()->$name, 'selectBy'], $arguments);
+                array_unshift($arguments, $entity);
+
+                $select = call_user_func_array([$this, 'relationSelection'], $arguments);
+                
+                if ($entity->hasOne($this)) {
+                    return $select->one();
+                }
+
+                return $select->all();
             }
         }
 
-        throw new SimpleCrudException("The method $name does not exists");
+        if (strpos($fn_name, 'set') === 0) {
+            $name = lcfirst(substr($fn_name, 3));
+
+            //Save values
+            if (!$arguments && array_key_exists($name, $this->values)) {
+                $this->values[$name] = isset($arguments[0]) ? $arguments[0] : null;
+
+                return $this;
+            }
+        }
+
+        throw new SimpleCrudException("The method $fn_name does not exists");
     }
 
     /**
@@ -137,24 +153,6 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Reload the row from the database.
-     *
-     * @throws SimpleCrudException
-     *
-     * @return $this
-     */
-    public function reload()
-    {
-        if (!$this->id || !($row = $this->getEntity()->selectBy($this->id))) {
-            throw new SimpleCrudException("This row does not exist in database");
-        }
-
-        $this->values = $row->get();
-
-        return $this;
-    }
-
-    /**
      * Relate 'has-one' elements with this row.
      *
      * @param RowInterface $row The row to relate
@@ -183,11 +181,9 @@ class Row extends BaseRow implements JsonSerializable
      *
      * @return $this
      */
-    public function set(array $data, $onlyDeclaredFields = false)
+    public function set(array $data)
     {
-        if ($onlyDeclaredFields === true) {
-            $data = array_intersect_key($data, $this->getEntity()->fields);
-        }
+        $this->values = $data + $this->values;
 
         return $this;
     }
@@ -209,6 +205,18 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
+     * Return whether a value is defined or not
+     *
+     * @param string $name
+     *
+     * @return boolean
+     */
+    public function has($name)
+    {
+        return array_key_exists($name, $this->values);
+    }
+
+    /**
      * Saves this row in the database.
      *
      * @param boolean $duplicate Set true to detect duplicates index
@@ -220,21 +228,13 @@ class Row extends BaseRow implements JsonSerializable
         $data = array_intersect_key($this->values, $this->getEntity()->fields);
 
         if (empty($this->id)) {
-            $this->getEntity->insert()
-                ->data($data)
-                ->duplicate($duplicate)
-                ->run();
-
+            $this->getEntity->insert($data, $duplicate);
             $this->id = $this->getAdapter()->lastInsertId();
 
             return $this;
         }
 
-        $this->getEntity()->update()
-            ->data($data)
-            ->where('id = :id', [':id' => $this->id])
-            ->limit(1)
-            ->run();
+        $this->getEntity()->update($data, 'id = :id', [':id' => $this->id], 1);
 
         return $this;
     }
@@ -247,10 +247,8 @@ class Row extends BaseRow implements JsonSerializable
     public function delete()
     {
         if (!empty($this->id)) {
-            $this->getEntity()->delete()
-                ->where('id = :id', [':id' => $this->id])
-                ->limit(1)
-                ->run();
+            $this->getEntity()->delete('id = :id', [':id' => $this->id], 1);
+            $this->id = null;
         }
 
         return $this;
