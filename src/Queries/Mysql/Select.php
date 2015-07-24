@@ -112,21 +112,30 @@ class Select implements QueryInterface
     /**
      * Adds a WHERE according with the relation of other entity
      * 
-     * @param RowInterface $id
+     * @param RowInterface $row
+     * @param string $through
      * 
      * @return self
      */
-    public function relatedWith(RowInterface $row)
+    public function relatedWith(RowInterface $row, $through = null)
     {
-        if ($this->entity->hasOne($row)) {
-            return $this->by($row->getEntity()->foreignKey, $id->get('id'));
+        if ($through !== null) {
+            $row = $this->entity->getDb()->select($through)
+                ->relatedWith($row)
+                ->all();
         }
 
-        if ($this->entity->hasMany($row)) {
+        $entity = $row->getEntity();
+
+        if ($this->entity->hasOne($entity)) {
+            return $this->by($entity->foreignKey, $row->get('id'));
+        }
+
+        if ($this->entity->hasMany($entity)) {
             return $this->byId($row->get($this->entity->foreignKey));
         }
 
-        throw new SimpleCrudException("The tables {$this->entity->table} and {$id->getEntity()->table} are no related");
+        throw new SimpleCrudException("The tables {$this->entity->table} and {$row->getEntity()->table} are no related");
     }
 
     /**
@@ -272,7 +281,7 @@ class Select implements QueryInterface
         $result = $this->entity->createCollection();
 
         while (($row = $statement->fetch())) {
-            $result[] = $this->entity->create($this->entity->dataFromDatabase($row));
+            $result[] = $this->entity->create($this->entity->prepareDataFromDatabase($row));
         }
 
         return $result;
@@ -285,10 +294,14 @@ class Select implements QueryInterface
      */
     public function one()
     {
+        if ($this->limit === null) {
+            $this->limit(1);
+        }
+
         $row = $this->run()->fetch();
 
         if ($row !== false) {
-            return $this->entity->create($this->entity->dataFromDatabase($row));
+            return $this->entity->create($this->entity->prepareDataFromDatabase($row));
         }
     }
 

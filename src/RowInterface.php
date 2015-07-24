@@ -26,13 +26,6 @@ interface RowInterface extends JsonSerializable
     public function getEntity();
 
     /**
-     * Return the adapter
-     *
-     * @return Adapters\AdapterInterface
-     */
-    public function getAdapter();
-
-    /**
      * Returns an attribute
      * 
      * @param string $name

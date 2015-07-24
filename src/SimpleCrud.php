@@ -71,6 +71,25 @@ class SimpleCrud
     }
 
     /**
+     * Magic method to create queries related with entities
+     * 
+     * @param string $name
+     * @param array  $arguments
+     * 
+     * @throws SimpleCrudException
+     * 
+     * @return QueryInterface|null
+     */
+    public function __call($name, $arguments)
+    {
+        $entity = array_shift($arguments);
+
+        if ($entity) {
+            return $this->factory->getQuery($this->$entity, $name);
+        }
+    }
+
+    /**
      * Execute a query and returns the statement object with the result.
      *
      * @param string $query The Mysql query to execute

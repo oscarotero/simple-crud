@@ -30,22 +30,12 @@ abstract class BaseRow implements RowInterface
 
     /**
      * @see RowInterface
-     *
-     * {@inheritdoc}
-     */
-    public function getAdapter()
-    {
-        return $this->entity->getAdapter();
-    }
-
-    /**
-     * @see RowInterface
      * 
      * {@inheritdoc}
      */
     public function getAttribute($name)
     {
-        return $this->getAdapter()->getAttribute($name);
+        return $this->getEntity()->getDb()->getAttribute($name);
     }
 
     /**
@@ -59,32 +49,16 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
-     * Returns related stuff
-     * 
-     * @param Entity $entity
-     * @param string|null $where
-     * @param string|null $marks
-     * @param string|null $orderBy
-     * @param int|null $limit
+     * Creates and return a Select query
      *
-     * @return Queries\QueryInterface
+     * @param string $entity
+     * @param string|null $through
+     *
+     * @return QueryInterface
      */
-    protected function relationSelection(Entity $entity, $where = null, $marks = null, $orderBy = null, $limit = null)
+    public function select($entity, $through = null)
     {
-        $select = $entity->querySelect()->relatedWith($this);
-
-        if ($where !== null) {
-            $select->where($where, $marks);
-        }
-
-        if ($orderBy !== null) {
-            $select->orderBy($orderBy);
-        }
-
-        if ($limit) {
-            $select->limit($limit);
-        }
-
-        return $select;
+        return $this->getEntity()->getDb()->select($entity)
+            ->relatedWith($this, $through);
     }
 }

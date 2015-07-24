@@ -9,15 +9,20 @@ use PDO;
  */
 class Factory
 {
+    protected $db;
+    protected $tables;
     protected $entities;
     protected $queries;
     protected $fields;
+    protected $rows;
+    protected $rowCollections;
     protected $autocreate;
-    protected $tables;
-    protected $db;
     protected $default_entity = 'SimpleCrud\\Entity';
     protected $default_queries = 'SimpleCrud\\Queries\\';
     protected $default_fields = 'SimpleCrud\\Fields\\';
+    protected $default_field = 'SimpleCrud\\Fields\\Field';
+    protected $default_row = 'SimpleCrud\\Row';
+    protected $default_rowCollection = 'SimpleCrud\\RowCollection';
 
     public function init(SimpleCrud $db)
     {
@@ -63,6 +68,34 @@ class Factory
     public function fields($namespace)
     {
         $this->fields = $namespace;
+
+        return $this;
+    }
+
+    /**
+     * Set the namespace for the Row classes
+     * 
+     * @param string $namespace
+     * 
+     * @return self
+     */
+    public function rows($namespace)
+    {
+        $this->rows = $namespace;
+
+        return $this;
+    }
+
+    /**
+     * Set the namespace for the RowCollection classes
+     * 
+     * @param string $namespace
+     * 
+     * @return self
+     */
+    public function rowCollections($namespace)
+    {
+        $this->rowCollections = $namespace;
 
         return $this;
     }
@@ -116,6 +149,78 @@ class Factory
     }
 
     /**
+     * Returns a Row class
+     *
+     * @param string $name
+     *
+     * @return string|null
+     */
+    public function getRowClass($name)
+    {
+        $name = ucfirst($name);
+
+        if ($this->rows !== null) {
+            $class = $this->rows.$name;
+
+            if (class_exists($class)) {
+                return $class;
+            }
+        }
+
+        return $this->default_row;
+    }
+
+    /**
+     * Returns a RowCollection class
+     *
+     * @param string $name
+     *
+     * @return string|null
+     */
+    public function getRowCollectionClass($name)
+    {
+        $name = ucfirst($name);
+
+        if ($this->rowCollections !== null) {
+            $class = $this->rowCollections.$name;
+
+            if (class_exists($class)) {
+                return $class;
+            }
+        }
+
+        return $this->default_rowCollection;
+    }
+
+    /**
+     * Returns a Field class
+     *
+     * @param string $name
+     *
+     * @return string|null
+     */
+    public function getFieldClass($name)
+    {
+        $name = ucfirst($name);
+
+        if ($this->fields !== null) {
+            $class = $this->fields.$name;
+
+            if (class_exists($class)) {
+                return $class;
+            }
+        }
+
+        $class = $this->default_fields.$name;
+
+        if (class_exists($class)) {
+            return $class;
+        }
+
+        return $this->default_field;
+    }
+
+    /**
      * Creates a new instance of a Field
      *
      * @param Entity $entity
@@ -125,20 +230,11 @@ class Factory
      */
     public function getField(Entity $entity, $name)
     {
-        $name = ucfirst($name);
-        $class = $this->fields.$name;
+        $class = $this->getFieldClass($name);
 
-        if (class_exists($class)) {
+        if (!empty($class)) {
             return $class::getInstance($entity);
         }
-
-        $class = $this->default_fields.$name;
-
-        if (class_exists($class)) {
-            return $class::getInstance($entity);
-        }
-
-        return Fields\Field::getInstance();
     }
 
 
@@ -152,10 +248,13 @@ class Factory
     public function getQueryClass($name)
     {
         $name = ucfirst($name);
-        $class = $this->queries.$name;
 
-        if (class_exists($class)) {
-            return $class;
+        if ($this->queries !== null) {
+            $class = $this->queries.$name;
+
+            if (class_exists($class)) {
+                return $class;
+            }
         }
 
         $class = $this->default_queries.$name;

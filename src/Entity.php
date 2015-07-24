@@ -20,12 +20,13 @@ class Entity
     public $fields;
     public $defaults;
     public $foreignKey;
-
-    public $rowClass = 'SimpleCrud\\Row';
-    public $rowCollectionClass = 'SimpleCrud\\RowCollection';
+    public $rowClass;
+    public $rowCollectionClass;
 
     public static function getInstance($name, SimpleCrud $db)
     {
+        $factory = $db->getFactory();
+
         $entity = new static($db);
         $entity->name = $name;
 
@@ -37,10 +38,18 @@ class Entity
             $entity->foreignKey = "{$entity->table}_id";
         }
 
+        if (empty($entity->rowClass)) {
+            $entity->rowClass = $factory->getRowClass($name);
+        }
+
+        if (empty($entity->rowCollectionClass)) {
+            $entity->rowCollectionClass = $factory->getRowCollectionClass($name);
+        }
+
         $fields = $entity->fields ?: $entity->fields();
 
         foreach ($fields as $name => $type) {
-            $entity->fields[$name] = $db->getFactory()->getField($entity, $type);
+            $entity->fields[$name] = $factory->getField($entity, $type);
         }
 
         return $entity;
@@ -53,7 +62,7 @@ class Entity
     }
 
     /**
-     * Magic method to create queries
+     * Magic method to execute queries
      * 
      * @param string $name
      * @param array  $arguments
@@ -64,12 +73,6 @@ class Entity
      */
     public function __call($name, $arguments)
     {
-        if (strpos($name, 'query')) {
-            $name = substr($name, 5);
-
-            return $this->db->getFactory()->getQuery($this, $name);
-        }
-
         $class = $this->db->getFactory()->getQueryClass($name);
 
         if ($class) {
@@ -194,8 +197,6 @@ class Entity
         if (!is_array($data = $this->dataFromDatabase($data))) {
             throw new SimpleCrudException("Data not valid");
         }
-
-        $data = $this->dataFromDatabase($data);
 
         //handle left-joins
         foreach ($joins as $key => $values) {

@@ -3,6 +3,8 @@ namespace SimpleCrud;
 
 use JsonSerializable;
 
+use SimpleCrud\Queries\QueryInterface;
+
 /**
  * Stores the data of an entity row
  *
@@ -36,15 +38,25 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function __get($name)
     {
+        //Return properties
         if (array_key_exists($name, $this->values)) {
             return $this->values[$name];
         }
 
-        //execute getName()
+        //Execute getName()
         $method = "get$name";
 
-        if (method_exists($this, $method) || $this->getEntity()->isRelated($name)) {
+        if (method_exists($this, $method)) {
             return $this->values[$name] = $this->$method();
+        }
+
+        //Load related data
+        if ($this->getEntity()->hasOne($name)) {
+            return $this->values[$name] = $this->select($name)->one();
+        }
+
+        if ($this->getEntity()->hasMany($name)) {
+            return $this->values[$name] = $this->select($name)->all();
         }
     }
 
@@ -69,54 +81,6 @@ class Row extends BaseRow implements JsonSerializable
     public function __isset($name)
     {
         return !empty($this->values[$name]);
-    }
-
-    /**
-     * Magic method to execute get[whatever] and set[whatever] and load/save automatically related stuff.
-     *
-     * @param string $fn_name
-     * @param string $arguments
-     *
-     * @throws SimpleCrudException
-     */
-    public function __call($fn_name, $arguments)
-    {
-        if (strpos($fn_name, 'get') === 0) {
-            $name = lcfirst(substr($fn_name, 3));
-
-            //Returns values
-            if (!$arguments && array_key_exists($name, $this->values)) {
-                return $this->values[$name];
-            }
-
-            //Returns related entities
-            if (isset($this->getAdapter()->$name)) {
-                $entity = $this->getAdapter()->$name;
-
-                array_unshift($arguments, $entity);
-
-                $select = call_user_func_array([$this, 'relationSelection'], $arguments);
-                
-                if ($entity->hasOne($this)) {
-                    return $select->one();
-                }
-
-                return $select->all();
-            }
-        }
-
-        if (strpos($fn_name, 'set') === 0) {
-            $name = lcfirst(substr($fn_name, 3));
-
-            //Save values
-            if (!$arguments && array_key_exists($name, $this->values)) {
-                $this->values[$name] = isset($arguments[0]) ? $arguments[0] : null;
-
-                return $this;
-            }
-        }
-
-        throw new SimpleCrudException("The method $fn_name does not exists");
     }
 
     /**
@@ -229,7 +193,7 @@ class Row extends BaseRow implements JsonSerializable
 
         if (empty($this->id)) {
             $this->getEntity->insert($data, $duplicate);
-            $this->id = $this->getAdapter()->lastInsertId();
+            $this->id = $this->getDb()->lastInsertId();
 
             return $this;
         }

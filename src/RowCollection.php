@@ -26,61 +26,46 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function __get($name)
     {
-        $method = "get$name";
+        reset($this->rows);
+        $first = current($this->rows);
 
-        return $this->$method();
-    }
+        if (!$first) {
+            return [];
+        }
 
-    /**
-     * Magic method to execute get[whatever] and load automatically related stuff or execute the same function in all rows
-     *
-     * @param string $fn_name      The function name
-     * @param string $arguments Array with all arguments passed to the function
-     *
-     * @return mixed
-     */
-    public function __call($fn_name, $arguments)
-    {
-        if (strpos($fn_name, 'get') === 0) {
-            $name = lcfirst(substr($fn_name, 3));
-            $first = current($this->rows);
+        //Returns related entities
+        $db = $this->getEntity()->getDb();
 
-            if (!$first) {
-                return [];
-            }
+        if (isset($db->$name)) {
+            $entity = $db->$name;
 
-            //Returns values
             if ($first->has($name)) {
-                return $this->get($name, isset($arguments[0]) ? $arguments[0] : null);
+                $collection = $entity->createCollection();
+
+                foreach ($this->get($name) as $row) {
+                    if ($row instanceof RowCollection) {
+                        foreach ($row as $r) {
+                            $collection[] = $r;
+                        }
+                    } else {
+                        $collection = $r;
+                    }
+                }
+
+                return $collection;
             }
 
-            //Returns related entities
-            if (isset($this->getAdapter()->$name)) {
-                $entity = $this->getAdapter()->$name;
+            $result = $this->select($name)->all();
 
-                array_unshift($arguments, $entity);
+            $this->distribute($result);
 
-                $result = call_user_func_array([$this, 'relationSelection'], $arguments)->all();
-                $this->distribute($result);
-
-                return $result;
-            }
-
-            //Execute getWhatever() in all rows and returns the result
-            $values = [];
-
-            foreach ($this->rows as $id => $row) {
-                $values[$id] = call_user_func_array([$row, $fn_name], $arguments);
-            }
-
-            return $values;
+            return $result;
         }
 
-        foreach ($this->rows as $row) {
-            call_user_func_array([$row, $fn_name], $arguments);
+        //Returns values
+        if ($first->has($name)) {
+            return $this->get($name, isset($arguments[0]) ? $arguments[0] : null);
         }
-
-        return $this;
     }
 
     /**
@@ -205,7 +190,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      * @param string $name The value name. If it's not defined returns all values
      * @param string $key  The parameter name used for the keys. If it's not defined, returns a numeric array
      *
-     * @return array All values found. It generates a RowCollection if the values are rows.
+     * @return array
      */
     public function get($name = null, $key = null)
     {
