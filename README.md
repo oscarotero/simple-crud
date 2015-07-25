@@ -115,27 +115,24 @@ You can work directly with the entities to insert/update/delete/select data:
 Use arrayAccess interface for access to the data using the `id`:
 
 ```php
-//Get the entity to work with the table `posts`:
-$posts = $db->posts;
-
 //Get the post id = 3;
-$post = $posts[3];
+$post = $db->posts[3];
 
 //Check if a row exists
-if (isset($posts[3])) {
+if (isset($db->posts[3])) {
     echo 'exists';
 }
 
 //Delete a post
-unset($posts[3]);
+unset($db->posts[3]);
 
 //Create or update posts
-$posts[3] = [
+$db->posts[3] = [
     'title' => 'Hello world'
 ];
 
 //Insert a new post
-$posts[] = [
+$db->posts[] = [
     'title' => 'Hello world 2'
 ];
 ```
@@ -143,81 +140,34 @@ $posts[] = [
 Use more advanced queries:
 
 ```php
-//Get the entity to work with the table `posts`:
-$posts = $db->posts;
-
 //insert new posts
-//Entity::insert(array $data)
-
-$posts->insert([
-    'title' => 'My first post',
-    'text' => 'This is the text of the post'
-]);
-
-//Update a post
-//Entity::update(array $data, $where = null, $marks = null, $limit = null)
-
-$posts->update(['title' => 'New title'], 'id = :id', [':id' => 23], 1);
-
-//Delete a post
-//Entity::delete($where = null, $marks = null, $limit = null)
-
-$posts->delete('id = :id', [':id' => 23], 1);
-
-//Select posts
-//Entity::select($where = null, $marks = null, $orderBy = null, $limit = null)
-
-$posts = $posts->select('id > :id', [':id' => 10], 'id ASC', 100);
-
-//use limit = true to get just one post
-$post = $posts->select('id = :id', [':id' => 10], null, true);
-```
-
-#### Working with queries
-
-To work with more complicated queries, you can use the query functions:
-
-```php
-//Insert data
 $db->insert('posts')
-    ->data($myData)
+    ->data([
+        'title' => 'My first post',
+        'text' => 'This is the text of the post'
+    ])
     ->run();
 
-//Update data
+//Update a post
 $db->update('posts')
-    ->data($myData)
-    ->where('id = :id', [':id' => 34])
+    ->data([
+        'title' => 'New title'
+    ])
+    ->where('id = :id', [':id' => 23])
     ->limit(1)
     ->run();
 
-//Delete data
+//Delete a post
 $db->delete('posts')
-    ->where('active = 0')
-    ->where('pub_date < :pubdate', [':pubdate' => $my_pubdate])
-    ->limit(10)
-    ->offset(5)
+    ->byId(23) //shortcut of where('id = :id', [':id' => 23])
     ->run();
 
-//Select data
-$result = $db->select('posts')
-    ->where('pub_date < :pubdate_max')
-    ->where('id < :id_max')
-    ->marks([
-        ':pubdate_max' => $pubdate,
-        ':id_max' => $id,
-    ])
-    ->limit(10)
-    ->orderBy('id DESC')
+//Select posts
+$db->select('posts')
+    ->where('id > :id', [':id' => 10])
+    ->orderBy('id ASC')
+    ->limit(100)
     ->all();
-```
-
-This functions returns an instance of one of the `Queries` classes available. The `Select` class, used to read data from the database has some special methods:
-
-```php
-$result = $db->select('posts')
-    ->withId(23) //select by id
-    ->with('slug', $my_slug) //select by slug also
-    ->one(); //get one result, instead all
 ```
 
 You can also select rows related with other rows:
@@ -227,41 +177,39 @@ You can also select rows related with other rows:
 $post = $db->posts[23];
 
 //Select the comments related with this posts
-$comments = $db->select('posts')->relatedWith($post)->all();
+$comments = $db->select('posts')
+    ->relatedWith($post)
+    ->all();
 ```
 
-You can, also create your own `Queries` classes to extend the default behaviour with custom functionalities:
+You can, also create your own `Queries` methods to extend the default behaviour with custom functionalities. You only have to create methods starting by 'query' into your entity class
 
 ```php
-namespace MyModels\Queries;
+namespace MyModels;
 
-class Select extends \SimpleCrud\Queries\Mysql\Select
+use SimpleCrud\Entity;
+
+class Posts extends Entity
 {
-    public function isActive()
+    public function queryIsActive($query)
     {
-        return $this->where('active = 1');
+        $query->where('active = 1');
     }
 }
 ```
 
-To use it, you must register your Queries namespace in the factory and that's all:
+Ready to use:
 
 ```php
-$factory = (new Factory())
-    ->entities('MyModels\\Queries\\') //The namespace where my Queries classes are placed
-    ->autocreate();          //Create automatically non defined entities.
-
-$db = new SimpleCrud($PDO, $factory);
-
 $posts = $db->select('posts')
-            ->withId(34)
-            ->isActive()
-            ->one();
+    ->withId(34)
+    ->isActive() //our method!
+    ->one();
 ```
 
 #### Working with rows
 
-If you select a row from the database, it's saved in a `Row` instance. This class allows read the data and modify:
+When you select data from the database, it's saved in a `Row` instance. This class allows read and modify the data:
 
 ```php
 $post = $db->posts[25];
@@ -305,7 +253,7 @@ $allTitles = $allPosts->title; //array with all titles of all posts
 
 ### Customize the Row and RowCollection classes
 
-Each entity can use its own `Row` or `RowCollection` classes instead the defaults, to use custom methods. You need to create classes extending `SimpleCrud\Row` and `SimpleRow\CollectionRow`:
+You can set custom methods to row and rowcollections, just create methods starting by `row` and `rowCollection` into the entity.
 
 ```php
 namespace MyModels;
@@ -316,25 +264,13 @@ use SimpleCrud\RowCollection;
 
 class Posts extends Entity
 {
-    public $rowClass = 'MyCustomRowClass';
-    public $rowCollectionClass = 'MyCustomRowCollectionClass';
-}
-
-class MyCustomRowClass extends Row
-{
-    public function escapeText ()
+    public function rowEscapeText($row)
     {
-        $this->text = htmlspecialchars($this->text);
+        $row->text = htmlspecialchars($row->text);
     }
-}
 
-class MyCustomRowCollectionClass extends Row
-{
-    public function getSumIds ()
-    {
-        $ids = $this->get('id');
-
-        return array_sum($ids);
+    public function rowCollectionSumIds($collection) {
+        return array_sum($collection->ids);
     }
 }
 ```
@@ -342,11 +278,13 @@ class MyCustomRowCollectionClass extends Row
 Now, you can use this functions in the rows and rowcollections:
 
 ```php
-$posts = $db->select('posts')->byId([1, 2, 3])->all();
+$posts = $db->select('posts')
+    ->byId([1, 2, 3])
+    ->all();
 
 $posts->escapeText(); //Execute escapeText in each row
 
-$total = $posts->getSumIds(); //Returns 6
+$total = $posts->sumIds(); //Returns 6
 ```
 
 ### Validate data
@@ -404,7 +342,10 @@ $post = $db->posts[34];
 $comments = $post->comments;
 
 //This is equivalent to:
-$comments = $db->comments->selectQuery->relatedWith($post)->all();
+$comments = $db->select('comments')->relatedWith($post)->all();
+
+//Or even:
+$comments = $post->select('comments')->all();
 ```
 
 This allows make awesome (and dangerous :D) things like this:
@@ -419,24 +360,23 @@ $titles = $db->posts[34]->comments->users->posts->title;
 //And finally, the titles of all these posts
 ```
 
-You can define the way of the lazy loads are executed, creating methods starting by "get" in the row class. The result of the method will be cached in a property with the same name.
-Lazy loads not only works with relations, but also with any value you want. Just create a method named get[NameOfTheProperty] and you get it.
+You can define the way of the lazy loads are executed, creating methods starting by "row" in the entity class. The result of the method will be cached in a property with the same name.
+Lazy loads not only works with relations, but also with any value you want. Just create a method named row[NameOfTheProperty] and that's all.
 
 ```php
-namespace MyModels\Rows;
+namespace MyModels;
 
-use SimpleCrud\Row;
+use SimpleCrud\Entity;
 
-class Posts extends Row
+class Posts extends Entity
 {
     /**
      * Changed the way to return the comments related with this post
      * returns only the validated comments
      */
-    public function getComments ()
+    public function rowComments($row)
     {
-        //Use $this->getDb() to access to the SimpleCrud instance
-        return $this->select('comments')
+        return $row->select('comments')
             ->where('validated = 1')
             ->all();
     }
@@ -444,9 +384,9 @@ class Posts extends Row
     /**
      * Custom method to return the title in lowercase
      */
-    public function getLowercaseTitle ()
+    public function rowLowercaseTitle($row)
     {
-        return strtolower($this->title);
+        return strtolower($row->title);
     }
 }
 ```
@@ -457,20 +397,12 @@ Now, to use it:
 //Select post id=4
 $post = $db->posts[4];
 
-$post->comments; //Execute getComments() methods and save the result in $post->comments
-$post->comments; //Access to the cached result instead execute getComments() again
-$post->lowercaseTitle; //Execute getLowercaseTitle() and save the result in $post->lowercaseTitle;
+$post->comments; //Execute rowComments() methods and save the result in $post->comments
+$post->comments; //Access to the cached result instead execute rowComments() again
+$post->lowercaseTitle; //Execute rowLowercaseTitle() and save the result in $post->lowercaseTitle;
 ```
-The difference between execute `$post->getComments()` or call directly `$post->comments` is that the second saves the result in the property so it's only executed the first time.
 
-Note that all these `getWhatever` methods that get relations are available automatically even if they are not defined. For example:
-
-```php
-//select post id=4
-$post = $db->posts[4];
-
-$users = $post->select('users')->where('active = :active', [':active' => 1])->all();
-```
+The difference between execute `$post->comments()` or call directly `$post->comments` is that the second saves the result in the property so it's only executed the first time.
 
 ### Fields
 
@@ -589,8 +521,6 @@ $post = $db->posts[1];
 var_dump($post->data); //array('foo', 'bar')
 ```
 
-If you create a Field in your namespace with the same name than any of the defaults fields (Date, Datetime, Set, etc), SimpleCrud will choose your custom Field instead the default, so this is useful to overwrite the default behaviours.
-
 ### Shared attributes
 
 Sometimes, you want to share some values across all entities, rows and adapter. For example a language configuration, the basepath where the files are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
@@ -599,7 +529,7 @@ Sometimes, you want to share some values across all entities, rows and adapter. 
 //Save an attribute, for example, the language code:
 $db->setAttribute('language', 'en');
 
-//This value is accessible from all entitites:
+//This value is accessible from the entity class and row/rowCollection:
 echo $db->posts->getAttribute('language'); //en
 
 //And rows

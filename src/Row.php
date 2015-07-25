@@ -12,23 +12,34 @@ use SimpleCrud\Queries\QueryInterface;
  */
 class Row extends BaseRow implements JsonSerializable
 {
-    private $values = [];
+    private $values;
 
     /**
      * Row constructor.
      *
      * @param Entity     $entity
-     * @param array|null $data
      */
-    public function __construct(Entity $entity, array $data = null)
+    public function __construct(Entity $entity)
     {
-        $this->setEntity($entity);
+        $this->entity = $entity;
+        $this->db = $entity->getDb();
+        $this->values = $entity->defaults;
+    }
 
-        if (!empty($data)) {
-            $this->values = $data;
+    /**
+     * Magic method to execute custom method defined in the entity class
+     *
+     * @param string $name
+     */
+    public function __call($name, $arguments)
+    {
+        $method = "row{$name}";
+
+        if (method_exists($this->entity, $method)) {
+            array_unshift($arguments, $this);
+
+            return call_user_func_array([$this->entity, $method], $arguments);
         }
-
-        $this->values += $entity->getDefaults();
     }
 
     /**
@@ -43,19 +54,17 @@ class Row extends BaseRow implements JsonSerializable
             return $this->values[$name];
         }
 
-        //Execute getName()
-        $method = "get$name";
-
-        if (method_exists($this, $method)) {
-            return $this->values[$name] = $this->$method();
+        //Custom method
+        if (method_exists($this->entity, "row{$name}")) {
+            return $this->__call($name, []);
         }
 
         //Load related data
-        if ($this->getEntity()->hasOne($name)) {
+        if ($this->entity->hasOne($name)) {
             return $this->values[$name] = $this->select($name)->one();
         }
 
-        if ($this->getEntity()->hasMany($name)) {
+        if ($this->entity->hasMany($name)) {
             return $this->values[$name] = $this->select($name)->all();
         }
     }
@@ -100,11 +109,11 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function toArray($keysAsId = false, array $parentEntities = array())
     {
-        if (!empty($parentEntities) && in_array($this->getEntity()->name, $parentEntities)) {
+        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
             return;
         }
 
-        $parentEntities[] = $this->getEntity()->name;
+        $parentEntities[] = $this->entity->name;
         $data = $this->values;
 
         foreach ($data as &$value) {
@@ -125,7 +134,7 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function relateWith(RowInterface $row)
     {
-        if (!$this->getEntity()->hasOne($row->getEntity())) {
+        if (!$this->entity->hasOne($row->getEntity())) {
             throw new SimpleCrudException("Not valid relation");
         }
 
@@ -189,10 +198,10 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function save($duplications = false)
     {
-        $data = array_intersect_key($this->values, $this->getEntity()->fields);
+        $data = array_intersect_key($this->values, $this->entity->fields);
 
         if (empty($this->id)) {
-            $this->id = $this->getEntity()->insert()
+            $this->id = $this->db->insert($this->entity->name)
                 ->data($data)
                 ->duplications($duplications)
                 ->get();
@@ -200,7 +209,7 @@ class Row extends BaseRow implements JsonSerializable
             return $this;
         }
 
-        $this->getEntity()->update()
+        $this->db->update($this->entity->name)
             ->data($data)
             ->byId($this->id)
             ->limit(1)

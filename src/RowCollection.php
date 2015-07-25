@@ -16,7 +16,24 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
     public function __construct(Entity $entity)
     {
-        $this->setEntity($entity);
+        $this->entity = $entity;
+        $this->db = $entity->getDb();
+    }
+
+    /**
+     * Magic method to execute custom method defined in the entity class
+     *
+     * @param string $name
+     */
+    public function __call($name, $arguments)
+    {
+        $method = "rowCollection{$name}";
+
+        if (method_exists($this->entity, $method)) {
+            array_unshift($arguments, $this);
+
+            return call_user_func_array([$this->entity, $method], $arguments);
+        }
     }
 
     /**
@@ -44,7 +61,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
         }
 
         //Returns related entities
-        $db = $this->getEntity()->getDb();
+        $db = $this->entity->getDb();
 
         if (isset($db->$name)) {
             $entity = $db->$name;
@@ -85,7 +102,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function __toString()
     {
-        return "\n".$this->getEntity()->name.":\n".print_r($this->toArray(), true)."\n";
+        return "\n".$this->entity->name.":\n".print_r($this->toArray(), true)."\n";
     }
 
     /**
@@ -97,11 +114,11 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
             throw new SimpleCrudException('Only instances of SimpleCrud\\Row must be added to collections');
         }
 
-        if (!($offset = $value->id)) {
+        if (empty($value->id)) {
             throw new SimpleCrudException('Only rows with the defined id must be added to collections');
         }
 
-        $this->rows[$offset] = $value;
+        $this->rows[$value->id] = $value;
     }
 
     /**
@@ -181,7 +198,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function toArray($keysAsId = false, array $parentEntities = array())
     {
-        if (!empty($parentEntities) && in_array($this->getEntity()->name, $parentEntities)) {
+        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
             return;
         }
 
@@ -323,7 +340,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
             }
         }
 
-        return $first ? null : $this->getEntity()->createCollection($rows);
+        return $first ? null : $this->entity->createCollection($rows);
     }
 
     /**
@@ -336,7 +353,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function distribute(RowInterface $data, $bidirectional = true)
     {
-        $thisEntity = $this->getEntity();
+        $thisEntity = $this->entity;
         $thatEntity = $data->getEntity();
 
         if (!($data instanceof RowCollection)) {

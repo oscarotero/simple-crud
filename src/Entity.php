@@ -2,6 +2,7 @@
 namespace SimpleCrud;
 
 use SimpleCrud\SimpleCrud;
+use SimpleCrud\Queries\QueryInterface;
 use ArrayAccess;
 use PDOStatement;
 use PDO;
@@ -21,8 +22,6 @@ class Entity implements ArrayAccess
     public $fields = [];
     public $defaults;
     public $foreignKey;
-    public $rowClass;
-    public $rowCollectionClass;
 
     public static function getInstance($name, SimpleCrud $db)
     {
@@ -39,19 +38,13 @@ class Entity implements ArrayAccess
             $entity->foreignKey = "{$entity->table}_id";
         }
 
-        if (empty($entity->rowClass)) {
-            $entity->rowClass = $factory->getRowClass($name);
-        }
-
-        if (empty($entity->rowCollectionClass)) {
-            $entity->rowCollectionClass = $factory->getRowCollectionClass($name);
-        }
-
-        $fields = $entity->fields ?: $entity->fields()->get();
+        $fields = $entity->fields ?: $factory->getQuery($entity, 'fields')->get();
 
         foreach ($fields as $field => $type) {
             $entity->fields[$field] = $factory->getField($entity, $type);
         }
+
+        $entity->defaults = array_fill_keys(array_keys($fields), null);
 
         return $entity;
     }
@@ -63,18 +56,18 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Magic method to execute queries
+     * Magic method to create queries related with this entity
      * 
      * @param string $name
      * @param array  $arguments
      * 
      * @throws SimpleCrudException
      * 
-     * @return QueryInterface
+     * @return QueryInterface|null
      */
     public function __call($name, $arguments)
     {
-        return $this->db->getFactory()->getQuery($this, $name);
+        return $this->db->$name($this->name);
     }
 
     /**
@@ -86,7 +79,10 @@ class Entity implements ArrayAccess
      */
     public function offsetExists($offset)
     {
-        return $this->count()->byId($offset)->limit(1)->get() === 1;
+        return $this->db->count($this->name)
+            ->byId($offset)
+            ->limit(1)
+            ->get() === 1;
     }
 
     /**
@@ -98,7 +94,9 @@ class Entity implements ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return $this->select()->byId($offset)->one();
+        return $this->db->select($this->name)
+            ->byId($offset)
+            ->one();
     }
 
     /**
@@ -109,10 +107,16 @@ class Entity implements ArrayAccess
     public function offsetSet($offset, $value)
     {
         if (!empty($offset) && $this->offsetExists($offset)) {
-            $this->update()->data($value)->byId($offset)->limit(1)->run();
+            $this->db->update($this->name)
+                ->data($value)
+                ->byId($offset)
+                ->limit(1)
+                ->run();
         } else {
             $value['id'] = $offset;
-            $this->insert()->data($value)->run();
+            $this->db->insert($this->name)
+                ->data($value)
+                ->run();
         }
     }
 
@@ -123,17 +127,10 @@ class Entity implements ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        $this->delete('id = :id', [':id' => $offset], 1);
-    }
-
-    /**
-     * Returns an array with the defaults values.
-     *
-     * @return array
-     */
-    public function getDefaults()
-    {
-        return array_fill_keys(array_keys($this->fields), null);
+        $this->db->delete($this->name)
+            ->byId($offset)
+            ->limit(1)
+            ->run();
     }
 
     /**
@@ -168,22 +165,28 @@ class Entity implements ArrayAccess
      */
     public function create(array $data = null)
     {
-        return new $this->rowClass($this, $data);
+        $row = new Row($this);
+
+        if ($data !== null) {
+            $row->set($data);
+        }
+
+        return $row;
     }
 
     /**
      * Creates a new rowCollection instance.
      *
-     * @param array $rows Rows added to this collection
+     * @param array|RowInterface $data Rows added to this collection
      *
      * @return RowCollection
      */
-    public function createCollection(array $rows = null)
+    public function createCollection($data = null)
     {
-        $collection = new $this->rowCollectionClass($this);
+        $collection = new RowCollection($this);
 
-        if ($rows !== null) {
-            $collection->add($rows);
+        if ($data !== null) {
+            $collection->add($data);
         }
 
         return $collection;
@@ -290,11 +293,11 @@ class Entity implements ArrayAccess
     public function getRelation($entity)
     {
         if (is_string($entity)) {
-            if (!isset($this->getDb()->$entity)) {
+            if (!isset($this->db->$entity)) {
                 return;
             }
 
-            $entity = $this->getDb()->$entity;
+            $entity = $this->db->$entity;
         }
 
         if (isset($entity->fields[$this->foreignKey])) {

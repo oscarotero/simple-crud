@@ -18,7 +18,6 @@ class Factory
     protected $rowCollections;
     protected $autocreate;
     protected $default_entity = 'SimpleCrud\\Entity';
-    protected $default_queries = 'SimpleCrud\\Queries\\';
     protected $default_fields = 'SimpleCrud\\Fields\\';
     protected $default_field = 'SimpleCrud\\Fields\\Field';
     protected $default_row = 'SimpleCrud\\Row';
@@ -27,7 +26,7 @@ class Factory
     public function init(SimpleCrud $db)
     {
         $this->db = $db;
-        $this->default_queries .= ucfirst($db->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\';
+        $this->queries = 'SimpleCrud\\Queries\\'.ucfirst($db->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\';
     }
 
     /**
@@ -239,33 +238,6 @@ class Factory
 
 
     /**
-     * Returns a Query class
-     *
-     * @param string $name
-     *
-     * @return string|null
-     */
-    public function getQueryClass($name)
-    {
-        $name = ucfirst($name);
-
-        if ($this->queries !== null) {
-            $class = $this->queries.$name;
-
-            if (class_exists($class)) {
-                return $class;
-            }
-        }
-
-        $class = $this->default_queries.$name;
-
-        if (class_exists($class)) {
-            return $class;
-        }
-    }
-
-
-    /**
      * Creates a new instance of a Query for a entity
      *
      * @param Entity $entity
@@ -275,9 +247,9 @@ class Factory
      */
     public function getQuery(Entity $entity, $name)
     {
-        $class = $this->getQueryClass($name);
+        $class = $this->queries.ucfirst($name);
 
-        if (!empty($class)) {
+        if (class_exists($class)) {
             return $class::getInstance($entity);
         }
     }
@@ -291,7 +263,7 @@ class Factory
     private function getTables()
     {
         if ($this->tables === null) {
-            $class = $this->default_queries.'DbTables';
+            $class = $this->queries.'DbTables';
             $this->tables = $class::getInstance($this->db)->get();
         }
 

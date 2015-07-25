@@ -1,7 +1,7 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\QueryInterface;
+use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -12,25 +12,13 @@ use PDO;
 /**
  * Manages a database update query in Mysql databases
  */
-class Update implements QueryInterface
+class Update extends BaseQuery
 {
     use WhereTrait;
     
-    protected $entity;
-
     protected $data = [];
     protected $limit;
     protected $offset;
-
-    /**
-     * @see QueryInterface
-     * 
-     * {@inheritdoc}
-     */
-    public static function getInstance(Entity $entity)
-    {
-        return new static($entity);
-    }
 
     /**
      * @see QueryInterface
@@ -54,16 +42,6 @@ class Update implements QueryInterface
         }
 
         return $select->run();
-    }
-
-    /**
-     * Constructor
-     * 
-     * @param Entity $entity
-     */
-    public function __construct(Entity $entity)
-    {
-        $this->entity = $entity;
     }
 
     /**

@@ -1,7 +1,7 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\QueryInterface;
+use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -12,24 +12,12 @@ use PDO;
 /**
  * Manages a database delete query in Mysql databases
  */
-class Delete implements QueryInterface
+class Delete extends BaseQuery
 {
     use WhereTrait;
 
-    protected $entity;
-
     protected $limit;
     protected $offset;
-
-    /**
-     * @see QueryInterface
-     * 
-     * {@inheritdoc}
-     */
-    public static function getInstance(Entity $entity)
-    {
-        return new static($entity);
-    }
 
     /**
      * @see QueryInterface
@@ -51,16 +39,6 @@ class Delete implements QueryInterface
         }
 
         return $delete->run();
-    }
-
-    /**
-     * Constructor
-     * 
-     * @param Entity $entity
-     */
-    public function __construct(Entity $entity)
-    {
-        $this->entity = $entity;
     }
 
     /**

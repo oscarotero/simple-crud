@@ -1,7 +1,7 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\QueryInterface;
+use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -12,20 +12,8 @@ use PDO;
 /**
  * Manages a database query to get the fields names in Mysql databases
  */
-class Fields implements QueryInterface
+class Fields extends BaseQuery
 {
-    protected $entity;
-
-    /**
-     * @see QueryInterface
-     * 
-     * {@inheritdoc}
-     */
-    public static function getInstance(Entity $entity)
-    {
-        return new static($entity);
-    }
-
     /**
      * @see QueryInterface
      * 
@@ -38,16 +26,6 @@ class Fields implements QueryInterface
         return self::getInstance($entity)->get();
     }
 
-
-    /**
-     * Constructor
-     * 
-     * @param Entity $entity
-     */
-    public function __construct(Entity $entity)
-    {
-        $this->entity = $entity;
-    }
 
     /**
      * Run the query and return all values

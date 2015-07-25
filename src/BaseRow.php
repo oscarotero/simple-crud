@@ -6,17 +6,8 @@ namespace SimpleCrud;
  */
 abstract class BaseRow implements RowInterface
 {
-    private $entity;
-
-    /**
-     * Set the row entity
-     *
-     * @param Entity $entity
-     */
-    protected function setEntity(Entity $entity)
-    {
-        $this->entity = $entity;
-    }
+    protected $entity;
+    protected $db;
 
     /**
      * @see RowInterface
@@ -35,7 +26,7 @@ abstract class BaseRow implements RowInterface
      */
     public function getDb()
     {
-        return $this->entity->getDb();
+        return $this->db;
     }
 
     /**
@@ -45,7 +36,7 @@ abstract class BaseRow implements RowInterface
      */
     public function getAttribute($name)
     {
-        return $this->getDb()->getAttribute($name);
+        return $this->db->getAttribute($name);
     }
 
     /**
@@ -68,7 +59,7 @@ abstract class BaseRow implements RowInterface
      */
     public function select($entity, $through = null)
     {
-        return $this->getDb()->select($entity)
+        return $this->db->select($entity)
             ->relatedWith($this, $through);
     }
 
@@ -82,7 +73,7 @@ abstract class BaseRow implements RowInterface
         $id = $this->id;
 
         if (!empty($id)) {
-            $this->getEntity()->delete()
+            $this->db->delete($this->entity->name)
                 ->byId($id)
                 ->run();
 

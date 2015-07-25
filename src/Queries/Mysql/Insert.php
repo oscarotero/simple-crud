@@ -1,7 +1,7 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\QueryInterface;
+use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -12,21 +12,10 @@ use PDO;
 /**
  * Manages a database insert query in Mysql databases
  */
-class Insert implements QueryInterface
+class Insert extends BaseQuery
 {
-    protected $entity;
     protected $data = [];
     protected $duplications;
-
-    /**
-     * @see QueryInterface
-     * 
-     * {@inheritdoc}
-     */
-    public static function getInstance(Entity $entity)
-    {
-        return new static($entity);
-    }
 
     /**
      * @see QueryInterface
@@ -50,16 +39,6 @@ class Insert implements QueryInterface
         $delete->run();
 
         return $this->entity->getDb()->lastInsertId();
-    }
-
-    /**
-     * Constructor
-     * 
-     * @param Entity $entity
-     */
-    public function __construct(Entity $entity)
-    {
-        $this->entity = $entity;
     }
 
     /**

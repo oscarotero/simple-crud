@@ -84,9 +84,7 @@ class SimpleCrud
     {
         $entity = array_shift($arguments);
 
-        if ($entity) {
-            return $this->factory->getQuery($this->$entity, $name);
-        }
+        return $this->factory->getQuery($this->$entity, $name);
     }
 
     /**
