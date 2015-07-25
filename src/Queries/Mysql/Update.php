@@ -75,7 +75,7 @@ class Update implements QueryInterface
      */
     public function data(array $data)
     {
-        $this->data = $this->entity->prepareDataToDatabase($data);
+        $this->data = $this->entity->prepareDataToDatabase($data, false);
 
         return $this;
     }
@@ -165,7 +165,7 @@ class Update implements QueryInterface
     public function __toString()
     {
         $query = "UPDATE `{$this->entity->table}`";
-        $query .= ' SET '.static::buildFields(array_keys($data));
+        $query .= ' SET '.static::buildFields(array_keys($this->data));
 
         if (!empty($this->where)) {
             $query .= ' WHERE ('.implode(') AND (', $this->where).')';

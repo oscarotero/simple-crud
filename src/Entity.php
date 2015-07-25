@@ -2,13 +2,14 @@
 namespace SimpleCrud;
 
 use SimpleCrud\SimpleCrud;
+use ArrayAccess;
 use PDOStatement;
 use PDO;
 
 /**
  * Manages a database entity (table)
  */
-class Entity
+class Entity implements ArrayAccess
 {
     const RELATION_HAS_ONE = 1;
     const RELATION_HAS_MANY = 2;
@@ -78,6 +79,55 @@ class Entity
         if ($class) {
             return $class::execute($this, $arguments);
         }
+    }
+
+    /**
+     * Check if a row with a specific id exists
+     * 
+     * @see ArrayAccess
+     * 
+     * @return boolean
+     */
+    public function offsetExists($offset)
+    {
+        return $this->count('id = :id', [':id' => $offset], 1) === 1;
+    }
+
+    /**
+     * Returns a row with a specific id
+     * 
+     * @see ArrayAccess
+     * 
+     * @return Row|null
+     */
+    public function offsetGet($offset)
+    {
+        return $this->select('id = :id', [':id' => $offset], null, true);
+    }
+
+    /**
+     * Store a row with a specific id
+     * 
+     * @see ArrayAccess
+     */
+    public function offsetSet($offset, $value)
+    {
+        if (!empty($offset) && $this->offsetExists($offset)) {
+            $this->update($value, 'id = :id', [':id' => $offset], 1);
+        } else {
+            $value['id'] = $offset;
+            $this->insert($value);
+        }
+    }
+
+    /**
+     * Remove a row with a specific id
+     * 
+     * @see ArrayAccess
+     */
+    public function offsetUnset($offset)
+    {
+        $this->delete('id = :id', [':id' => $offset], 1);
     }
 
     /**

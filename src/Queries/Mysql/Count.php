@@ -33,7 +33,7 @@ class Count implements QueryInterface
     /**
      * @see QueryInterface
      * 
-     * $entity->count($where, $marks)
+     * $entity->count($where, $marks, $limit)
      * 
      * {@inheritdoc}
      */
@@ -43,6 +43,10 @@ class Count implements QueryInterface
 
         if (isset($args[0])) {
             $count->where($args[0], isset($args[1]) ? $args[1] : null);
+        }
+
+        if (isset($args[2])) {
+            $count->limit($args[2]);
         }
 
         return $count->get();

@@ -14,12 +14,13 @@ class Delete extends Mysql\Delete
      * Adds a LIMIT clause
      * 
      * @param integer $limit
+     * @param boolean $force
      * 
      * @return self
      */
-    public function limit($limit)
+    public function limit($limit, $force = false)
     {
-        if ($this->hasCompiledOption('ENABLE_UPDATE_DELETE_LIMIT')) {
+        if ($force || $this->hasCompiledOption('ENABLE_UPDATE_DELETE_LIMIT')) {
             $this->limit = $limit;
         }
 
@@ -30,12 +31,13 @@ class Delete extends Mysql\Delete
      * Adds an offset to the LIMIT clause
      * 
      * @param integer $offset
+     * @param boolean $force
      * 
      * @return self
      */
-    public function offset($offset)
+    public function offset($offset, $force = false)
     {
-        if ($this->hasCompiledOption('ENABLE_UPDATE_DELETE_LIMIT')) {
+        if ($force || $this->hasCompiledOption('ENABLE_UPDATE_DELETE_LIMIT')) {
             $this->offset = $offset;
         }
 

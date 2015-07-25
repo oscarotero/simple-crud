@@ -7,7 +7,7 @@ use PDO;
 /**
  * Manages a database select count query in Mysql databases
  */
-trait CompiledOptions
+trait CompiledOptionsTrait
 {
     protected static $options;
 

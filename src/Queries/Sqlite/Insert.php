@@ -16,7 +16,7 @@ class Insert extends Mysql\Insert
     public function __toString()
     {
         if (empty($this->data) || !$this->duplications) {
-            parent::__toString();
+            return parent::__toString();
         }
 
         $fields = array_keys($this->data);

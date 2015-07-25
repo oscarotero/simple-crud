@@ -21,7 +21,7 @@ Currently there are support for mysql and sqlite databases
 
 ### Define the entities:
 
-Create a new entity for each table in the database in a common namespace, for example `MyModels`:
+Create a new entity class for each table in the database in a common namespace, for example `MyModels`:
 
 ```php
 namespace MyModels;
@@ -112,30 +112,60 @@ $db->posts; //Posts entity
 
 You can work directly with the entities to insert/update/delete/select data:
 
+Use arrayAccess interface for access to the data using the `id`:
+
+```php
+//Get the entity to work with the table `posts`:
+$posts = $db->posts;
+
+//Get the post id = 3;
+$post = $posts[3];
+
+//Check if a row exists
+if (isset($posts[3])) {
+    echo 'exists';
+}
+
+//Delete a post
+unset($posts[3]);
+
+//Create or update posts
+$posts[3] = [
+    'title' => 'Hello world'
+];
+
+//Insert a new post
+$posts[] = [
+    'title' => 'Hello world 2'
+];
+```
+
+Use more advanced queries:
+
 ```php
 //Get the entity to work with the table `posts`:
 $posts = $db->posts;
 
 //insert new posts
-//$entity->insert(array $data)
+//Entity::insert(array $data)
 
-$db->insert([
+$posts->insert([
     'title' => 'My first post',
     'text' => 'This is the text of the post'
 ]);
 
 //Update a post
-//$entity->update(array $data, $where = null, $marks = null, $limit = null)
+//Entity::update(array $data, $where = null, $marks = null, $limit = null)
 
-$db->update(['title' => 'New title'], 'id = :id', [':id' => 23], 1);
+$posts->update(['title' => 'New title'], 'id = :id', [':id' => 23], 1);
 
 //Delete a post
-//$entity->delete($where = null, $marks = null, $limit = null)
+//Entity::delete($where = null, $marks = null, $limit = null)
 
-$db->delete('id = :id', [':id' => 23], 1);
+$posts->delete('id = :id', [':id' => 23], 1);
 
 //Select posts
-//$entity->select($where = null, $marks = null, $orderBy = null, $limit = null)
+//Entity::select($where = null, $marks = null, $orderBy = null, $limit = null)
 
 $posts = $posts->select('id > :id', [':id' => 10], 'id ASC', 100);
 
@@ -145,23 +175,23 @@ $post = $posts->select('id = :id', [':id' => 10], null, true);
 
 #### Working with queries
 
-To work with more complicated queries, you can use the `query[whatever]` functions:
+To work with more complicated queries, you can use the query functions:
 
 ```php
 //Insert data
-$posts->queryInsert()
+$db->insert('posts')
     ->data($myData)
     ->run();
 
 //Update data
-$posts->queryUpdate()
+$db->update('posts')
     ->data($myData)
     ->where('id = :id', [':id' => 34])
     ->limit(1)
     ->run();
 
 //Delete data
-$posts->queryDelete()
+$db->delete('posts')
     ->where('active = 0')
     ->where('pub_date < :pubdate', [':pubdate' => $my_pubdate])
     ->limit(10)
@@ -169,7 +199,7 @@ $posts->queryDelete()
     ->run();
 
 //Select data
-$result = $posts->querySelect()
+$result = $db->select('posts')
     ->where('pub_date < :pubdate_max')
     ->where('id < :id_max')
     ->marks([
@@ -184,7 +214,7 @@ $result = $posts->querySelect()
 This functions returns an instance of one of the `Queries` classes available. The `Select` class, used to read data from the database has some special methods:
 
 ```php
-$result = $posts->querySelect()
+$result = $db->select('posts')
     ->withId(23) //select by id
     ->with('slug', $my_slug) //select by slug also
     ->one(); //get one result, instead all
@@ -194,10 +224,10 @@ You can also select rows related with other rows:
 
 ```php
 //Select a post by id
-$post = $posts->querySelect()->withId(23)->one();
+$post = $db->posts[23];
 
 //Select the comments related with this posts
-$comments = $posts->querySelect()->relatedWith($post)->all();
+$comments = $db->select('posts')->relatedWith($post)->all();
 ```
 
 You can, also create your own `Queries` classes to extend the default behaviour with custom functionalities:
@@ -223,7 +253,7 @@ $factory = (new Factory())
 
 $db = new SimpleCrud($PDO, $factory);
 
-$posts = $db->posts->querySelect()
+$posts = $db->select('posts')
             ->withId(34)
             ->isActive()
             ->one();
@@ -234,7 +264,7 @@ $posts = $db->posts->querySelect()
 If you select a row from the database, it's saved in a `Row` instance. This class allows read the data and modify:
 
 ```php
-$post = $db->posts->querySelect()->withId(25)->one();
+$post = $db->posts[25];
 
 echo $post->title; //Get the post title
 
@@ -263,7 +293,7 @@ $newPost->save(); //save the posts in the database.
 If you select more than one row from the database, the rows are saved in a `RowCollection` instance.
 
 ```php
-$allPosts = $db->posts->querySelect()->all();
+$allPosts = $db->select('posts')->all();
 
 foreach ($allPosts as $post) {
     echo $post->title;
@@ -312,7 +342,7 @@ class MyCustomRowCollectionClass extends Row
 Now, you can use this functions in the rows and rowcollections:
 
 ```php
-$posts = $db->posts->querySelect()->byId([1, 2, 3])->all();
+$posts = $db->select('posts')->byId([1, 2, 3])->all();
 
 $posts->escapeText(); //Execute escapeText in each row
 
@@ -368,7 +398,7 @@ Both `Row` and `RowCollection` can load automatically the related rows if you ca
 
 ```php
 //Get posts by id=34
-$post = $db->posts->selectQuery()->withId(34)->one();
+$post = $db->posts[34];
 
 //Load the comments related with this post
 $comments = $post->comments;
@@ -380,11 +410,9 @@ $comments = $db->comments->selectQuery->relatedWith($post)->all();
 This allows make awesome (and dangerous :D) things like this:
 
 ```php
-//Select the post id=34
-$post = $db->posts->selectBy(34);
+$titles = $db->posts[34]->comments->users->posts->title;
 
-$title = $post->comments->users->posts->title;
-
+//Get the post id=34
 //Get the comments of the post
 //Then the users related with these comments
 //Then the posts related by these users
@@ -408,8 +436,7 @@ class Posts extends Row
     public function getComments ()
     {
         //Use $this->getDb() to access to the SimpleCrud instance
-        return $this->getDb()->comments->querySelect()
-            ->relatedWith($this)
+        return $this->select('comments')
             ->where('validated = 1')
             ->all();
     }
@@ -428,7 +455,7 @@ Now, to use it:
 
 ```php
 //Select post id=4
-$post = $db->posts->querySelect()->byId(4)->one();
+$post = $db->posts[4];
 
 $post->comments; //Execute getComments() methods and save the result in $post->comments
 $post->comments; //Access to the cached result instead execute getComments() again
@@ -440,9 +467,9 @@ Note that all these `getWhatever` methods that get relations are available autom
 
 ```php
 //select post id=4
-$post = $db->posts->querySelect()->byId(4)->one();
+$post = $db->posts[4];
 
-$users = $post->getUsers('active = :active', [':active' => 1]);
+$users = $post->select('users')->where('active = :active', [':active' => 1])->all();
 ```
 
 ### Fields
@@ -556,7 +583,7 @@ $post = $db->posts->create([
 $post->save();
 
 //Get the post from the database:
-$post = $db->posts->selectBy(1);
+$post = $db->posts[1];
 
 //We have the array
 var_dump($post->data); //array('foo', 'bar')
@@ -576,7 +603,7 @@ $db->setAttribute('language', 'en');
 echo $db->posts->getAttribute('language'); //en
 
 //And rows
-$post = $db->posts->selectBy(2);
+$post = $db->posts[2];
 $post->getAttribute('language'); //en
 ```
 Only the SimpleCrud instance has the method `setAttribute`, so only it can create/modify attributes. These values are inmutable for the rest.
