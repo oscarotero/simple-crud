@@ -30,12 +30,22 @@ abstract class BaseRow implements RowInterface
 
     /**
      * @see RowInterface
+     *
+     * {@inheritdoc}
+     */
+    public function getDb()
+    {
+        return $this->entity->getDb();
+    }
+
+    /**
+     * @see RowInterface
      * 
      * {@inheritdoc}
      */
     public function getAttribute($name)
     {
-        return $this->getEntity()->getDb()->getAttribute($name);
+        return $this->getDb()->getAttribute($name);
     }
 
     /**
@@ -58,7 +68,27 @@ abstract class BaseRow implements RowInterface
      */
     public function select($entity, $through = null)
     {
-        return $this->getEntity()->getDb()->select($entity)
+        return $this->getDb()->select($entity)
             ->relatedWith($this, $through);
+    }
+
+    /**
+     * Deletes the row(s) in the database.
+     *
+     * @return $this
+     */
+    public function delete()
+    {
+        $id = $this->id;
+
+        if (!empty($id)) {
+            $this->getEntity()->delete()
+                ->byId($id)
+                ->run();
+
+            $this->id = null;
+        }
+
+        return $this;
     }
 }

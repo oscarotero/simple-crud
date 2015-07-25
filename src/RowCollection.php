@@ -20,9 +20,19 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Magic method to execute the get method on access to undefined property.
-     *
-     * @see RowCollection::get()
+     * Magic method to set properties to all rows
+     * 
+     * @see self::set()
+     */
+    public function __set($name, $value)
+    {
+        $this->set($name, $value);
+    }
+
+    /**
+     * Magic method to get properties from all rows
+     * 
+     * @see self::get()
      */
     public function __get($name)
     {
@@ -183,6 +193,24 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
         return $keysAsId ? $rows : array_values($rows);
     }
+
+    /**
+     * Set values to all children
+     *
+     * @param string $name
+     * @param string $value
+     *
+     * @return self
+     */
+    public function set($name, $value)
+    {
+        foreach ($this->rows as $row) {
+            $row->$name = $value;
+        }
+
+        return $this;
+    }
+
 
     /**
      * Returns one or all values of the collections.

@@ -15,12 +15,12 @@ use PDO;
  */
 class Select implements QueryInterface
 {
+    use WhereTrait;
+
     protected $entity;
 
     protected $fields = [];
     protected $from = [];
-    protected $where = [];
-    protected $marks = [];
     protected $leftJoin = [];
     protected $orderBy = [];
     protected $limit;
@@ -91,25 +91,6 @@ class Select implements QueryInterface
     }
 
     /**
-     * Adds a WHERE clause
-     * 
-     * @param string     $where
-     * @param null|array $marks
-     * 
-     * @return self
-     */
-    public function where($where, $marks = null)
-    {
-        $this->where[] = $where;
-
-        if ($marks) {
-            $this->marks += $marks;
-        }
-
-        return $this;
-    }
-
-    /**
      * Adds a WHERE according with the relation of other entity
      * 
      * @param RowInterface $row
@@ -136,37 +117,6 @@ class Select implements QueryInterface
         }
 
         throw new SimpleCrudException("The tables {$this->entity->table} and {$row->getEntity()->table} are no related");
-    }
-
-    /**
-     * Adds a WHERE field = :value clause
-     * 
-     * @param string $field
-     * @param int|array $value
-     * 
-     * @return self
-     */
-    public function by($field, $value)
-    {
-        if (is_array($value)) {
-            return $this->where("`{$this->entity->table}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
-        }
-        
-        return $this->where("`{$this->entity->table}`.`{$field}` = :{$field}", [":{$field}" => $value]);
-    }
-
-    /**
-     * Adds a WHERE id = :id clause
-     * 
-     * @param int|array $id
-     * 
-     * @return self
-     */
-    public function byId($id)
-    {
-        $limit = is_array($id) ? count($id) : 1;
-
-        return $this->limit($limit)->by('id', $id);
     }
 
     /**

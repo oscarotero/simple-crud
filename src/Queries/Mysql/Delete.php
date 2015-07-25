@@ -14,10 +14,10 @@ use PDO;
  */
 class Delete implements QueryInterface
 {
+    use WhereTrait;
+
     protected $entity;
 
-    protected $where = [];
-    protected $marks = [];
     protected $limit;
     protected $offset;
 
@@ -61,25 +61,6 @@ class Delete implements QueryInterface
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
-    }
-
-    /**
-     * Adds a WHERE clause
-     * 
-     * @param string     $where
-     * @param null|array $marks
-     * 
-     * @return self
-     */
-    public function where($where, $marks = null)
-    {
-        $this->where[] = $where;
-
-        if ($marks) {
-            $this->marks += $marks;
-        }
-
-        return $this;
     }
 
     /**
@@ -131,7 +112,7 @@ class Delete implements QueryInterface
      */
     public function run()
     {
-        return $this->entity->getAdapter->execute((string) $this, $this->marks);
+        return $this->entity->getDb()->execute((string) $this, $this->marks);
     }
 
     /**

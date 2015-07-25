@@ -15,7 +15,6 @@ use PDO;
 class Insert implements QueryInterface
 {
     protected $entity;
-
     protected $data = [];
     protected $duplications;
 
@@ -104,7 +103,19 @@ class Insert implements QueryInterface
             $marks[":{$field}"] = $value;
         }
 
-        return $this->entity->getAdapter->execute((string) $this, $marks);
+        return $this->entity->getDb()->execute((string) $this, $marks);
+    }
+
+    /**
+     * Run the query and return the id
+     * 
+     * @return integer
+     */
+    public function get()
+    {
+        $this->run();
+
+        return $this->entity->getDb()->lastInsertId();
     }
 
     /**

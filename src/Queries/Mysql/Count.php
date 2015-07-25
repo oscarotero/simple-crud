@@ -14,10 +14,10 @@ use PDO;
  */
 class Count implements QueryInterface
 {
+    use WhereTrait;
+
     protected $entity;
 
-    protected $where = [];
-    protected $marks = [];
     protected $limit;
 
     /**
@@ -61,25 +61,6 @@ class Count implements QueryInterface
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
-    }
-
-    /**
-     * Adds a WHERE clause
-     * 
-     * @param string     $where
-     * @param null|array $marks
-     * 
-     * @return self
-     */
-    public function where($where, $marks = null)
-    {
-        $this->where[] = $where;
-
-        if ($marks) {
-            $this->marks += $marks;
-        }
-
-        return $this;
     }
 
     /**

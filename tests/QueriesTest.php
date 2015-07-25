@@ -62,6 +62,4 @@ class QueriesTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals((string) $query, 'DELETE FROM `posts` WHERE (id = 3) LIMIT 2, 1');
     }
-
-
 }

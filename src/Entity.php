@@ -18,7 +18,7 @@ class Entity implements ArrayAccess
 
     public $name;
     public $table;
-    public $fields;
+    public $fields = [];
     public $defaults;
     public $foreignKey;
     public $rowClass;
@@ -47,10 +47,10 @@ class Entity implements ArrayAccess
             $entity->rowCollectionClass = $factory->getRowCollectionClass($name);
         }
 
-        $fields = $entity->fields ?: $entity->fields();
+        $fields = $entity->fields ?: $entity->fields()->get();
 
-        foreach ($fields as $name => $type) {
-            $entity->fields[$name] = $factory->getField($entity, $type);
+        foreach ($fields as $field => $type) {
+            $entity->fields[$field] = $factory->getField($entity, $type);
         }
 
         return $entity;
@@ -70,15 +70,11 @@ class Entity implements ArrayAccess
      * 
      * @throws SimpleCrudException
      * 
-     * @return QueryInterface|mixed
+     * @return QueryInterface
      */
     public function __call($name, $arguments)
     {
-        $class = $this->db->getFactory()->getQueryClass($name);
-
-        if ($class) {
-            return $class::execute($this, $arguments);
-        }
+        return $this->db->getFactory()->getQuery($this, $name);
     }
 
     /**
@@ -90,7 +86,7 @@ class Entity implements ArrayAccess
      */
     public function offsetExists($offset)
     {
-        return $this->count('id = :id', [':id' => $offset], 1) === 1;
+        return $this->count()->byId($offset)->limit(1)->get() === 1;
     }
 
     /**
@@ -102,7 +98,7 @@ class Entity implements ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return $this->select('id = :id', [':id' => $offset], null, true);
+        return $this->select()->byId($offset)->one();
     }
 
     /**
@@ -113,10 +109,10 @@ class Entity implements ArrayAccess
     public function offsetSet($offset, $value)
     {
         if (!empty($offset) && $this->offsetExists($offset)) {
-            $this->update($value, 'id = :id', [':id' => $offset], 1);
+            $this->update()->data($value)->byId($offset)->limit(1)->run();
         } else {
             $value['id'] = $offset;
-            $this->insert($value);
+            $this->insert()->data($value)->run();
         }
     }
 

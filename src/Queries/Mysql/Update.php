@@ -14,11 +14,11 @@ use PDO;
  */
 class Update implements QueryInterface
 {
+    use WhereTrait;
+    
     protected $entity;
 
     protected $data = [];
-    protected $where = [];
-    protected $marks = [];
     protected $limit;
     protected $offset;
 
@@ -81,25 +81,6 @@ class Update implements QueryInterface
     }
 
     /**
-     * Adds a WHERE clause
-     * 
-     * @param string     $where
-     * @param null|array $marks
-     * 
-     * @return self
-     */
-    public function where($where, $marks = null)
-    {
-        $this->where[] = $where;
-
-        if ($marks) {
-            $this->marks += $marks;
-        }
-
-        return $this;
-    }
-
-    /**
      * Adds a LIMIT clause
      * 
      * @param integer $limit
@@ -148,13 +129,13 @@ class Update implements QueryInterface
      */
     public function run()
     {
-        $marks = [];
+        $marks = $this->marks;
 
         foreach ($this->data as $field => $value) {
             $marks[":__{$field}"] = $value;
         }
 
-        return $this->entity->getAdapter->execute((string) $this, $marks);
+        return $this->entity->getDb()->execute((string) $this, $marks);
     }
 
     /**

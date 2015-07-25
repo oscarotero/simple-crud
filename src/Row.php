@@ -183,37 +183,28 @@ class Row extends BaseRow implements JsonSerializable
     /**
      * Saves this row in the database.
      *
-     * @param boolean $duplicate Set true to detect duplicates index
+     * @param boolean $duplications Set true to detect duplicates index
      *
      * @return $this
      */
-    public function save($duplicate = false)
+    public function save($duplications = false)
     {
         $data = array_intersect_key($this->values, $this->getEntity()->fields);
 
         if (empty($this->id)) {
-            $this->getEntity->insert($data, $duplicate);
-            $this->id = $this->getDb()->lastInsertId();
+            $this->id = $this->getEntity()->insert()
+                ->data($data)
+                ->duplications($duplications)
+                ->get();
 
             return $this;
         }
 
-        $this->getEntity()->update($data, 'id = :id', [':id' => $this->id], 1);
-
-        return $this;
-    }
-
-    /**
-     * Deletes the row in the database.
-     *
-     * @return $this
-     */
-    public function delete()
-    {
-        if (!empty($this->id)) {
-            $this->getEntity()->delete('id = :id', [':id' => $this->id], 1);
-            $this->id = null;
-        }
+        $this->getEntity()->update()
+            ->data($data)
+            ->byId($this->id)
+            ->limit(1)
+            ->run();
 
         return $this;
     }

@@ -26,6 +26,13 @@ interface RowInterface extends JsonSerializable
     public function getEntity();
 
     /**
+     * Return the database connection
+     *
+     * @return SimpleCrud
+     */
+    public function getDb();
+
+    /**
      * Returns an attribute
      * 
      * @param string $name
