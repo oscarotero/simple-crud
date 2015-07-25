@@ -10,7 +10,7 @@ class Insert extends Mysql\Insert
 {
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

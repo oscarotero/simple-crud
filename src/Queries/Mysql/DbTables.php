@@ -1,10 +1,6 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\RowCollection;
-use SimpleCrud\Row;
-use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use SimpleCrud\SimpleCrud;
 use PDOStatement;
 use PDO;
@@ -28,7 +24,7 @@ class DbTables
 
     /**
      * Run the query and return all values
-     * 
+     *
      * @return PDOStatement
      */
     public function run()
@@ -38,7 +34,7 @@ class DbTables
 
     /**
      * Run the query and return the fields
-     * 
+     *
      * @return array
      */
     public function get()
@@ -48,7 +44,7 @@ class DbTables
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

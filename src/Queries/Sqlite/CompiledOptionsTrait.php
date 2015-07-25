@@ -13,9 +13,9 @@ trait CompiledOptionsTrait
 
     /**
      * Check whether the sqlite has a compiled option
-     * 
+     *
      * @param string $name
-     * 
+     *
      * @return boolean
      */
     public function hasCompiledOption($name)

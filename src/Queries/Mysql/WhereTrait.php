@@ -1,8 +1,6 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\Mysql;
-use PDO;
 
 /**
  * Common function to manage WHERE clause
@@ -14,10 +12,10 @@ trait WhereTrait
 
     /**
      * Adds a WHERE clause
-     * 
+     *
      * @param string     $where
      * @param null|array $marks
-     * 
+     *
      * @return self
      */
     public function where($where, $marks = null)
@@ -33,10 +31,10 @@ trait WhereTrait
 
     /**
      * Adds a WHERE field = :value clause
-     * 
-     * @param string $field
+     *
+     * @param string    $field
      * @param int|array $value
-     * 
+     *
      * @return self
      */
     public function by($field, $value)
@@ -44,15 +42,15 @@ trait WhereTrait
         if (is_array($value)) {
             return $this->where("`{$this->entity->table}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
         }
-        
+
         return $this->where("`{$this->entity->table}`.`{$field}` = :{$field}", [":{$field}" => $value]);
     }
 
     /**
      * Adds a WHERE id = :id clause
-     * 
+     *
      * @param int|array $id
-     * 
+     *
      * @return self
      */
     public function byId($id)

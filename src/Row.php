@@ -3,8 +3,6 @@ namespace SimpleCrud;
 
 use JsonSerializable;
 
-use SimpleCrud\Queries\QueryInterface;
-
 /**
  * Stores the data of an entity row
  *
@@ -17,7 +15,7 @@ class Row extends BaseRow implements JsonSerializable
     /**
      * Row constructor.
      *
-     * @param Entity     $entity
+     * @param Entity $entity
      */
     public function __construct(Entity $entity)
     {
@@ -150,7 +148,7 @@ class Row extends BaseRow implements JsonSerializable
     /**
      * Set new values to the row.
      *
-     * @param array   $data               The new values
+     * @param array $data The new values
      *
      * @return $this
      */

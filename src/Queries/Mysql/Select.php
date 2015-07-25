@@ -26,9 +26,9 @@ class Select extends BaseQuery
 
     /**
      * @see QueryInterface
-     * 
+     *
      * $entity->select($where, $marks, $orderBy, $limit)
-     * 
+     *
      * {@inheritdoc}
      */
     public static function execute(Entity $entity, array $args)
@@ -56,9 +56,9 @@ class Select extends BaseQuery
 
     /**
      * Adds new extra table to the query
-     * 
-     * @param string     $table
-     * 
+     *
+     * @param string $table
+     *
      * @return self
      */
     public function from($table)
@@ -70,10 +70,10 @@ class Select extends BaseQuery
 
     /**
      * Adds a WHERE according with the relation of other entity
-     * 
+     *
      * @param RowInterface $row
-     * @param string $through
-     * 
+     * @param string       $through
+     *
      * @return self
      */
     public function relatedWith(RowInterface $row, $through = null)
@@ -99,10 +99,10 @@ class Select extends BaseQuery
 
     /**
      * Adds an ORDER BY clause
-     * 
+     *
      * @param string      $orderBy
      * @param string|null $direction
-     * 
+     *
      * @return self
      */
     public function orderBy($orderBy, $direction = null)
@@ -118,9 +118,9 @@ class Select extends BaseQuery
 
     /**
      * Adds a LIMIT clause
-     * 
+     *
      * @param integer $limit
-     * 
+     *
      * @return self
      */
     public function limit($limit)
@@ -132,9 +132,9 @@ class Select extends BaseQuery
 
     /**
      * Adds an offset to the LIMIT clause
-     * 
+     *
      * @param integer $offset
-     * 
+     *
      * @return self
      */
     public function offset($offset)
@@ -146,11 +146,11 @@ class Select extends BaseQuery
 
     /**
      * Adds a LEFT JOIN clause
-     * 
+     *
      * @param Entity     $entity
      * @param string     $on
      * @param array|null $marks
-     * 
+     *
      * @return self
      */
     public function leftJoin(Entity $entity, $on = null, $marks = null)
@@ -161,7 +161,7 @@ class Select extends BaseQuery
 
         $this->leftJoin[] = [
             'entity' => $entity,
-            'on' => $on
+            'on' => $on,
         ];
 
         if ($marks) {
@@ -173,9 +173,9 @@ class Select extends BaseQuery
 
     /**
      * Adds new marks to the query
-     * 
+     *
      * @param array $marks
-     * 
+     *
      * @return self
      */
     public function marks(array $marks)
@@ -187,7 +187,7 @@ class Select extends BaseQuery
 
     /**
      * Run the query and return a statement with the result
-     * 
+     *
      * @return PDOStatement
      */
     public function run()
@@ -200,12 +200,12 @@ class Select extends BaseQuery
 
     /**
      * Run the query and return all values
-     * 
+     *
      * @return RowCollection
      */
     public function all()
     {
-        $statement= $this->run();
+        $statement = $this->run();
         $result = $this->entity->createCollection();
 
         while (($row = $statement->fetch())) {
@@ -217,7 +217,7 @@ class Select extends BaseQuery
 
     /**
      * Run the query and return the first value
-     * 
+     *
      * @return RowCollection
      */
     public function one()
@@ -235,7 +235,7 @@ class Select extends BaseQuery
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

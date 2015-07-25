@@ -10,7 +10,7 @@ class DbTables extends Mysql\DbTables
 {
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

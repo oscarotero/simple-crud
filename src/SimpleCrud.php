@@ -1,11 +1,8 @@
 <?php
 namespace SimpleCrud;
 
-use SimpleCrud\Factory;
-use SimpleCrud\SimpleCrudException;
 use Exception;
 use PDO;
-
 
 class SimpleCrud
 {
@@ -72,12 +69,12 @@ class SimpleCrud
 
     /**
      * Magic method to create queries related with entities
-     * 
+     *
      * @param string $name
      * @param array  $arguments
-     * 
+     *
      * @throws SimpleCrudException
-     * 
+     *
      * @return QueryInterface|null
      */
     public function __call($name, $arguments)
@@ -209,10 +206,10 @@ class SimpleCrud
 
     /**
      * Saves a new attribute
-     * 
+     *
      * @param string $name
      * @param mixed  $value
-     * 
+     *
      * @return $this
      */
     public function setAttribute($name, $value)
@@ -224,9 +221,9 @@ class SimpleCrud
 
     /**
      * Returns an attribute
-     * 
+     *
      * @param string|int $name
-     * 
+     *
      * @return null|mixed
      */
     public function getAttribute($name)
@@ -240,7 +237,7 @@ class SimpleCrud
 
     /**
      * Returns the factory instance
-     * 
+     *
      * @return Factory
      */
     public function getFactory()

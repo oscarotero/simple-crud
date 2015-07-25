@@ -29,7 +29,7 @@ class QueriesTest extends PHPUnit_Framework_TestCase
             ->data([
                 'title' => 'Hello world',
                 'pubdate' => new Datetime(),
-                'type' => 2
+                'type' => 2,
             ]);
 
         $this->assertEquals((string) $query, 'INSERT INTO `posts` (`title`, `pubdate`, `type`) VALUES (:title, :pubdate, :type)');
@@ -45,7 +45,7 @@ class QueriesTest extends PHPUnit_Framework_TestCase
             ->data([
                 'title' => 'Hello world',
                 'pubdate' => new Datetime(),
-                'type' => 2
+                'type' => 2,
             ])
             ->where('id = 3')
             ->limit(1, true);

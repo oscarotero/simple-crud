@@ -38,7 +38,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
     /**
      * Magic method to set properties to all rows
-     * 
+     *
      * @see self::set()
      */
     public function __set($name, $value)
@@ -48,7 +48,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
     /**
      * Magic method to get properties from all rows
-     * 
+     *
      * @see self::get()
      */
     public function __get($name)
@@ -227,7 +227,6 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
         return $this;
     }
-
 
     /**
      * Returns one or all values of the collections.

@@ -31,7 +31,7 @@ abstract class BaseRow implements RowInterface
 
     /**
      * @see RowInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function getAttribute($name)
@@ -52,7 +52,7 @@ abstract class BaseRow implements RowInterface
     /**
      * Creates and return a Select query
      *
-     * @param string $entity
+     * @param string      $entity
      * @param string|null $through
      *
      * @return QueryInterface

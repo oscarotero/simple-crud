@@ -2,12 +2,8 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\RowCollection;
-use SimpleCrud\Row;
 use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use PDOStatement;
-use PDO;
 
 /**
  * Manages a database delete query in Mysql databases
@@ -21,9 +17,9 @@ class Delete extends BaseQuery
 
     /**
      * @see QueryInterface
-     * 
+     *
      * $entity->delete($where, $marks, $limit)
-     * 
+     *
      * {@inheritdoc}
      */
     public static function execute(Entity $entity, array $args)
@@ -43,9 +39,9 @@ class Delete extends BaseQuery
 
     /**
      * Adds a LIMIT clause
-     * 
+     *
      * @param integer $limit
-     * 
+     *
      * @return self
      */
     public function limit($limit)
@@ -57,9 +53,9 @@ class Delete extends BaseQuery
 
     /**
      * Adds an offset to the LIMIT clause
-     * 
+     *
      * @param integer $offset
-     * 
+     *
      * @return self
      */
     public function offset($offset)
@@ -71,9 +67,9 @@ class Delete extends BaseQuery
 
     /**
      * Adds new marks to the query
-     * 
+     *
      * @param array $marks
-     * 
+     *
      * @return self
      */
     public function marks(array $marks)
@@ -85,7 +81,7 @@ class Delete extends BaseQuery
 
     /**
      * Run the query and return all values
-     * 
+     *
      * @return PDOStatement
      */
     public function run()
@@ -95,7 +91,7 @@ class Delete extends BaseQuery
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

@@ -34,9 +34,9 @@ interface RowInterface extends JsonSerializable
 
     /**
      * Returns an attribute
-     * 
+     *
      * @param string $name
-     * 
+     *
      * @return null|mixed
      */
     public function getAttribute($name);

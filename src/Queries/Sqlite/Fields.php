@@ -11,7 +11,7 @@ class Fields extends Mysql\Fields
 {
     /**
      * Run the query and return the fields
-     * 
+     *
      * @return array
      */
     public function get()
@@ -27,7 +27,7 @@ class Fields extends Mysql\Fields
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

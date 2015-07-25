@@ -2,8 +2,6 @@
 namespace SimpleCrud\Queries;
 
 use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
-use PDOStatement;
 
 /**
  * Base class used by all queries
@@ -14,7 +12,7 @@ abstract class BaseQuery implements QueryInterface
 
     /**
      * @see QueryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public static function getInstance(Entity $entity)
@@ -24,7 +22,7 @@ abstract class BaseQuery implements QueryInterface
 
     /**
      * Constructor
-     * 
+     *
      * @param Entity $entity
      */
     public function __construct(Entity $entity)
@@ -34,7 +32,7 @@ abstract class BaseQuery implements QueryInterface
 
     /**
      * Magic method to execute Entity's queries
-     * 
+     *
      * @param string $name
      * @param array  $arguments
      */
@@ -50,6 +48,5 @@ abstract class BaseQuery implements QueryInterface
         }
 
         throw new \Exception("Not valid function '{$fn_name}' in the entity '{$this->entity->name}'");
-        
     }
 }

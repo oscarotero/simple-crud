@@ -31,9 +31,9 @@ class Factory
 
     /**
      * Set the namespace for the entities classes
-     * 
+     *
      * @param string $namespace
-     * 
+     *
      * @return self
      */
     public function entities($namespace)
@@ -45,9 +45,9 @@ class Factory
 
     /**
      * Set the namespace for the queries classes
-     * 
+     *
      * @param string $namespace
-     * 
+     *
      * @return self
      */
     public function queries($namespace)
@@ -59,9 +59,9 @@ class Factory
 
     /**
      * Set the namespace for the fields classes
-     * 
+     *
      * @param string $namespace
-     * 
+     *
      * @return self
      */
     public function fields($namespace)
@@ -73,9 +73,9 @@ class Factory
 
     /**
      * Set the namespace for the Row classes
-     * 
+     *
      * @param string $namespace
-     * 
+     *
      * @return self
      */
     public function rows($namespace)
@@ -87,9 +87,9 @@ class Factory
 
     /**
      * Set the namespace for the RowCollection classes
-     * 
+     *
      * @param string $namespace
-     * 
+     *
      * @return self
      */
     public function rowCollections($namespace)
@@ -101,9 +101,9 @@ class Factory
 
     /**
      * Set whether the entities are autocreated or not
-     * 
+     *
      * @param boolean $autocreate
-     * 
+     *
      * @return self
      */
     public function autocreate($autocreate = true)
@@ -236,7 +236,6 @@ class Factory
         }
     }
 
-
     /**
      * Creates a new instance of a Query for a entity
      *
@@ -254,10 +253,9 @@ class Factory
         }
     }
 
-
     /**
      * Returns all tables in the database
-     * 
+     *
      * @return array
      */
     private function getTables()

@@ -2,12 +2,8 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\RowCollection;
-use SimpleCrud\Row;
 use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use PDOStatement;
-use PDO;
 
 /**
  * Manages a database query to get the fields names in Mysql databases
@@ -16,9 +12,9 @@ class Fields extends BaseQuery
 {
     /**
      * @see QueryInterface
-     * 
+     *
      * $entity->fields()
-     * 
+     *
      * {@inheritdoc}
      */
     public static function execute(Entity $entity, array $args)
@@ -26,10 +22,9 @@ class Fields extends BaseQuery
         return self::getInstance($entity)->get();
     }
 
-
     /**
      * Run the query and return all values
-     * 
+     *
      * @return PDOStatement
      */
     public function run()
@@ -39,7 +34,7 @@ class Fields extends BaseQuery
 
     /**
      * Run the query and return the fields
-     * 
+     *
      * @return array
      */
     public function get()
@@ -57,7 +52,7 @@ class Fields extends BaseQuery
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

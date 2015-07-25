@@ -2,12 +2,8 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\RowCollection;
-use SimpleCrud\Row;
 use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use PDOStatement;
-use PDO;
 
 /**
  * Manages a database insert query in Mysql databases
@@ -19,9 +15,9 @@ class Insert extends BaseQuery
 
     /**
      * @see QueryInterface
-     * 
+     *
      * $entity->insert($data, $duplications)
-     * 
+     *
      * {@inheritdoc}
      */
     public static function execute(Entity $entity, array $args)
@@ -43,9 +39,9 @@ class Insert extends BaseQuery
 
     /**
      * Set the data to update
-     * 
+     *
      * @param array $data
-     * 
+     *
      * @return self
      */
     public function data(array $data)
@@ -57,9 +53,9 @@ class Insert extends BaseQuery
 
     /**
      * Set true to handle duplications
-     * 
+     *
      * @param boolean $handle
-     * 
+     *
      * @return self
      */
     public function duplications($handle = true)
@@ -71,7 +67,7 @@ class Insert extends BaseQuery
 
     /**
      * Run the query and return all values
-     * 
+     *
      * @return PDOStatement
      */
     public function run()
@@ -87,7 +83,7 @@ class Insert extends BaseQuery
 
     /**
      * Run the query and return the id
-     * 
+     *
      * @return integer
      */
     public function get()
@@ -99,7 +95,7 @@ class Insert extends BaseQuery
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()
@@ -125,7 +121,7 @@ class Insert extends BaseQuery
     /**
      * Generates the data part of a UPDATE query
      *
-     * @param array       $fields
+     * @param array $fields
      *
      * @return string
      */

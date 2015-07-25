@@ -2,10 +2,7 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\RowCollection;
-use SimpleCrud\Row;
 use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use PDOStatement;
 use PDO;
 
@@ -20,9 +17,9 @@ class Count extends BaseQuery
 
     /**
      * @see QueryInterface
-     * 
+     *
      * $entity->count($where, $marks, $limit)
-     * 
+     *
      * {@inheritdoc}
      */
     public static function execute(Entity $entity, array $args)
@@ -40,12 +37,11 @@ class Count extends BaseQuery
         return $count->get();
     }
 
-
     /**
      * Adds a LIMIT clause
-     * 
+     *
      * @param integer $limit
-     * 
+     *
      * @return self
      */
     public function limit($limit)
@@ -57,9 +53,9 @@ class Count extends BaseQuery
 
     /**
      * Adds new marks to the query
-     * 
+     *
      * @param array $marks
-     * 
+     *
      * @return self
      */
     public function marks(array $marks)
@@ -71,7 +67,7 @@ class Count extends BaseQuery
 
     /**
      * Run the query and return a statement with the result
-     * 
+     *
      * @return PDOStatement
      */
     public function run()
@@ -84,7 +80,7 @@ class Count extends BaseQuery
 
     /**
      * Run the query and return the value
-     * 
+     *
      * @return integer
      */
     public function get()
@@ -96,7 +92,7 @@ class Count extends BaseQuery
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()

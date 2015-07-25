@@ -2,12 +2,8 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\RowCollection;
-use SimpleCrud\Row;
 use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use PDOStatement;
-use PDO;
 
 /**
  * Manages a database update query in Mysql databases
@@ -15,16 +11,16 @@ use PDO;
 class Update extends BaseQuery
 {
     use WhereTrait;
-    
+
     protected $data = [];
     protected $limit;
     protected $offset;
 
     /**
      * @see QueryInterface
-     * 
+     *
      * $entity->update($data, $where, $marks, $limit)
-     * 
+     *
      * {@inheritdoc}
      */
     public static function execute(Entity $entity, array $args)
@@ -46,9 +42,9 @@ class Update extends BaseQuery
 
     /**
      * Set the data to update
-     * 
+     *
      * @param array $data
-     * 
+     *
      * @return self
      */
     public function data(array $data)
@@ -60,9 +56,9 @@ class Update extends BaseQuery
 
     /**
      * Adds a LIMIT clause
-     * 
+     *
      * @param integer $limit
-     * 
+     *
      * @return self
      */
     public function limit($limit)
@@ -74,9 +70,9 @@ class Update extends BaseQuery
 
     /**
      * Adds an offset to the LIMIT clause
-     * 
+     *
      * @param integer $offset
-     * 
+     *
      * @return self
      */
     public function offset($offset)
@@ -88,9 +84,9 @@ class Update extends BaseQuery
 
     /**
      * Adds new marks to the query
-     * 
+     *
      * @param array $marks
-     * 
+     *
      * @return self
      */
     public function marks(array $marks)
@@ -102,7 +98,7 @@ class Update extends BaseQuery
 
     /**
      * Run the query and return all values
-     * 
+     *
      * @return PDOStatement
      */
     public function run()
@@ -118,7 +114,7 @@ class Update extends BaseQuery
 
     /**
      * Build and return the query
-     * 
+     *
      * @return string
      */
     public function __toString()
@@ -146,7 +142,7 @@ class Update extends BaseQuery
     /**
      * Generates the data part of a UPDATE query
      *
-     * @param array       $fields
+     * @param array $fields
      *
      * @return string
      */

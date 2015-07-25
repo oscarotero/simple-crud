@@ -12,10 +12,10 @@ class Update extends Mysql\Update
 
     /**
      * Adds a LIMIT clause
-     * 
+     *
      * @param integer $limit
      * @param boolean $force
-     * 
+     *
      * @return self
      */
     public function limit($limit, $force = false)
@@ -29,10 +29,10 @@ class Update extends Mysql\Update
 
     /**
      * Adds an offset to the LIMIT clause
-     * 
+     *
      * @param integer $offset
      * @param boolean $force
-     * 
+     *
      * @return self
      */
     public function offset($offset, $force = false)

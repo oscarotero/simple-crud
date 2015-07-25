@@ -1,11 +1,8 @@
 <?php
 namespace SimpleCrud;
 
-use SimpleCrud\SimpleCrud;
 use SimpleCrud\Queries\QueryInterface;
 use ArrayAccess;
-use PDOStatement;
-use PDO;
 
 /**
  * Manages a database entity (table)
@@ -49,7 +46,6 @@ class Entity implements ArrayAccess
         return $entity;
     }
 
-
     public function __construct(SimpleCrud $db)
     {
         $this->db = $db;
@@ -57,12 +53,12 @@ class Entity implements ArrayAccess
 
     /**
      * Magic method to create queries related with this entity
-     * 
+     *
      * @param string $name
      * @param array  $arguments
-     * 
+     *
      * @throws SimpleCrudException
-     * 
+     *
      * @return QueryInterface|null
      */
     public function __call($name, $arguments)
@@ -72,9 +68,9 @@ class Entity implements ArrayAccess
 
     /**
      * Check if a row with a specific id exists
-     * 
+     *
      * @see ArrayAccess
-     * 
+     *
      * @return boolean
      */
     public function offsetExists($offset)
@@ -87,9 +83,9 @@ class Entity implements ArrayAccess
 
     /**
      * Returns a row with a specific id
-     * 
+     *
      * @see ArrayAccess
-     * 
+     *
      * @return Row|null
      */
     public function offsetGet($offset)
@@ -101,7 +97,7 @@ class Entity implements ArrayAccess
 
     /**
      * Store a row with a specific id
-     * 
+     *
      * @see ArrayAccess
      */
     public function offsetSet($offset, $value)
@@ -122,7 +118,7 @@ class Entity implements ArrayAccess
 
     /**
      * Remove a row with a specific id
-     * 
+     *
      * @see ArrayAccess
      */
     public function offsetUnset($offset)
@@ -145,9 +141,9 @@ class Entity implements ArrayAccess
 
     /**
      * Returns an attribute
-     * 
+     *
      * @param string $name
-     * 
+     *
      * @return null|mixed
      */
     public function getAttribute($name)
@@ -232,7 +228,7 @@ class Entity implements ArrayAccess
 
             if (strpos($key, '.') !== false) {
                 list($name, $field) = explode('.', $key, 2);
-                
+
                 if (!isset($joins[$name])) {
                     $joins[$name] = [];
                 }
@@ -262,7 +258,7 @@ class Entity implements ArrayAccess
      *
      * @param array $data
      * @param bool  $new
-     * 
+     *
      * @return array
      */
     public function prepareDataToDatabase(array $data, $new)
