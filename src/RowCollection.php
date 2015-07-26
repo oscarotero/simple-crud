@@ -13,6 +13,7 @@ use Countable;
 class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 {
     private $rows = [];
+    private $keysAsId = true;
 
     public function __construct(Entity $entity)
     {
@@ -82,17 +83,35 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
                 return $collection;
             }
 
-            $result = $this->select($name)->all();
+            $collection = $this->select($name)->all();
 
-            $this->distribute($result);
+            if ($this->hasOne($name)) {
+                $this->joinOne($collection);
+            } else {
+                $this->joinMany($collection);
+            }
 
-            return $result;
+            return $collection;
         }
 
         //Returns values
         if ($first->has($name)) {
             return $this->get($name, isset($arguments[0]) ? $arguments[0] : null);
         }
+    }
+
+    /**
+     * Set whether or not use the id as key
+     * 
+     * @param boolean $keyAsId
+     *
+     * @return self
+     */
+    public function keysAsId($keysAsId)
+    {
+        $this->keysAsId = (boolean) $keysAsId;
+
+        return $this;
     }
 
     /**
@@ -114,8 +133,13 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
             throw new SimpleCrudException('Only instances of SimpleCrud\\Row must be added to collections');
         }
 
+        if ($this->keysAsId === false) {
+            $this->rows[] = $value;
+            return;
+        }
+
         if (empty($value->id)) {
-            throw new SimpleCrudException('Only rows with the defined id must be added to collections');
+            throw new SimpleCrudException("Only rows with the defined id must be added to collections");
         }
 
         $this->rows[$value->id] = $value;
@@ -343,62 +367,61 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Distribute a row or rowcollection througth all rows.
+     * Distribute a rowcollection througth all rows.
      *
-     * @param RowInterface $data          The row or rowcollection to distribute
-     * @param boolean      $bidirectional Set true to distribute also in reverse direccion
+     * @param RowCollection $rows
      *
      * @return $this
      */
-    public function distribute(RowInterface $data, $bidirectional = true)
+    public function joinMany(RowCollection $rows)
     {
         $thisEntity = $this->entity;
-        $thatEntity = $data->getEntity();
+        $thatEntity = $rows->getEntity();
+        $thisName = $thisEntity->name;
+        $thatName = $thatEntity->name;
 
-        if (!($data instanceof RowCollection)) {
-            $data = $thatEntity->createCollection([$data]);
+        $foreignKey = $thisEntity->foreignKey;
+
+        foreach ($this->rows as $row) {
+            if (!isset($row->$thatName)) {
+                $row->$thatName = $thatEntity->createCollection();
+            }
         }
 
-        $name = $thatEntity->name;
+        foreach ($rows as $row) {
+            $id = $row->$foreignKey;
 
-        if ($thisEntity->hasOne($thatEntity)) {
-            $foreignKey = $thatEntity->foreignKey;
-
-            foreach ($this->rows as $row) {
-                $row->$name = (($id = $row->$foreignKey) && isset($data[$id])) ? $data[$id] : null;
+            if (isset($this->rows[$id])) {
+                $this->rows[$id]->$thatName->add($row);
+                $row->$thisName = $this->rows[$id];
             }
-
-            if ($bidirectional === true) {
-                $data->distribute($this, false);
-            }
-
-            return $this;
         }
 
-        if ($thisEntity->hasMany($thatEntity)) {
-            $foreignKey = $thisEntity->foreignKey;
+        return $this;
+    }
 
-            foreach ($this->rows as $row) {
-                if (!isset($row->$name)) {
-                    $row->$name = $thatEntity->createCollection();
-                }
-            }
+    /**
+     * Distribute a rowcollection througth all rows.
+     *
+     * @param RowCollection $rows
+     *
+     * @return $this
+     */
+    public function joinOne(RowCollection $rows)
+    {
+        $rows->joinMany($this);
 
-            foreach ($data as $row) {
-                $id = $row->$foreignKey;
+        return $this;
 
-                if (isset($this->rows[$id])) {
-                    $this->rows[$id]->$name->add($row);
-                }
-            }
 
-            if ($bidirectional === true) {
-                $data->distribute($this, false);
-            }
+        $foreignKey = $rows->getEntity()->foreignKey;
 
-            return $this;
+        foreach ($this->rows as $row) {
+            $id = $row->$foreignKey;
+
+            $row->$name = $rows[$id];
         }
 
-        throw new SimpleCrudException("Cannot set '$name' and '{$thisEntity->name}' because is not related or does not exists");
+        return $this;
     }
 }

@@ -91,9 +91,13 @@ class Select extends BaseQuery
             }
 
             $this->from($through->table);
+            $this->from($entity->table);
+
+            $this->fields[] = "`{$through->table}`.`{$entity->foreignKey}`";
 
             $this->where("`{$through->table}`.`{$this->entity->foreignKey}` = `{$this->entity->table}`.`id`");
-            $this->where("`{$through->table}`.`{$entity->foreignKey}` IN (:{$through->name})", [":{$through->name}" => $row->get('id')]);
+            $this->where("`{$through->table}`.`{$entity->foreignKey}` = `{$entity->table}`.`id`");
+            $this->where("`{$entity->table}`.`id` IN (:{$through->name})", [":{$through->name}" => $row->get('id')]);
 
             return $this;
         }
@@ -212,13 +216,17 @@ class Select extends BaseQuery
 
     /**
      * Run the query and return all values
+     * 
+     * @param boolean $keyAsIndex
      *
      * @return RowCollection
      */
-    public function all()
+    public function all($keyAsIndex = true)
     {
         $statement = $this->run();
         $result = $this->entity->createCollection();
+
+        $result->keyAsIndex($keyAsIndex);
 
         while (($row = $statement->fetch())) {
             $result[] = $this->entity->create($this->entity->prepareDataFromDatabase($row));
@@ -257,6 +265,10 @@ class Select extends BaseQuery
 
         foreach ($this->leftJoin as $join) {
             $query .= ', '.static::buildFields($join['entity']->table, array_keys($join['entity']->fields), $join['entity']->name);
+        }
+
+        foreach ($this->fields as $field) {
+            $query .= ', '.$field;
         }
 
         $query .= ' FROM `'.$this->entity->table.'`';

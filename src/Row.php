@@ -54,7 +54,7 @@ class Row extends BaseRow implements JsonSerializable
 
         //Custom method
         if (method_exists($this->entity, "row{$name}")) {
-            return $this->__call($name, []);
+            return $this->values[$name] = $this->__call($name, []);
         }
 
         //Load related data
