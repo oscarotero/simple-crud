@@ -78,13 +78,25 @@ class Select extends BaseQuery
      */
     public function relatedWith(RowInterface $row, $through = null)
     {
-        if ($through !== null) {
-            $row = $this->entity->getDb()->select($through)
-                ->relatedWith($row)
-                ->all();
-        }
-
         $entity = $row->getEntity();
+
+        if ($through !== null) {
+            $through = $this->entity->getDb()->$through;
+
+            if (!$through->hasOne($entity)) {
+                throw new SimpleCrudException("The relationship between '{$through->table}' and '{$entity->table}' must be RELATION_HAS_ONE");
+            }
+            if (!$through->hasOne($this->entity)) {
+                throw new SimpleCrudException("The relationship between '{$through->table}' and '{$this->entity->table}' must be RELATION_HAS_ONE");
+            }
+
+            $this->from($through->table);
+
+            $this->where("`{$through->table}`.`{$this->entity->foreignKey}` = `{$this->entity->table}`.`id`");
+            $this->where("`{$through->table}`.`{$entity->foreignKey}` IN (:{$through->name})", [":{$through->name}" => $row->get('id')]);
+
+            return $this;
+        }
 
         if ($this->entity->hasOne($entity)) {
             return $this->by($entity->foreignKey, $row->get('id'));
@@ -94,7 +106,7 @@ class Select extends BaseQuery
             return $this->byId($row->get($this->entity->foreignKey));
         }
 
-        throw new SimpleCrudException("The tables {$this->entity->table} and {$row->getEntity()->table} are no related");
+        throw new SimpleCrudException("The tables {$this->entity->table} and {$entity->table} are no related");
     }
 
     /**
