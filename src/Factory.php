@@ -11,17 +11,12 @@ class Factory
 {
     protected $db;
     protected $tables;
-    protected $entities;
-    protected $queries;
-    protected $fields;
-    protected $rows;
-    protected $rowCollections;
     protected $autocreate;
+    protected $queries;
+    protected $entities;
+    protected $fields = 'SimpleCrud\\Fields\\';
     protected $default_entity = 'SimpleCrud\\Entity';
-    protected $default_fields = 'SimpleCrud\\Fields\\';
     protected $default_field = 'SimpleCrud\\Fields\\Field';
-    protected $default_row = 'SimpleCrud\\Row';
-    protected $default_rowCollection = 'SimpleCrud\\RowCollection';
 
     public function init(SimpleCrud $db)
     {
@@ -39,62 +34,6 @@ class Factory
     public function entities($namespace)
     {
         $this->entities = $namespace;
-
-        return $this;
-    }
-
-    /**
-     * Set the namespace for the queries classes
-     *
-     * @param string $namespace
-     *
-     * @return self
-     */
-    public function queries($namespace)
-    {
-        $this->queries = $namespace;
-
-        return $this;
-    }
-
-    /**
-     * Set the namespace for the fields classes
-     *
-     * @param string $namespace
-     *
-     * @return self
-     */
-    public function fields($namespace)
-    {
-        $this->fields = $namespace;
-
-        return $this;
-    }
-
-    /**
-     * Set the namespace for the Row classes
-     *
-     * @param string $namespace
-     *
-     * @return self
-     */
-    public function rows($namespace)
-    {
-        $this->rows = $namespace;
-
-        return $this;
-    }
-
-    /**
-     * Set the namespace for the RowCollection classes
-     *
-     * @param string $namespace
-     *
-     * @return self
-     */
-    public function rowCollections($namespace)
-    {
-        $this->rowCollections = $namespace;
 
         return $this;
     }
@@ -122,7 +61,7 @@ class Factory
      */
     public function hasEntity($name)
     {
-        return in_array($name, $this->getTables()) || class_exists($this->entities.ucfirst($name));
+        return ($this->autocreate && in_array($name, $this->getTables())) || class_exists($this->entities.ucfirst($name));
     }
 
     /**
@@ -148,78 +87,6 @@ class Factory
     }
 
     /**
-     * Returns a Row class
-     *
-     * @param string $name
-     *
-     * @return string|null
-     */
-    public function getRowClass($name)
-    {
-        $name = ucfirst($name);
-
-        if ($this->rows !== null) {
-            $class = $this->rows.$name;
-
-            if (class_exists($class)) {
-                return $class;
-            }
-        }
-
-        return $this->default_row;
-    }
-
-    /**
-     * Returns a RowCollection class
-     *
-     * @param string $name
-     *
-     * @return string|null
-     */
-    public function getRowCollectionClass($name)
-    {
-        $name = ucfirst($name);
-
-        if ($this->rowCollections !== null) {
-            $class = $this->rowCollections.$name;
-
-            if (class_exists($class)) {
-                return $class;
-            }
-        }
-
-        return $this->default_rowCollection;
-    }
-
-    /**
-     * Returns a Field class
-     *
-     * @param string $name
-     *
-     * @return string|null
-     */
-    public function getFieldClass($name)
-    {
-        $name = ucfirst($name);
-
-        if ($this->fields !== null) {
-            $class = $this->fields.$name;
-
-            if (class_exists($class)) {
-                return $class;
-            }
-        }
-
-        $class = $this->default_fields.$name;
-
-        if (class_exists($class)) {
-            return $class;
-        }
-
-        return $this->default_field;
-    }
-
-    /**
      * Creates a new instance of a Field
      *
      * @param Entity $entity
@@ -229,11 +96,17 @@ class Factory
      */
     public function getField(Entity $entity, $name)
     {
-        $class = $this->getFieldClass($name);
+        $name = ucfirst($name);
 
-        if (!empty($class)) {
-            return $class::getInstance($entity);
+        if ($this->fields !== null) {
+            $class = $this->fields.$name;
+
+            if (class_exists($class)) {
+                return $class::getInstance($entity);
+            }
         }
+
+        return call_user_func("{$this->default_field}::getInstance", $entity);
     }
 
     /**
