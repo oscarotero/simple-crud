@@ -13,7 +13,7 @@ use Countable;
 class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 {
     private $rows = [];
-    private $keysAsId = true;
+    private $idAsKey = true;
 
     public function __construct(Entity $entity)
     {
@@ -103,13 +103,13 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     /**
      * Set whether or not use the id as key
      * 
-     * @param boolean $keyAsId
+     * @param boolean $idAsKey
      *
      * @return self
      */
-    public function keysAsId($keysAsId)
+    public function idAsKey($idAsKey)
     {
-        $this->keysAsId = (boolean) $keysAsId;
+        $this->idAsKey = (boolean) $idAsKey;
 
         return $this;
     }
@@ -133,7 +133,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
             throw new SimpleCrudException('Only instances of SimpleCrud\\Row must be added to collections');
         }
 
-        if ($this->keysAsId === false) {
+        if ($this->idAsKey === false) {
             $this->rows[] = $value;
             return;
         }
@@ -220,7 +220,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     /**
      * {@inheritdoc}
      */
-    public function toArray($keysAsId = false, array $parentEntities = array())
+    public function toArray($idAsKey = false, array $parentEntities = array())
     {
         if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
             return;
@@ -232,7 +232,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
             $rows[$id] = $row->toArray($parentEntities);
         }
 
-        return $keysAsId ? $rows : array_values($rows);
+        return $idAsKey ? $rows : array_values($rows);
     }
 
     /**

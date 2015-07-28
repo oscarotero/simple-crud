@@ -217,16 +217,16 @@ class Select extends BaseQuery
     /**
      * Run the query and return all values
      * 
-     * @param boolean $keyAsIndex
+     * @param boolean $idAsKey
      *
      * @return RowCollection
      */
-    public function all($keyAsIndex = true)
+    public function all($idAsKey = true)
     {
         $statement = $this->run();
         $result = $this->entity->createCollection();
 
-        $result->keyAsIndex($keyAsIndex);
+        $result->idAsKey($idAsKey);
 
         while (($row = $statement->fetch())) {
             $result[] = $this->entity->create($this->entity->prepareDataFromDatabase($row));
