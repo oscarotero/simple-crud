@@ -85,7 +85,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
             $collection = $this->select($name)->all();
 
-            if ($this->hasOne($name)) {
+            if ($this->entity->hasOne($name)) {
                 $this->joinOne($collection);
             } else {
                 $this->joinMany($collection);
@@ -402,6 +402,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
     /**
      * Distribute a rowcollection througth all rows.
+     * Its the opposite of $this->joinMany()
      *
      * @param RowCollection $rows
      *
@@ -410,17 +411,6 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     public function joinOne(RowCollection $rows)
     {
         $rows->joinMany($this);
-
-        return $this;
-
-
-        $foreignKey = $rows->getEntity()->foreignKey;
-
-        foreach ($this->rows as $row) {
-            $id = $row->$foreignKey;
-
-            $row->$name = $rows[$id];
-        }
 
         return $this;
     }
