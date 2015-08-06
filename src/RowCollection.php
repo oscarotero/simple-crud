@@ -102,7 +102,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
     /**
      * Set whether or not use the id as key
-     * 
+     *
      * @param boolean $idAsKey
      *
      * @return self
@@ -135,6 +135,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
         if ($this->idAsKey === false) {
             $this->rows[] = $value;
+
             return;
         }
 

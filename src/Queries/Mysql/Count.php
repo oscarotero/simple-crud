@@ -11,7 +11,7 @@ use PDO;
  */
 class Count extends BaseQuery
 {
-    use WhereTrait;
+    use WhereExtendedTrait;
     use LimitTrait;
 
     /**
@@ -62,6 +62,7 @@ class Count extends BaseQuery
     {
         $query = "SELECT COUNT(*) FROM `{$this->entity->table}`";
 
+        $query .= $this->fromToString();
         $query .= $this->whereToString();
         $query .= $this->limitToString();
 

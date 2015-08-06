@@ -9,9 +9,9 @@ use PDO;
 /**
  * Manages a database select count query in Mysql databases
  */
-class Count extends BaseQuery
+class Sum extends BaseQuery
 {
-    use WhereTrait;
+    use WhereExtendedTrait;
     use LimitTrait;
 
     protected $field;
@@ -92,6 +92,7 @@ class Count extends BaseQuery
     {
         $query = "SELECT SUM(`{$this->field}`) FROM `{$this->entity->table}`";
 
+        $query .= $this->fromToString();
         $query .= $this->whereToString();
         $query .= $this->limitToString();
 

@@ -1,7 +1,6 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-
 /**
  * Common function to manage LIMIT clause
  */
@@ -40,7 +39,7 @@ trait LimitTrait
 
     /**
      * Generate LIMIT clause
-     * 
+     *
      * @return string
      */
     protected function limitToString()

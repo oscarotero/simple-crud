@@ -2,7 +2,6 @@
 namespace SimpleCrud\Queries;
 
 use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use PDOStatement;
 
 /**

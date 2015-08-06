@@ -1,6 +1,5 @@
 <?php
 use SimpleCrud\SimpleCrud;
-use SimpleCrud\Entity;
 
 class RowTest extends PHPUnit_Framework_TestCase
 {

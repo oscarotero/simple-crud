@@ -1,7 +1,6 @@
 <?php
 namespace SimpleCrud\Queries\Mysql;
 
-
 /**
  * Common function to manage WHERE clause
  */
@@ -85,7 +84,7 @@ trait WhereTrait
 
     /**
      * Generate WHERE clause
-     * 
+     *
      * @return string
      */
     protected function whereToString()
