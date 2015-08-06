@@ -14,30 +14,6 @@ class Insert extends BaseQuery
     protected $duplications;
 
     /**
-     * @see QueryInterface
-     *
-     * $entity->insert($data, $duplications)
-     *
-     * {@inheritdoc}
-     */
-    public static function execute(Entity $entity, array $args)
-    {
-        $insert = self::getInstance($entity);
-
-        if (isset($args[0])) {
-            $insert->data($args[0]);
-        }
-
-        if (isset($args[1])) {
-            $delete->duplications($args[1]);
-        }
-
-        $delete->run();
-
-        return $this->entity->getDb()->lastInsertId();
-    }
-
-    /**
      * Set the data to update
      *
      * @param array $data

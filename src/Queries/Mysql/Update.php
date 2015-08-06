@@ -17,30 +17,6 @@ class Update extends BaseQuery
     protected $offset;
 
     /**
-     * @see QueryInterface
-     *
-     * $entity->update($data, $where, $marks, $limit)
-     *
-     * {@inheritdoc}
-     */
-    public static function execute(Entity $entity, array $args)
-    {
-        $update = self::getInstance($entity);
-
-        $update->data($args[0]);
-
-        if (isset($args[1])) {
-            $delete->where($args[1], isset($args[2]) ? $args[2] : null);
-        }
-
-        if (isset($args[3])) {
-            $select->limit($args[3]);
-        }
-
-        return $select->run();
-    }
-
-    /**
      * Set the data to update
      *
      * @param array $data
@@ -122,9 +98,7 @@ class Update extends BaseQuery
         $query = "UPDATE `{$this->entity->table}`";
         $query .= ' SET '.static::buildFields(array_keys($this->data));
 
-        if (!empty($this->where)) {
-            $query .= ' WHERE ('.implode(') AND (', $this->where).')';
-        }
+        $query .= $this->whereToString();
 
         if (!empty($this->limit)) {
             $query .= ' LIMIT';

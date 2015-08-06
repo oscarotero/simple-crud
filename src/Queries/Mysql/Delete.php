@@ -11,59 +11,7 @@ use PDOStatement;
 class Delete extends BaseQuery
 {
     use WhereTrait;
-
-    protected $limit;
-    protected $offset;
-
-    /**
-     * @see QueryInterface
-     *
-     * $entity->delete($where, $marks, $limit)
-     *
-     * {@inheritdoc}
-     */
-    public static function execute(Entity $entity, array $args)
-    {
-        $delete = self::getInstance($entity);
-
-        if (isset($args[0])) {
-            $delete->where($args[0], isset($args[1]) ? $args[1] : null);
-        }
-
-        if (isset($args[2])) {
-            $delete->limit($args[2]);
-        }
-
-        return $delete->run();
-    }
-
-    /**
-     * Adds a LIMIT clause
-     *
-     * @param integer $limit
-     *
-     * @return self
-     */
-    public function limit($limit)
-    {
-        $this->limit = $limit;
-
-        return $this;
-    }
-
-    /**
-     * Adds an offset to the LIMIT clause
-     *
-     * @param integer $offset
-     *
-     * @return self
-     */
-    public function offset($offset)
-    {
-        $this->offset = $offset;
-
-        return $this;
-    }
+    use LimitTrait;
 
     /**
      * Adds new marks to the query
@@ -98,19 +46,8 @@ class Delete extends BaseQuery
     {
         $query = "DELETE FROM `{$this->entity->table}`";
 
-        if (!empty($this->where)) {
-            $query .= ' WHERE ('.implode(') AND (', $this->where).')';
-        }
-
-        if (!empty($this->limit)) {
-            $query .= ' LIMIT';
-
-            if (!empty($this->offset)) {
-                $query .= ' '.$this->offset.',';
-            }
-
-            $query .= ' '.$this->limit;
-        }
+        $query .= $this->whereToString();
+        $query .= $this->limitToString();
 
         return $query;
     }

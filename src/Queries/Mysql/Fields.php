@@ -11,18 +11,6 @@ use PDOStatement;
 class Fields extends BaseQuery
 {
     /**
-     * @see QueryInterface
-     *
-     * $entity->fields()
-     *
-     * {@inheritdoc}
-     */
-    public static function execute(Entity $entity, array $args)
-    {
-        return self::getInstance($entity)->get();
-    }
-
-    /**
      * Run the query and return all values
      *
      * @return PDOStatement

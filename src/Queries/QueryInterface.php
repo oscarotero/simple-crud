@@ -20,18 +20,6 @@ interface QueryInterface
     public static function getInstance(Entity $entity);
 
     /**
-     * Executes the query and return the result
-     *
-     * @param Entity $entity
-     * @param array  $args
-     *
-     * @throws SimpleCrudException
-     *
-     * @return mixed
-     */
-    public static function execute(Entity $entity, array $args);
-
-    /**
      * Run the query and return a statement with the result
      *
      * @return PDOStatement

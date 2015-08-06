@@ -16,43 +16,14 @@ use PDO;
 class Select extends BaseQuery
 {
     use WhereTrait;
+    use LimitTrait;
 
     protected $fields = [];
     protected $from = [];
     protected $leftJoin = [];
     protected $orderBy = [];
-    protected $limit;
-    protected $offset;
 
-    /**
-     * @see QueryInterface
-     *
-     * $entity->select($where, $marks, $orderBy, $limit)
-     *
-     * {@inheritdoc}
-     */
-    public static function execute(Entity $entity, array $args)
-    {
-        $select = self::getInstance($entity);
-
-        if (isset($args[0])) {
-            $select->where($args[0], isset($args[1]) ? $args[1] : null);
-        }
-
-        if (isset($args[2])) {
-            $select->orderBy($args[2]);
-        }
-
-        if (isset($args[3])) {
-            if ($args[3] === true) {
-                return $select->one();
-            }
-
-            $select->limit($args[3]);
-        }
-
-        return $select->all();
-    }
+    protected $statement;
 
     /**
      * Adds new extra table to the query
@@ -128,34 +99,6 @@ class Select extends BaseQuery
         }
 
         $this->orderBy[] = $orderBy;
-
-        return $this;
-    }
-
-    /**
-     * Adds a LIMIT clause
-     *
-     * @param integer $limit
-     *
-     * @return self
-     */
-    public function limit($limit)
-    {
-        $this->limit = $limit;
-
-        return $this;
-    }
-
-    /**
-     * Adds an offset to the LIMIT clause
-     *
-     * @param integer $offset
-     *
-     * @return self
-     */
-    public function offset($offset)
-    {
-        $this->offset = $offset;
 
         return $this;
     }
@@ -246,7 +189,23 @@ class Select extends BaseQuery
             $this->limit(1);
         }
 
-        $row = $this->run()->fetch();
+        $this->statement = null;
+
+        return $this->fetch();
+    }
+
+    /**
+     * Run the query and return the first value
+     *
+     * @return RowCollection
+     */
+    public function fetch()
+    {
+        if (!$this->statement) {
+            $this->statement = $this->run();
+        }
+
+        $row = $this->statement->fetch();
 
         if ($row !== false) {
             return $this->entity->create($this->entity->prepareDataFromDatabase($row));
@@ -285,23 +244,13 @@ class Select extends BaseQuery
             }
         }
 
-        if (!empty($this->where)) {
-            $query .= ' WHERE ('.implode(') AND (', $this->where).')';
-        }
+        $query .= $this->whereToString();
 
         if (!empty($this->orderBy)) {
             $query .= ' ORDER BY '.implode(', ', $this->orderBy);
         }
 
-        if (!empty($this->limit)) {
-            $query .= ' LIMIT';
-
-            if (!empty($this->offset)) {
-                $query .= ' '.$this->offset.',';
-            }
-
-            $query .= ' '.$this->limit;
-        }
+        $query .= $this->limitToString();
 
         return $query;
     }
