@@ -10,34 +10,16 @@ use JsonSerializable;
  */
 class Row extends BaseRow implements JsonSerializable
 {
-    private $values;
+    private $values = [];
 
     /**
-     * Row constructor.
-     *
-     * @param Entity $entity
+     * {@inheritdoc}
      */
     public function __construct(Entity $entity)
     {
-        $this->entity = $entity;
-        $this->db = $entity->getDb();
-        $this->values = $entity->defaults;
-    }
+        parent::__construct($entity);
 
-    /**
-     * Magic method to execute custom method defined in the entity class
-     *
-     * @param string $name
-     */
-    public function __call($name, $arguments)
-    {
-        $method = "row{$name}";
-
-        if (method_exists($this->entity, $method)) {
-            array_unshift($arguments, $this);
-
-            return call_user_func_array([$this->entity, $method], $arguments);
-        }
+        $this->values = array_fill_keys(array_keys($entity->fields), null);
     }
 
     /**
@@ -199,7 +181,7 @@ class Row extends BaseRow implements JsonSerializable
         $data = array_intersect_key($this->values, $this->entity->fields);
 
         if (empty($this->id)) {
-            $this->id = $this->db->insert($this->entity->name)
+            $this->id = $this->entity->insert()
                 ->data($data)
                 ->duplications($duplications)
                 ->get();
@@ -207,7 +189,7 @@ class Row extends BaseRow implements JsonSerializable
             return $this;
         }
 
-        $this->db->update($this->entity->name)
+        $this->entity->update()
             ->data($data)
             ->byId($this->id)
             ->limit(1)

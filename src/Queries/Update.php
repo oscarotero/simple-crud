@@ -1,12 +1,11 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Entity;
 use PDOStatement;
 
 /**
- * Manages a database update query in Mysql databases
+ * Manages a database update query
  */
 class Update extends BaseQuery
 {

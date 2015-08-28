@@ -76,13 +76,13 @@ class Factory
         $class = $this->entities.ucfirst($name);
 
         if (class_exists($class)) {
-            return $class::getInstance($name, $this->db);
+            return new $class($this->db);
         }
 
         $class = $this->default_entity;
 
         if ($this->autocreate && in_array($name, $this->getTables())) {
-            return $class::getInstance($name, $this->db);
+            return new $class($this->db, $name);
         }
     }
 

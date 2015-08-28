@@ -1,7 +1,7 @@
 <?php
 error_reporting(E_ALL);
 
-include_once dirname(__DIR__).'/src/autoloader.php';
+include_once dirname(__DIR__).'/vendor/autoload.php';
 
 PHPUnit_Framework_Error_Notice::$enabled = true;
 
@@ -44,7 +44,7 @@ EOT
 
     //Relationship Tags-Posts
     $pdo->exec(<<<EOT
-        CREATE TABLE `tags_in_posts` (
+        CREATE TABLE `posts__tags` (
             `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             `tags_id`   INTEGER NOT NULL,
             `posts_id`  INTEGER NOT NULL,

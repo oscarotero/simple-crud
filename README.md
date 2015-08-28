@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
 
-PHP library to provide CRUD functions (Create, Read, Update, Delete) in Mysql/Sqlite databases with some magic features.
+PHP library to provide CRUD functions (Create, Read, Update, Delete) in Mysql/Sqlite databases with zero configuration and some magic.
 
 
 ## Components
@@ -11,7 +11,7 @@ PHP library to provide CRUD functions (Create, Read, Update, Delete) in Mysql/Sq
 SimpleCrud has the following classes:
 
 * **SimpleCrud:** Manage the database connection, execute the queries and create all entities. 
-* **Query:** Generates all queries needed for select/insert/update/delete operations.
+* **Query:** Generates all queries needed for select/insert/update/delete/etc operations.
 Currently there are support for mysql and sqlite databases
 * **Entity:** Manages an entity (database table) to select, insert, update, delete rows.
 * **Row:** Stores/modifies the data of a row

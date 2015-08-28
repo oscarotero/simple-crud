@@ -1,7 +1,6 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Entity;
 use PDOStatement;
 
@@ -66,7 +65,9 @@ class Insert extends BaseQuery
     {
         $this->run();
 
-        return $this->entity->getDb()->lastInsertId();
+        $id = $this->entity->getDb()->lastInsertId();
+
+        return $this->entity->fields['id']->dataFromDatabase($id);
     }
 
     /**

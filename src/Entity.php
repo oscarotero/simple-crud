@@ -1,7 +1,6 @@
 <?php
 namespace SimpleCrud;
 
-use SimpleCrud\Queries\QueryInterface;
 use ArrayAccess;
 
 /**
@@ -11,44 +10,54 @@ class Entity implements ArrayAccess
 {
     const RELATION_HAS_ONE = 1;
     const RELATION_HAS_MANY = 2;
+    const RELATION_HAS_BRIDGE = 3;
 
     protected $db;
+    protected $row;
+    protected $collection;
+    protected $queryFactory;
 
     public $name;
     public $table;
     public $fields = [];
-    public $defaults;
     public $foreignKey;
 
-    public static function getInstance($name, SimpleCrud $db)
-    {
-        $factory = $db->getFactory();
-
-        $entity = new static($db);
-        $entity->name = $name;
-
-        if (empty($entity->table)) {
-            $entity->table = $name;
-        }
-
-        if (empty($entity->foreignKey)) {
-            $entity->foreignKey = "{$entity->table}_id";
-        }
-
-        $fields = $entity->fields ?: $factory->getQuery($entity, 'fields')->get();
-
-        foreach ($fields as $field => $type) {
-            $entity->fields[$field] = $factory->getField($entity, $type);
-        }
-
-        $entity->defaults = array_fill_keys(array_keys($fields), null);
-
-        return $entity;
-    }
-
-    public function __construct(SimpleCrud $db)
+    /**
+     * Constructor
+     * 
+     * @param string     $name
+     * @param SimpleCrud $db
+     */
+    public function __construct($name, SimpleCrud $db)
     {
         $this->db = $db;
+        $this->name = strtolower(preg_replace('/([A-Z])/', '_$1', lcfirst($name)));
+        $this->table = strtolower(preg_replace('/([A-Z])/', '_$1', lcfirst($this->name)));
+        $this->foreignKey = "{$this->table}_id";
+        
+        $this->setQueryFactory(new QueryFactory());
+        $this->setFieldFactory(new FieldFactory());
+
+        $this->row = new Row($this);
+        $this->collection = new RowCollection($this);
+    }
+
+    protected function setQueryFactory(QueryFactory $queryFactory)
+    {
+        $queryFactory->setEntity($this);
+        $this->queryFactory = $queryFactory;
+    }
+
+    protected function setFieldFactory(FieldFactory $fieldFactory)
+    {
+        $fieldFactory->setEntity($this);
+        $this->fields = [];
+
+        $fields = $this->db->getFields($this->table);
+
+        foreach ($fields as $field => $type) {
+            $this->fields[$field] = $fieldFactory->get($type);
+        }
     }
 
     /**
@@ -63,7 +72,7 @@ class Entity implements ArrayAccess
      */
     public function __call($name, $arguments)
     {
-        return $this->db->$name($this->name);
+        return $this->queryFactory->get($name);
     }
 
     /**
@@ -148,7 +157,7 @@ class Entity implements ArrayAccess
      */
     public function getAttribute($name)
     {
-        return $this->getDb()->getAttribute($name);
+        return $this->db->getAttribute($name);
     }
 
     /**
@@ -161,7 +170,7 @@ class Entity implements ArrayAccess
      */
     public function create(array $data = null)
     {
-        $row = new Row($this);
+        $row = clone $this->row;
 
         if ($data !== null) {
             $row->set($data);
@@ -173,13 +182,13 @@ class Entity implements ArrayAccess
     /**
      * Creates a new rowCollection instance.
      *
-     * @param array|RowInterface $data Rows added to this collection
+     * @param array $data Rows added to this collection
      *
      * @return RowCollection
      */
-    public function createCollection($data = null)
+    public function createCollection(array $data = null)
     {
-        $collection = new RowCollection($this);
+        $collection = clone $this->collection;
 
         if ($data !== null) {
             $collection->add($data);
@@ -288,20 +297,40 @@ class Entity implements ArrayAccess
      */
     public function getRelation($entity)
     {
-        if (is_string($entity)) {
-            if (!isset($this->db->$entity)) {
-                return;
-            }
-
-            $entity = $this->db->$entity;
+        if ($this->hasOne($entity)) {
+            return self::RELATION_HAS_ONE;
         }
 
-        if (isset($entity->fields[$this->foreignKey])) {
+        if ($this->hasMany($entity)) {
             return self::RELATION_HAS_MANY;
         }
 
-        if (isset($this->fields[$entity->foreignKey])) {
-            return self::RELATION_HAS_ONE;
+        if ($this->hasBridge($entity)) {
+            return self::RELATION_HAS_BRIDGE;
+        }
+    }
+
+    /**
+     * Returns the entity that works as a bridge between this entity and other
+     * 
+     * @param Entity $entity
+     * 
+     * @return Entity|null
+     */
+    public function getBridge(Entity $entity)
+    {
+        if ($this->name < $entity->name) {
+            $name = "{$this->name}__{$entity->name}";
+        } else {
+            $name = "{$entity->name}__{$this->name}";
+        }
+
+        if ($this->db->has($name)) {
+            $bridge = $this->db->$name;
+
+            if (isset($bridge->fields[$this->foreignKey]) && isset($bridge->fields[$entity->foreignKey])) {
+                return $bridge;
+            }
         }
     }
 
@@ -314,7 +343,15 @@ class Entity implements ArrayAccess
      */
     public function hasMany($entity)
     {
-        return $this->getRelation($entity) === self::RELATION_HAS_MANY;
+        if (is_string($entity)) {
+            if (!isset($this->db->$entity)) {
+                return false;
+            }
+
+            $entity = $this->db->$entity;
+        }
+
+        return isset($entity->fields[$this->foreignKey]);
     }
 
     /**
@@ -326,6 +363,26 @@ class Entity implements ArrayAccess
      */
     public function hasOne($entity)
     {
-        return $this->getRelation($entity) === self::RELATION_HAS_ONE;
+        if (is_string($entity)) {
+            if (!isset($this->db->$entity)) {
+                return false;
+            }
+
+            $entity = $this->db->$entity;
+        }
+
+        return isset($this->fields[$entity->foreignKey]);
+    }
+
+    /**
+     * Returns whether the relation type of this entity with other is HAS_BRIDGE.
+     *
+     * @param Entity|string $entity
+     *
+     * @return boolean
+     */
+    public function hasBridge($entity)
+    {
+        return $this->getBridge($entity) !== null;
     }
 }

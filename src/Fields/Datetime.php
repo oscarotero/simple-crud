@@ -27,6 +27,6 @@ class Datetime extends Field
      */
     public function dataFromDatabase($data)
     {
-        return $data;
+        return $data ? new \Datetime($data) : null;
     }
 }

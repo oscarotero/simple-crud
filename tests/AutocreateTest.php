@@ -28,12 +28,6 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $posts->fields['categories_id']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $posts->fields['pubdate']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $posts->fields['type']);
-
-        $this->assertNull($posts->defaults['id']);
-        $this->assertNull($posts->defaults['title']);
-        $this->assertNull($posts->defaults['categories_id']);
-        $this->assertNull($posts->defaults['pubdate']);
-        $this->assertNull($posts->defaults['type']);
     }
 
     public function testCategories()
@@ -51,9 +45,6 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
 
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $categories->fields['id']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $categories->fields['name']);
-
-        $this->assertNull($categories->defaults['id']);
-        $this->assertNull($categories->defaults['name']);
     }
 
     public function testTags()
@@ -71,30 +62,23 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
 
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tags->fields['id']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tags->fields['name']);
-
-        $this->assertNull($tags->defaults['id']);
-        $this->assertNull($tags->defaults['name']);
     }
 
     public function testTagsPosts()
     {
-        $tags_in_posts = $this->db->tags_in_posts;
+        $posts__tags = $this->db->posts__tags;
 
-        $this->assertInstanceOf('SimpleCrud\\Entity', $tags_in_posts);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $tags_in_posts->getDb());
+        $this->assertInstanceOf('SimpleCrud\\Entity', $posts__tags);
+        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $posts__tags->getDb());
 
-        $this->assertCount(3, $tags_in_posts->fields);
+        $this->assertCount(3, $posts__tags->fields);
 
-        $this->assertEquals('tags_in_posts', $tags_in_posts->name);
-        $this->assertEquals('tags_in_posts', $tags_in_posts->table);
-        $this->assertEquals('tags_in_posts_id', $tags_in_posts->foreignKey);
+        $this->assertEquals('posts__tags', $posts__tags->name);
+        $this->assertEquals('posts__tags', $posts__tags->table);
+        $this->assertEquals('posts__tags_id', $posts__tags->foreignKey);
 
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tags_in_posts->fields['id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tags_in_posts->fields['tags_id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tags_in_posts->fields['posts_id']);
-
-        $this->assertNull($tags_in_posts->defaults['id']);
-        $this->assertNull($tags_in_posts->defaults['tags_id']);
-        $this->assertNull($tags_in_posts->defaults['posts_id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $posts__tags->fields['id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $posts__tags->fields['tags_id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $posts__tags->fields['posts_id']);
     }
 }

@@ -15,28 +15,6 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     private $rows = [];
     private $idAsKey = true;
 
-    public function __construct(Entity $entity)
-    {
-        $this->entity = $entity;
-        $this->db = $entity->getDb();
-    }
-
-    /**
-     * Magic method to execute custom method defined in the entity class
-     *
-     * @param string $name
-     */
-    public function __call($name, $arguments)
-    {
-        $method = "rowCollection{$name}";
-
-        if (method_exists($this->entity, $method)) {
-            array_unshift($arguments, $this);
-
-            return call_user_func_array([$this->entity, $method], $arguments);
-        }
-    }
-
     /**
      * Magic method to set properties to all rows
      *

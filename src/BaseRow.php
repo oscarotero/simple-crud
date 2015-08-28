@@ -8,6 +8,18 @@ abstract class BaseRow implements RowInterface
 {
     protected $entity;
     protected $db;
+    protected $functions = [];
+
+    /**
+     * Constructor
+     * 
+     * @param Entity $entity
+     */
+    public function __construct(Entity $entity)
+    {
+        $this->entity = $entity;
+        $this->db = $entity->getDb();
+    }
 
     /**
      * @see RowInterface
@@ -50,30 +62,28 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
-     * Creates and return a Select query
+     * Creates and return a Select query related with this entity
      *
      * @param string      $entity
-     * @param string|null $through
      *
      * @return QueryInterface
      */
-    public function select($entity, $through = null)
+    public function select($entity)
     {
-        return $this->db->select($entity)
-            ->relatedWith($this, $through);
+        return $this->db->$entity->select()->relatedWith($this);
     }
 
     /**
      * Deletes the row(s) in the database.
      *
-     * @return $this
+     * @return self
      */
     public function delete()
     {
         $id = $this->id;
 
         if (!empty($id)) {
-            $this->db->delete($this->entity->name)
+            $this->entity->delete()
                 ->byId($id)
                 ->run();
 
@@ -81,5 +91,33 @@ abstract class BaseRow implements RowInterface
         }
 
         return $this;
+    }
+
+    /**
+     * Set a custom function
+     * 
+     * {@inheritdoc}
+     * 
+     * @return self
+     */
+    public function setCustomFunction($name, callable $function)
+    {
+        $this->functions[$name] = $function;
+
+        return $this;
+    }
+
+    /**
+     * Magic method to execute custom method defined in the entity class
+     *
+     * @param string $name
+     */
+    public function __call($name, $arguments)
+    {
+        if (isset($this->functions[$name])) {
+            array_unshift($arguments, $this);
+
+            return call_user_func_array($this->functions[$name], $arguments);
+        }
     }
 }

@@ -1,7 +1,6 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\RowInterface;
@@ -11,7 +10,7 @@ use PDOStatement;
 use PDO;
 
 /**
- * Manages a database select query in Mysql databases
+ * Manages a database select query
  */
 class Select extends BaseQuery
 {
@@ -43,35 +42,12 @@ class Select extends BaseQuery
      * Adds a WHERE according with the relation of other entity
      *
      * @param RowInterface $row
-     * @param string       $through
      *
      * @return self
      */
-    public function relatedWith(RowInterface $row, $through = null)
+    public function relatedWith(RowInterface $row)
     {
         $entity = $row->getEntity();
-
-        if ($through !== null) {
-            $through = $this->entity->getDb()->$through;
-
-            if (!$through->hasOne($entity)) {
-                throw new SimpleCrudException("The relationship between '{$through->table}' and '{$entity->table}' must be RELATION_HAS_ONE");
-            }
-            if (!$through->hasOne($this->entity)) {
-                throw new SimpleCrudException("The relationship between '{$through->table}' and '{$this->entity->table}' must be RELATION_HAS_ONE");
-            }
-
-            $this->from($through->table);
-            $this->from($entity->table);
-
-            $this->fields[] = "`{$through->table}`.`{$entity->foreignKey}`";
-
-            $this->where("`{$through->table}`.`{$this->entity->foreignKey}` = `{$this->entity->table}`.`id`");
-            $this->where("`{$through->table}`.`{$entity->foreignKey}` = `{$entity->table}`.`id`");
-            $this->where("`{$entity->table}`.`id` IN (:{$through->name})", [":{$through->name}" => $row->get('id')]);
-
-            return $this;
-        }
 
         if ($this->entity->hasOne($entity)) {
             return $this->by($entity->foreignKey, $row->get('id'));
@@ -79,6 +55,21 @@ class Select extends BaseQuery
 
         if ($this->entity->hasMany($entity)) {
             return $this->byId($row->get($this->entity->foreignKey));
+        }
+
+        $bridge = $this->entity->getBridge($entity);
+
+        if ($bridge) {
+            $this->from($bridge->table);
+            $this->from($entity->table);
+
+            $this->fields[] = "`{$bridge->table}`.`{$entity->foreignKey}`";
+
+            $this->where("`{$bridge->table}`.`{$this->entity->foreignKey}` = `{$this->entity->table}`.`id`");
+            $this->where("`{$bridge->table}`.`{$entity->foreignKey}` = `{$entity->table}`.`id`");
+            $this->where("`{$entity->table}`.`id` IN (:{$bridge->name})", [":{$bridge->name}" => $row->get('id')]);
+
+            return $this;
         }
 
         throw new SimpleCrudException("The tables {$this->entity->table} and {$entity->table} are no related");

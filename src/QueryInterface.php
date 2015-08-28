@@ -1,8 +1,6 @@
 <?php
-namespace SimpleCrud\Queries;
+namespace SimpleCrud;
 
-use SimpleCrud\Entity;
-use SimpleCrud\SimpleCrudException;
 use PDOStatement;
 
 /**
@@ -11,13 +9,11 @@ use PDOStatement;
 interface QueryInterface
 {
     /**
-     * Creates a query instance
+     * Constructor
      *
      * @param Entity $entity
-     *
-     * @return QueryInterface
      */
-    public static function getInstance(Entity $entity);
+    public function __construct(Entity $entity);
 
     /**
      * Run the query and return a statement with the result

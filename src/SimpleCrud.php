@@ -3,8 +3,9 @@ namespace SimpleCrud;
 
 use Exception;
 use PDO;
+use Interop\Container\ContainerInterface;
 
-class SimpleCrud
+class SimpleCrud implements ContainerInterface
 {
     protected $connection;
     protected $inTransaction = false;
@@ -18,17 +19,49 @@ class SimpleCrud
      * @param PDO           $connection
      * @param EntityFactory $entityFactory
      */
-    public function __construct(PDO $connection, Factory $factory = null)
+    public function __construct(PDO $connection, EntityFactory $entityFactory = null)
     {
-        if ($factory === null) {
-            $factory = (new Factory())->autocreate();
+        if ($entityFactory === null) {
+            $entityFactory = (new EntityFactory())->setAutocreate();
         }
+
+        $entityFactory->setDb($this);
+        $this->entityFactory = $entityFactory;
 
         $this->connection = $connection;
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
 
-        $this->factory = $factory;
-        $this->factory->init($this);
+    /**
+     * Returns an entity
+     *
+     * @param string $name The entity name
+     *
+     * @throws SimpleCrudException If the entity cannot be instantiated
+     *
+     * @return null|Entity
+     */
+    public function get($name)
+    {
+        if (isset($this->entities[$name])) {
+            return $this->entities[$name];
+        }
+
+        return $this->entities[$name] = $this->entityFactory->get($name);
+    }
+
+    /**
+     * Check whether an entity exists
+     *
+     * @param string $name The entity name
+     *
+     * @throws SimpleCrudException If the entity cannot be instantiated
+     *
+     * @return null|Entity
+     */
+    public function has($name)
+    {
+        return isset($this->entities[$name]) || $this->entityFactory->has($name);
     }
 
     /**
@@ -42,17 +75,7 @@ class SimpleCrud
      */
     public function __get($name)
     {
-        if (isset($this->entities[$name])) {
-            return $this->entities[$name];
-        }
-
-        $entity = $this->factory->getEntity($name);
-
-        if (empty($entity)) {
-            throw new SimpleCrudException("The entity '{$name}' is not valid");
-        }
-
-        return $this->entities[$name] = $entity;
+        return $this->get($name);
     }
 
     /**
@@ -64,24 +87,7 @@ class SimpleCrud
      */
     public function __isset($name)
     {
-        return isset($this->entities[$name]) || $this->factory->hasEntity($name);
-    }
-
-    /**
-     * Magic method to create queries related with entities
-     *
-     * @param string $name
-     * @param array  $arguments
-     *
-     * @throws SimpleCrudException
-     *
-     * @return QueryInterface|null
-     */
-    public function __call($name, $arguments)
-    {
-        $entity = array_shift($arguments);
-
-        return $this->factory->getQuery($this->$entity, $name);
+        return $this->has($name);
     }
 
     /**
@@ -236,12 +242,28 @@ class SimpleCrud
     }
 
     /**
-     * Returns the factory instance
+     * Returns all tables
      *
-     * @return Factory
+     * @return array
      */
-    public function getFactory()
+    public function getTables()
     {
-        return $this->factory;
+        $class = 'SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\DbInfo';
+
+        return $class::getTables($this);
+    }
+
+    /**
+     * Returns the field info of a table
+     * 
+     * @param string $table
+     *
+     * @return array
+     */
+    public function getFields($table)
+    {
+        $class = 'SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\DbInfo';
+
+        return $class::getFields($this, $table);
     }
 }
