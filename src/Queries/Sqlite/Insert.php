@@ -21,7 +21,7 @@ class Insert extends InsertQuery
 
         $fields = array_keys($this->data);
 
-        $query = "INSERT OR REPLACE INTO `{$this->entity->table}`";
+        $query = "INSERT OR REPLACE INTO `{$this->entity->name}`";
         $query .= ' (`'.implode('`, `', $fields).'`)';
         $query .= ' VALUES (:'.implode(', :', $fields).')';
 

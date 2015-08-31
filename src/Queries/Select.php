@@ -60,19 +60,19 @@ class Select extends BaseQuery
         $bridge = $this->entity->getBridge($entity);
 
         if ($bridge) {
-            $this->from($bridge->table);
-            $this->from($entity->table);
+            $this->from($bridge->name);
+            $this->from($entity->name);
 
-            $this->fields[] = "`{$bridge->table}`.`{$entity->foreignKey}`";
+            $this->fields[] = "`{$bridge->name}`.`{$entity->foreignKey}`";
 
-            $this->where("`{$bridge->table}`.`{$this->entity->foreignKey}` = `{$this->entity->table}`.`id`");
-            $this->where("`{$bridge->table}`.`{$entity->foreignKey}` = `{$entity->table}`.`id`");
-            $this->where("`{$entity->table}`.`id` IN (:{$bridge->name})", [":{$bridge->name}" => $row->get('id')]);
+            $this->where("`{$bridge->name}`.`{$this->entity->foreignKey}` = `{$this->entity->name}`.`id`");
+            $this->where("`{$bridge->name}`.`{$entity->foreignKey}` = `{$entity->name}`.`id`");
+            $this->where("`{$entity->name}`.`id` IN (:{$bridge->name})", [":{$bridge->name}" => $row->get('id')]);
 
             return $this;
         }
 
-        throw new SimpleCrudException("The tables {$this->entity->table} and {$entity->table} are no related");
+        throw new SimpleCrudException("The tables {$this->entity->name} and {$entity->name} are no related");
     }
 
     /**
@@ -106,7 +106,7 @@ class Select extends BaseQuery
     public function leftJoin(Entity $entity, $on = null, $marks = null)
     {
         if ($this->entity->getRelation($entity) !== Entity::RELATION_HAS_ONE) {
-            throw new SimpleCrudException("The items '{$this->entity->table}' and '{$entity->table}' are no related or cannot be joined");
+            throw new SimpleCrudException("The items '{$this->entity->name}' and '{$entity->name}' are no related or cannot be joined");
         }
 
         $this->leftJoin[] = [
@@ -211,24 +211,24 @@ class Select extends BaseQuery
     public function __toString()
     {
         $query = 'SELECT';
-        $query .= ' '.static::buildFields($this->entity->table, array_keys($this->entity->fields));
+        $query .= ' '.static::buildFields($this->entity->name, array_keys($this->entity->fields));
 
         foreach ($this->leftJoin as $join) {
-            $query .= ', '.static::buildFields($join['entity']->table, array_keys($join['entity']->fields), $join['entity']->name);
+            $query .= ', '.static::buildFields($join['entity']->name, array_keys($join['entity']->fields), $join['entity']->name);
         }
 
         foreach ($this->fields as $field) {
             $query .= ', '.$field;
         }
 
-        $query .= ' FROM `'.$this->entity->table.'`';
+        $query .= ' FROM `'.$this->entity->name.'`';
 
         if (!empty($this->from)) {
             $query .= ', `'.implode('`, `', $this->from).'`';
         }
 
         foreach ($this->leftJoin as $join) {
-            $query .= ' LEFT JOIN `'.$join['entity']->table.'`"';
+            $query .= ' LEFT JOIN `'.$join['entity']->name.'`"';
 
             if (!empty($join['on'])) {
                 $query .= ' ON ('.$join['on'].')';

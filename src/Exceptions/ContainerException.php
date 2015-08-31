@@ -1,8 +1,8 @@
 <?php
-namespace SimpleCrud;
+namespace SimpleCrud\Exceptions;
 
 use Interop\Container\Exception\ContainerException as ContainerExceptionInterface;
 
-class NotFoundException extends SimpleCrudException implements ContainerExceptionInterface
+class ContainerException extends SimpleCrudException implements ContainerExceptionInterface
 {
 }

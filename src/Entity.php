@@ -18,9 +18,14 @@ class Entity implements ArrayAccess
     protected $queryFactory;
 
     public $name;
-    public $table;
     public $fields = [];
     public $foreignKey;
+
+    protected $smartFields = [
+        'Boolean' => ['active'],
+        'Datetime' => ['pubdate', 'createdAt', 'updatedAt'],
+        'Integer' => ['id'],
+    ];
 
     /**
      * Constructor
@@ -28,36 +33,60 @@ class Entity implements ArrayAccess
      * @param string     $name
      * @param SimpleCrud $db
      */
-    public function __construct($name, SimpleCrud $db)
+    public function __construct($name, SimpleCrud $db, QueryFactory $queryFactory = null, FieldFactory $fieldFactory = null)
     {
         $this->db = $db;
-        $this->name = strtolower(preg_replace('/([A-Z])/', '_$1', lcfirst($name)));
-        $this->table = strtolower(preg_replace('/([A-Z])/', '_$1', lcfirst($this->name)));
-        $this->foreignKey = "{$this->table}_id";
-        
-        $this->setQueryFactory(new QueryFactory());
-        $this->setFieldFactory(new FieldFactory());
+        $this->name = $name;
+        $this->foreignKey = "{$this->name}_id";
+
+        if (empty($fieldFactory)) {
+            $fieldFactory = new FieldFactory();
+        }
+
+        $fieldFactory->setEntity($this);
+
+        if (empty($this->fields)) {
+            $this->fields = $this->db->getFields($this->name);
+        }
+
+        foreach ($this->fields as $name => $type) {
+            $this->fields[$name] = $fieldFactory->get($this->getFieldType($name, $type));
+        }
+
+        if (empty($queryFactory)) {
+            $queryFactory = new QueryFactory();
+        }
+
+        $queryFactory->setEntity($this);
+        $this->queryFactory = $queryFactory;
 
         $this->row = new Row($this);
         $this->collection = new RowCollection($this);
     }
 
-    protected function setQueryFactory(QueryFactory $queryFactory)
+    /**
+     * Retrieves the field type used
+     *
+     * @param string $name
+     * @param string $default
+     *
+     * @throws SimpleCrudException
+     *
+     * @return QueryInterface|null
+     */
+    protected function getFieldType($name, $default)
     {
-        $queryFactory->setEntity($this);
-        $this->queryFactory = $queryFactory;
-    }
-
-    protected function setFieldFactory(FieldFactory $fieldFactory)
-    {
-        $fieldFactory->setEntity($this);
-        $this->fields = [];
-
-        $fields = $this->db->getFields($this->table);
-
-        foreach ($fields as $field => $type) {
-            $this->fields[$field] = $fieldFactory->get($type);
+        foreach ($this->smartFields as $type => $names) {
+            if (in_array($name, $names, true)) {
+                return $type;
+            }
         }
+
+        if (substr($name, -3) === '_id') {
+            return 'Integer';
+        }
+
+        return $default;
     }
 
     /**
@@ -84,7 +113,7 @@ class Entity implements ArrayAccess
      */
     public function offsetExists($offset)
     {
-        return $this->db->count($this->name)
+        return $this->count()
             ->byId($offset)
             ->limit(1)
             ->get() === 1;
@@ -99,7 +128,7 @@ class Entity implements ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return $this->db->select($this->name)
+        return $this->select()
             ->byId($offset)
             ->one();
     }
@@ -112,14 +141,14 @@ class Entity implements ArrayAccess
     public function offsetSet($offset, $value)
     {
         if (!empty($offset) && $this->offsetExists($offset)) {
-            $this->db->update($this->name)
+            $this->update()
                 ->data($value)
                 ->byId($offset)
                 ->limit(1)
                 ->run();
         } else {
             $value['id'] = $offset;
-            $this->db->insert($this->name)
+            $this->insert()
                 ->data($value)
                 ->run();
         }
@@ -132,7 +161,7 @@ class Entity implements ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        $this->db->delete($this->name)
+        $this->delete()
             ->byId($offset)
             ->limit(1)
             ->run();
@@ -320,9 +349,9 @@ class Entity implements ArrayAccess
     public function getBridge(Entity $entity)
     {
         if ($this->name < $entity->name) {
-            $name = "{$this->name}__{$entity->name}";
+            $name = "{$this->name}_{$entity->name}";
         } else {
-            $name = "{$entity->name}__{$this->name}";
+            $name = "{$entity->name}_{$this->name}";
         }
 
         if ($this->db->has($name)) {

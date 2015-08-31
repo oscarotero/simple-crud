@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud;
+namespace SimpleCrud\Exceptions;
 
 class SimpleCrudException extends \Exception
 {

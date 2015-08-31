@@ -75,7 +75,7 @@ class Count extends BaseQuery
      */
     public function __toString()
     {
-        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->entity->table}`";
+        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->entity->name}`";
 
         $query .= $this->whereToString();
         $query .= $this->limitToString();

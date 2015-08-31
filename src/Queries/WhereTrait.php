@@ -62,10 +62,10 @@ trait WhereTrait
     public function by($field, $value)
     {
         if (is_array($value)) {
-            return $this->where("`{$this->entity->table}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
+            return $this->where("`{$this->entity->name}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
         }
 
-        return $this->where("`{$this->entity->table}`.`{$field}` = :{$field}", [":{$field}" => $value]);
+        return $this->where("`{$this->entity->name}`.`{$field}` = :{$field}", [":{$field}" => $value]);
     }
 
     /**

@@ -78,12 +78,12 @@ class Insert extends BaseQuery
     public function __toString()
     {
         if (empty($this->data)) {
-            return "INSERT INTO `{$this->entity->table}` (`id`) VALUES (NULL)";
+            return "INSERT INTO `{$this->entity->name}` (`id`) VALUES (NULL)";
         }
 
         $fields = array_keys($this->data);
 
-        $query = "INSERT INTO `{$this->entity->table}`";
+        $query = "INSERT INTO `{$this->entity->name}`";
         $query .= ' (`'.implode('`, `', $fields).'`)';
         $query .= ' VALUES (:'.implode(', :', $fields).')';
 

@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud;
+namespace SimpleCrud\Exceptions;
 
 use Interop\Container\Exception\NotFoundException as NotFoundExceptionInterface;
 

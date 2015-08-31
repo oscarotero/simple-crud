@@ -59,7 +59,7 @@ class Count extends BaseQuery
      */
     public function __toString()
     {
-        $query = "SELECT COUNT(*) FROM `{$this->entity->table}`";
+        $query = "SELECT COUNT(*) FROM `{$this->entity->name}`";
 
         $query .= $this->whereToString();
         $query .= $this->limitToString();

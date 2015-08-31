@@ -94,7 +94,7 @@ class Update extends BaseQuery
      */
     public function __toString()
     {
-        $query = "UPDATE `{$this->entity->table}`";
+        $query = "UPDATE `{$this->entity->name}`";
         $query .= ' SET '.static::buildFields(array_keys($this->data));
 
         $query .= $this->whereToString();

@@ -5,6 +5,15 @@
 
 PHP library to provide CRUD functions (Create, Read, Update, Delete) in Mysql/Sqlite databases with zero configuration and some magic.
 
+## Conventions:
+
+This library relies in some conventions for simplify the configuration.
+
+* Table names must be in [singular](http://stackoverflow.com/a/5841297) and **camelCase**
+* Fields names must be in **singular** and **camelCase**
+* The primary key of all tables must be `id`.
+* Foreign keys must be `[tableName]_id`. For example, `post` table uses `post_id` as foreign key.
+* Associative tables must use a underscore joining the two tables in alphabetic order. For example, the relationship between `post` and `tag` is `post_tag` but `post` and `category` is `category_post`.
 
 ## Components
 

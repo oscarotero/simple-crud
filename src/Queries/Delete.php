@@ -43,7 +43,7 @@ class Delete extends BaseQuery
      */
     public function __toString()
     {
-        $query = "DELETE FROM `{$this->entity->table}`";
+        $query = "DELETE FROM `{$this->entity->name}`";
 
         $query .= $this->whereToString();
         $query .= $this->limitToString();
