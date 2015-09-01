@@ -1,26 +1,19 @@
 <?php
 namespace SimpleCrud;
 
-use SimpleCrud\Fieds\FieldInterface;
-use Interop\Container\ContainerInterface;
-
-use SimpleCrud\Exceptions\ContainerException;
-use SimpleCrud\Exceptions\NotFoundException;
-use Exception;
-
 /**
  * Class to create instances of fields.
  */
-class FieldFactory implements ContainerInterface
+class FieldFactory implements FieldFactoryInterface
 {
-    protected $entity;
+    protected $cachedTypes = [];
     protected $namespaces = ['SimpleCrud\\Fields\\'];
-    protected $defaultField = 'SimpleCrud\\Fields\\Field';
-
-    public function setEntity(Entity $entity)
-    {
-        $this->entity = $entity;
-    }
+    protected $defaultType = 'SimpleCrud\\Fields\\Field';
+    protected $smartNames = [
+        'Boolean' => ['active'],
+        'Datetime' => ['pubdate', 'createdAt', 'updatedAt'],
+        'Integer' => ['id'],
+    ];
 
     /**
      * Set the namespace for the fields classes
@@ -37,48 +30,95 @@ class FieldFactory implements ContainerInterface
     }
 
     /**
-     * Check whether or not an Entity is instantiable.
+     * Set new smart names
+     *
+     * @param string $name
+     * @param string $type
+     *
+     * @return self
+     */
+    public function addSmartName($name, $type)
+    {
+        if (!isset($this->smartNames[$type])) {
+            $this->smartNames[$type] = [$name];
+        } else {
+            $this->smartNames[$type][] = $name;
+        }
+
+        return $this;
+    }
+
+    /**
+     * @see FieldFactoryInterface
+     * 
+     * {@inheritdoc}
+     */
+    public function get($name, $type)
+    {
+        try {
+            if (empty($type)) {
+                $type = $this->getTypeByName($name);
+            }
+
+            if ($type) {
+                if (isset($this->cachedTypes[$type])) {
+                    $class = $this->cachedTypes[$type];
+                    return new $class();
+                }
+
+                $class = $this->getClass($type);
+
+                if (!empty($class)) {
+                    $this->cachedTypes[$type] = $class;
+                    return new $class();
+                }
+            }
+
+            $class = $this->cachedTypes[$type] = $this->defaultType;
+
+            return new $class();
+        } catch (Exception $exception) {
+            throw new SimpleCrudException("Error getting the '{$type}' field", 0, $exception);
+        }
+    }
+
+    /**
+     * Retrieves the field type to use
      *
      * @param string $name
      *
-     * @return boolean
+     * @return string|null
      */
-    public function has($name)
+    protected function getTypeByName($name)
+    {
+        foreach ($this->smartNames as $type => $names) {
+            if (in_array($name, $names, true)) {
+                return $type;
+            }
+        }
+
+        if (substr($name, -3) === '_id') {
+            return 'Integer';
+        }
+    }
+
+    /**
+     * Retrieves a class name if exists
+     *
+     * @param string $name
+     *
+     * @return string|null
+     */
+    protected function getClass($name)
     {
         $name = ucfirst($name);
 
         foreach ($this->namespaces as $namespace) {
-            if (class_exists($namespace.$name)) {
-                return true;
+            $class = $namespace.$name;
+
+            if (class_exists($class)) {
+                return $class;
             }
-        }
-
-        return false;
-    }
-
-    /**
-     * Creates a new instance of a Field
-     *
-     * @param string $name
-     *
-     * @return FieldInterface
-     */
-    public function get($name)
-    {
-        try {
-            $name = ucfirst($name);
-
-            foreach ($this->namespaces as $namespace) {
-                $class = $namespace.$name;
-
-                if (class_exists($class)) {
-                    return new $class($this->entity);
-                }
-            }
-
-            return new $this->defaultField($this->entity);
-        } catch (Exception $exception) {
-            throw new ContainerException("Error getting the '{$name}' field", 0, $exception);
         }
     }
 }

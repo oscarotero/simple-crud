@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud\Fields;
+namespace SimpleCrud;
 
 /**
  * Interface used by all fields

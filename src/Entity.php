@@ -21,72 +21,45 @@ class Entity implements ArrayAccess
     public $fields = [];
     public $foreignKey;
 
-    protected $smartFields = [
-        'Boolean' => ['active'],
-        'Datetime' => ['pubdate', 'createdAt', 'updatedAt'],
-        'Integer' => ['id'],
-    ];
-
     /**
      * Constructor
      * 
      * @param string     $name
      * @param SimpleCrud $db
      */
-    public function __construct($name, SimpleCrud $db, QueryFactory $queryFactory = null, FieldFactory $fieldFactory = null)
+    public function __construct($name, SimpleCrud $db, QueryFactory $queryFactory, FieldFactory $fieldFactory)
     {
         $this->db = $db;
         $this->name = $name;
         $this->foreignKey = "{$this->name}_id";
-
-        if (empty($fieldFactory)) {
-            $fieldFactory = new FieldFactory();
-        }
-
-        $fieldFactory->setEntity($this);
 
         if (empty($this->fields)) {
             $this->fields = $this->db->getFields($this->name);
         }
 
         foreach ($this->fields as $name => $type) {
-            $this->fields[$name] = $fieldFactory->get($this->getFieldType($name, $type));
+            if (is_int($name)) {
+                $name = $type;
+                $type = null;
+            }
+
+            $this->fields[$name] = $fieldFactory->get($name, $type);
         }
 
-        if (empty($queryFactory)) {
-            $queryFactory = new QueryFactory();
-        }
+        $this->queryFactory = $queryFactory->setEntity($this);
 
-        $queryFactory->setEntity($this);
-        $this->queryFactory = $queryFactory;
+        $this->setRow(new Row($this));
+        $this->setCollection(new RowCollection($this));
 
-        $this->row = new Row($this);
-        $this->collection = new RowCollection($this);
+        $this->init();
     }
 
     /**
-     * Retrieves the field type used
-     *
-     * @param string $name
-     * @param string $default
-     *
-     * @throws SimpleCrudException
-     *
-     * @return QueryInterface|null
+     * Callback used to init the entity
      */
-    protected function getFieldType($name, $default)
+    protected function init()
     {
-        foreach ($this->smartFields as $type => $names) {
-            if (in_array($name, $names, true)) {
-                return $type;
-            }
-        }
 
-        if (substr($name, -3) === '_id') {
-            return 'Integer';
-        }
-
-        return $default;
     }
 
     /**
@@ -187,6 +160,26 @@ class Entity implements ArrayAccess
     public function getAttribute($name)
     {
         return $this->db->getAttribute($name);
+    }
+
+    /**
+     * Defines the Row class used by this entity
+     *
+     * @param Row $row
+     */
+    public function setRow(Row $row)
+    {
+        $this->row = $row;
+    }
+
+    /**
+     * Defines the RowCollection class used by this entity
+     *
+     * @param RowCollection $collection
+     */
+    public function setCollection(RowCollection $collection)
+    {
+        $this->collection = $collection;
     }
 
     /**

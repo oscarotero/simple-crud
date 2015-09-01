@@ -3,9 +3,8 @@ namespace SimpleCrud;
 
 use Exception;
 use PDO;
-use Interop\Container\ContainerInterface;
 
-class SimpleCrud implements ContainerInterface
+class SimpleCrud
 {
     protected $connection;
     protected $inTransaction = false;
@@ -143,7 +142,7 @@ class SimpleCrud implements ContainerInterface
             if ($transaction) {
                 $this->commit();
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             if ($transaction) {
                 $this->rollBack();
             }

@@ -18,8 +18,7 @@
 		"issues": "https://github.com/oscarotero/simple-crud/issues"
 	},
 	"require": {
-		"php": ">=5.4",
-		"container-interop/container-interop": "^1.1"
+		"php": ">=5.4"
 	},
 	"autoload": {
 		"psr-4": {
