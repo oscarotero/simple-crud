@@ -1,12 +1,12 @@
 <?php
 namespace SimpleCrud\Queries\Sqlite;
 
-use SimpleCrud\Queries\Mysql;
+use SimpleCrud\Queries\Delete as DeleteQuery;
 
 /**
- * Manages a database delete query in Mysql databases
+ * Manages a database delete query in Sqlite databases
  */
-class Delete extends Mysql\Delete
+class Delete extends DeleteQuery
 {
     use CompiledOptionsTrait;
 

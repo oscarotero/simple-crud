@@ -1,7 +1,6 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;
@@ -10,7 +9,7 @@ use PDOStatement;
 use PDO;
 
 /**
- * Manages a database select query in Mysql databases
+ * Manages a database select query
  */
 class Select extends BaseQuery
 {
@@ -19,7 +18,6 @@ class Select extends BaseQuery
 
     protected $leftJoin = [];
     protected $orderBy = [];
-
     protected $statement;
 
     /**
@@ -53,7 +51,7 @@ class Select extends BaseQuery
     public function leftJoin(Entity $entity, $on = null, $marks = null)
     {
         if ($this->entity->getRelation($entity) !== Entity::RELATION_HAS_ONE) {
-            throw new SimpleCrudException("The items '{$this->entity->table}' and '{$entity->table}' are no related or cannot be joined");
+            throw new SimpleCrudException("The items '{$this->entity->name}' and '{$entity->name}' are no related or cannot be joined");
         }
 
         $this->leftJoin[] = [
@@ -158,18 +156,18 @@ class Select extends BaseQuery
     public function __toString()
     {
         $query = 'SELECT';
-        $query .= ' '.static::buildFields($this->entity->table, array_keys($this->entity->fields));
+        $query .= ' '.static::buildFields($this->entity->name, array_keys($this->entity->fields));
 
         foreach ($this->leftJoin as $join) {
-            $query .= ', '.static::buildFields($join['entity']->table, array_keys($join['entity']->fields), $join['entity']->name);
+            $query .= ', '.static::buildFields($join['entity']->name, array_keys($join['entity']->fields), $join['entity']->name);
         }
 
         $query .= $this->fieldsToString();
-        $query .= ' FROM `'.$this->entity->table.'`';
+        $query .= ' FROM `'.$this->entity->name.'`';
         $query .= $this->fromToString();
 
         foreach ($this->leftJoin as $join) {
-            $query .= ' LEFT JOIN `'.$join['entity']->table.'`"';
+            $query .= ' LEFT JOIN `'.$join['entity']->name.'`"';
 
             if (!empty($join['on'])) {
                 $query .= ' ON ('.$join['on'].')';

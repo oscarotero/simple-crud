@@ -1,5 +1,5 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
 /**
  * Common function to manage LIMIT clause

@@ -1,18 +1,11 @@
 <?php
-namespace SimpleCrud\Fields;
+namespace SimpleCrud;
 
 /**
  * Interface used by all fields
  */
 interface FieldInterface
 {
-    /**
-     * Convert the data before insert into the database
-     *
-     * @return FieldInterface
-     */
-    public static function getInstance();
-
     /**
      * Convert the data before insert into the database
      *

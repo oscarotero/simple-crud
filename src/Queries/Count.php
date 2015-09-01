@@ -1,48 +1,17 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Entity;
 use PDOStatement;
 use PDO;
 
 /**
- * Manages a database select count query in Mysql databases
+ * Manages a database select count query
  */
-class Sum extends BaseQuery
+class Count extends BaseQuery
 {
     use WhereExtendedTrait;
     use LimitTrait;
-
-    protected $field;
-
-    /**
-     * Set the field name to count
-     *
-     * @param string $field
-     *
-     * @return self
-     */
-    public function field($field)
-    {
-        $this->field = $field;
-
-        return $this;
-    }
-
-    /**
-     * Adds a LIMIT clause
-     *
-     * @param integer $limit
-     *
-     * @return self
-     */
-    public function limit($limit)
-    {
-        $this->limit = $limit;
-
-        return $this;
-    }
 
     /**
      * Adds new marks to the query
@@ -90,7 +59,7 @@ class Sum extends BaseQuery
      */
     public function __toString()
     {
-        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->entity->table}`";
+        $query = "SELECT COUNT(*) FROM `{$this->entity->name}`";
 
         $query .= $this->fromToString();
         $query .= $this->whereToString();

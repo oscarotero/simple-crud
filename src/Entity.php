@@ -1,7 +1,6 @@
 <?php
 namespace SimpleCrud;
 
-use SimpleCrud\Queries\QueryInterface;
 use ArrayAccess;
 
 /**
@@ -11,44 +10,55 @@ class Entity implements ArrayAccess
 {
     const RELATION_HAS_ONE = 1;
     const RELATION_HAS_MANY = 2;
+    const RELATION_HAS_BRIDGE = 3;
 
     protected $db;
+    protected $row;
+    protected $collection;
+    protected $queryFactory;
 
     public $name;
-    public $table;
     public $fields = [];
-    public $defaults;
     public $foreignKey;
 
-    public static function getInstance($name, SimpleCrud $db)
-    {
-        $factory = $db->getFactory();
-
-        $entity = new static($db);
-        $entity->name = $name;
-
-        if (empty($entity->table)) {
-            $entity->table = $name;
-        }
-
-        if (empty($entity->foreignKey)) {
-            $entity->foreignKey = "{$entity->table}_id";
-        }
-
-        $fields = $entity->fields ?: $factory->getQuery($entity, 'fields')->get();
-
-        foreach ($fields as $field => $type) {
-            $entity->fields[$field] = $factory->getField($entity, $type);
-        }
-
-        $entity->defaults = array_fill_keys(array_keys($fields), null);
-
-        return $entity;
-    }
-
-    public function __construct(SimpleCrud $db)
+    /**
+     * Constructor
+     *
+     * @param string     $name
+     * @param SimpleCrud $db
+     */
+    public function __construct($name, SimpleCrud $db, QueryFactory $queryFactory, FieldFactory $fieldFactory)
     {
         $this->db = $db;
+        $this->name = $name;
+        $this->foreignKey = "{$this->name}_id";
+
+        if (empty($this->fields)) {
+            $this->fields = $this->db->getFields($this->name);
+        }
+
+        foreach ($this->fields as $name => $type) {
+            if (is_int($name)) {
+                $name = $type;
+                $type = null;
+            }
+
+            $this->fields[$name] = $fieldFactory->get($name, $type);
+        }
+
+        $this->queryFactory = $queryFactory->setEntity($this);
+
+        $this->setRow(new Row($this));
+        $this->setCollection(new RowCollection($this));
+
+        $this->init();
+    }
+
+    /**
+     * Callback used to init the entity
+     */
+    protected function init()
+    {
     }
 
     /**
@@ -63,7 +73,7 @@ class Entity implements ArrayAccess
      */
     public function __call($name, $arguments)
     {
-        return $this->db->$name($this->name);
+        return $this->queryFactory->get($name);
     }
 
     /**
@@ -75,7 +85,7 @@ class Entity implements ArrayAccess
      */
     public function offsetExists($offset)
     {
-        return $this->db->count($this->name)
+        return $this->count()
             ->byId($offset)
             ->limit(1)
             ->get() === 1;
@@ -90,7 +100,7 @@ class Entity implements ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return $this->db->select($this->name)
+        return $this->select()
             ->byId($offset)
             ->one();
     }
@@ -103,14 +113,14 @@ class Entity implements ArrayAccess
     public function offsetSet($offset, $value)
     {
         if (!empty($offset) && $this->offsetExists($offset)) {
-            $this->db->update($this->name)
+            $this->update()
                 ->data($value)
                 ->byId($offset)
                 ->limit(1)
                 ->run();
         } else {
             $value['id'] = $offset;
-            $this->db->insert($this->name)
+            $this->insert()
                 ->data($value)
                 ->run();
         }
@@ -123,7 +133,7 @@ class Entity implements ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        $this->db->delete($this->name)
+        $this->delete()
             ->byId($offset)
             ->limit(1)
             ->run();
@@ -148,7 +158,27 @@ class Entity implements ArrayAccess
      */
     public function getAttribute($name)
     {
-        return $this->getDb()->getAttribute($name);
+        return $this->db->getAttribute($name);
+    }
+
+    /**
+     * Defines the Row class used by this entity
+     *
+     * @param Row $row
+     */
+    public function setRow(Row $row)
+    {
+        $this->row = $row;
+    }
+
+    /**
+     * Defines the RowCollection class used by this entity
+     *
+     * @param RowCollection $collection
+     */
+    public function setCollection(RowCollection $collection)
+    {
+        $this->collection = $collection;
     }
 
     /**
@@ -161,7 +191,7 @@ class Entity implements ArrayAccess
      */
     public function create(array $data = null)
     {
-        $row = new Row($this);
+        $row = clone $this->row;
 
         if ($data !== null) {
             $row->set($data);
@@ -173,13 +203,13 @@ class Entity implements ArrayAccess
     /**
      * Creates a new rowCollection instance.
      *
-     * @param array|RowInterface $data Rows added to this collection
+     * @param array $data Rows added to this collection
      *
      * @return RowCollection
      */
-    public function createCollection($data = null)
+    public function createCollection(array $data = null)
     {
-        $collection = new RowCollection($this);
+        $collection = clone $this->collection;
 
         if ($data !== null) {
             $collection->add($data);
@@ -288,20 +318,40 @@ class Entity implements ArrayAccess
      */
     public function getRelation($entity)
     {
-        if (is_string($entity)) {
-            if (!isset($this->db->$entity)) {
-                return;
-            }
-
-            $entity = $this->db->$entity;
+        if ($this->hasOne($entity)) {
+            return self::RELATION_HAS_ONE;
         }
 
-        if (isset($entity->fields[$this->foreignKey])) {
+        if ($this->hasMany($entity)) {
             return self::RELATION_HAS_MANY;
         }
 
-        if (isset($this->fields[$entity->foreignKey])) {
-            return self::RELATION_HAS_ONE;
+        if ($this->hasBridge($entity)) {
+            return self::RELATION_HAS_BRIDGE;
+        }
+    }
+
+    /**
+     * Returns the entity that works as a bridge between this entity and other
+     *
+     * @param Entity $entity
+     *
+     * @return Entity|null
+     */
+    public function getBridge(Entity $entity)
+    {
+        if ($this->name < $entity->name) {
+            $name = "{$this->name}_{$entity->name}";
+        } else {
+            $name = "{$entity->name}_{$this->name}";
+        }
+
+        if ($this->db->has($name)) {
+            $bridge = $this->db->$name;
+
+            if (isset($bridge->fields[$this->foreignKey]) && isset($bridge->fields[$entity->foreignKey])) {
+                return $bridge;
+            }
         }
     }
 
@@ -314,7 +364,15 @@ class Entity implements ArrayAccess
      */
     public function hasMany($entity)
     {
-        return $this->getRelation($entity) === self::RELATION_HAS_MANY;
+        if (is_string($entity)) {
+            if (!isset($this->db->$entity)) {
+                return false;
+            }
+
+            $entity = $this->db->$entity;
+        }
+
+        return isset($entity->fields[$this->foreignKey]);
     }
 
     /**
@@ -326,6 +384,26 @@ class Entity implements ArrayAccess
      */
     public function hasOne($entity)
     {
-        return $this->getRelation($entity) === self::RELATION_HAS_ONE;
+        if (is_string($entity)) {
+            if (!isset($this->db->$entity)) {
+                return false;
+            }
+
+            $entity = $this->db->$entity;
+        }
+
+        return isset($this->fields[$entity->foreignKey]);
+    }
+
+    /**
+     * Returns whether the relation type of this entity with other is HAS_BRIDGE.
+     *
+     * @param Entity|string $entity
+     *
+     * @return boolean
+     */
+    public function hasBridge($entity)
+    {
+        return $this->getBridge($entity) !== null;
     }
 }

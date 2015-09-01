@@ -1,20 +1,18 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Entity;
 use PDOStatement;
 
 /**
- * Manages a database update query in Mysql databases
+ * Manages a database update query
  */
 class Update extends BaseQuery
 {
     use WhereTrait;
+    use LimitTrait;
 
     protected $data = [];
-    protected $limit;
-    protected $offset;
 
     /**
      * Set the data to update
@@ -26,34 +24,6 @@ class Update extends BaseQuery
     public function data(array $data)
     {
         $this->data = $this->entity->prepareDataToDatabase($data, false);
-
-        return $this;
-    }
-
-    /**
-     * Adds a LIMIT clause
-     *
-     * @param integer $limit
-     *
-     * @return self
-     */
-    public function limit($limit)
-    {
-        $this->limit = $limit;
-
-        return $this;
-    }
-
-    /**
-     * Adds an offset to the LIMIT clause
-     *
-     * @param integer $offset
-     *
-     * @return self
-     */
-    public function offset($offset)
-    {
-        $this->offset = $offset;
 
         return $this;
     }
@@ -95,20 +65,11 @@ class Update extends BaseQuery
      */
     public function __toString()
     {
-        $query = "UPDATE `{$this->entity->table}`";
+        $query = "UPDATE `{$this->entity->name}`";
         $query .= ' SET '.static::buildFields(array_keys($this->data));
 
         $query .= $this->whereToString();
-
-        if (!empty($this->limit)) {
-            $query .= ' LIMIT';
-
-            if (!empty($this->offset)) {
-                $query .= ' '.$this->offset.',';
-            }
-
-            $query .= ' '.$this->limit;
-        }
+        $query .= $this->limitToString();
 
         return $query;
     }

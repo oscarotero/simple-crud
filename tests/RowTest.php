@@ -12,7 +12,7 @@ class RowTest extends PHPUnit_Framework_TestCase
 
     public function testPost()
     {
-        $post = $this->db->posts->create();
+        $post = $this->db->post->create();
 
         $this->assertInstanceOf('SimpleCrud\\Row', $post);
 

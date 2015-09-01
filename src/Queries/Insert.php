@@ -1,7 +1,6 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Entity;
 use PDOStatement;
 
@@ -66,7 +65,9 @@ class Insert extends BaseQuery
     {
         $this->run();
 
-        return $this->entity->getDb()->lastInsertId();
+        $id = $this->entity->getDb()->lastInsertId();
+
+        return $this->entity->fields['id']->dataFromDatabase($id);
     }
 
     /**
@@ -77,12 +78,12 @@ class Insert extends BaseQuery
     public function __toString()
     {
         if (empty($this->data)) {
-            return "INSERT INTO `{$this->entity->table}` (`id`) VALUES (NULL)";
+            return "INSERT INTO `{$this->entity->name}` (`id`) VALUES (NULL)";
         }
 
         $fields = array_keys($this->data);
 
-        $query = "INSERT INTO `{$this->entity->table}`";
+        $query = "INSERT INTO `{$this->entity->name}`";
         $query .= ' (`'.implode('`, `', $fields).'`)';
         $query .= ' VALUES (:'.implode(', :', $fields).')';
 

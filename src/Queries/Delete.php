@@ -1,7 +1,6 @@
 <?php
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Queries;
 
-use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Entity;
 use PDOStatement;
 
@@ -44,7 +43,7 @@ class Delete extends BaseQuery
      */
     public function __toString()
     {
-        $query = "DELETE FROM `{$this->entity->table}`";
+        $query = "DELETE FROM `{$this->entity->name}`";
 
         $query .= $this->whereToString();
         $query .= $this->limitToString();

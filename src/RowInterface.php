@@ -40,4 +40,14 @@ interface RowInterface extends JsonSerializable
      * @return null|mixed
      */
     public function getAttribute($name);
+
+    /**
+     * Register a new custom method
+     *
+     * @param string   $name
+     * @param callable $function
+     *
+     * @return self
+     */
+    public function setCustomFunction($name, callable $function);
 }

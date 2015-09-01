@@ -13,20 +13,20 @@ function initSqlitePdo()
 
     //Posts
     $pdo->exec(<<<EOT
-        CREATE TABLE "posts" (
+        CREATE TABLE "post" (
             `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             `title` TEXT,
-            `categories_id` INTEGER,
+            `category_id` INTEGER,
             `pubdate`   TEXT,
             `type`  TEXT,
-            FOREIGN KEY(`categories_id`) REFERENCES categories(id)
+            FOREIGN KEY(`category_id`) REFERENCES category(id)
         );
 EOT
 );
 
     //Categories
     $pdo->exec(<<<EOT
-        CREATE TABLE `categories` (
+        CREATE TABLE `category` (
             `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             `name`  TEXT
         );
@@ -35,7 +35,7 @@ EOT
 
     //Tags
     $pdo->exec(<<<EOT
-        CREATE TABLE `tags` (
+        CREATE TABLE `tag` (
             `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
             `name`  TEXT
         );
@@ -44,12 +44,12 @@ EOT
 
     //Relationship Tags-Posts
     $pdo->exec(<<<EOT
-        CREATE TABLE `tags_in_posts` (
+        CREATE TABLE `post_tag` (
             `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-            `tags_id`   INTEGER NOT NULL,
-            `posts_id`  INTEGER NOT NULL,
-            FOREIGN KEY(`tags_id`) REFERENCES tags(id),
-            FOREIGN KEY(`posts_id`) REFERENCES posts(id)
+            `tag_id`   INTEGER NOT NULL,
+            `post_id`  INTEGER NOT NULL,
+            FOREIGN KEY(`tag_id`) REFERENCES tag(id),
+            FOREIGN KEY(`post_id`) REFERENCES post(id)
         );
 EOT
 );

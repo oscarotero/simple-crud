@@ -2,6 +2,7 @@
 namespace SimpleCrud\Queries;
 
 use SimpleCrud\Entity;
+use SimpleCrud\QueryInterface;
 
 /**
  * Base class used by all queries
@@ -9,16 +10,6 @@ use SimpleCrud\Entity;
 abstract class BaseQuery implements QueryInterface
 {
     protected $entity;
-
-    /**
-     * @see QueryInterface
-     *
-     * {@inheritdoc}
-     */
-    public static function getInstance(Entity $entity)
-    {
-        return new static($entity);
-    }
 
     /**
      * Constructor

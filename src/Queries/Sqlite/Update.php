@@ -1,12 +1,12 @@
 <?php
 namespace SimpleCrud\Queries\Sqlite;
 
-use SimpleCrud\Queries\Mysql;
+use SimpleCrud\Queries\Update as UpdateQuery;
 
 /**
- * Manages a database update query in Mysql databases
+ * Manages a database update query in Sqlite databases
  */
-class Update extends Mysql\Update
+class Update extends UpdateQuery
 {
     use CompiledOptionsTrait;
 

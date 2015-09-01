@@ -1,12 +1,12 @@
 <?php
 namespace SimpleCrud\Queries\Sqlite;
 
-use SimpleCrud\Queries\Mysql;
+use SimpleCrud\Queries\Insert as InsertQuery;
 
 /**
  * Manages a database insert query in Mysql databases
  */
-class Insert extends Mysql\Insert
+class Insert extends InsertQuery
 {
     /**
      * Build and return the query
@@ -21,7 +21,7 @@ class Insert extends Mysql\Insert
 
         $fields = array_keys($this->data);
 
-        $query = "INSERT OR REPLACE INTO `{$this->entity->table}`";
+        $query = "INSERT OR REPLACE INTO `{$this->entity->name}`";
         $query .= ' (`'.implode('`, `', $fields).'`)';
         $query .= ' VALUES (:'.implode(', :', $fields).')';
 
