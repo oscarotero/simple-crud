@@ -59,7 +59,7 @@ CREATE TABLE `post_tag` (
 );
 ```
 
-SimpleCrud can detect automatically all relations between tables using the naming conventions described above. So you only need to instantiate the class `SimpleCrud\SimpleCrud` passing the `PDO` connection.
+To use the database, just create an instance of `SimpleCrud\SimpleCrud` passing the `PDO` connection.
 
 ```php
 use SimpleCrud\SimpleCrud;
@@ -70,7 +70,7 @@ $db = new SimpleCrud($pdo);
 $post = $db->post;
 ```
 
-SimpleCrud uses the `foreignKey` property to detect automatically the relationship between two entities `RELATION_HAS_ONE | RELATION_HAS_MANY`. For example: the foreignKey for the table "category" is "category_id" and the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category (`RELATION_HAS_ONE`).
+SimpleCrud can detect automatically all relationship between tables using the naming conventions described above. To do that, uses the `foreignKey` know the relation type `RELATION_HAS_ONE | RELATION_HAS_MANY | RELATION_HAS_BRIDGE`. For example: the foreignKey for the table "category" is "category_id" and the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category (`RELATION_HAS_ONE`).
 
 
 ### Using the library
@@ -165,10 +165,10 @@ $category = $db->category->select()
 
 #### Working with rows
 
-When you select data from the database, it's saved in a `Row` instance. This class allows read and modify the data:
+When you select data from the database using `one()`, it's saved in a `Row` instance. This class allows read and modify the data:
 
 ```php
-$post = $db->post[25];
+$post = $db->post->select()->one();
 
 echo $post->title; //Get the post title
 
@@ -190,7 +190,7 @@ $newPost->set([
 $newPost->save(); //Insert the post in the database.
 ```
 
-#### Working with row collections
+#### Working with collections
 
 If you use `all()` to get the result of a selection, no mather how many rows are selected, you get a `RowCollection` instance (it can be empty, one result or more).
 
