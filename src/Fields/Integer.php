@@ -24,9 +24,9 @@ class Integer extends Field
 
     /**
      * Normalize a number
-     * 
+     *
      * @param mixed $number
-     * 
+     *
      * @return int|null
      */
     protected static function normalize($number)

@@ -50,7 +50,7 @@ class FieldFactory implements FieldFactoryInterface
 
     /**
      * @see FieldFactoryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function get($name, $type)
@@ -63,6 +63,7 @@ class FieldFactory implements FieldFactoryInterface
             if ($type) {
                 if (isset($this->cachedTypes[$type])) {
                     $class = $this->cachedTypes[$type];
+
                     return new $class();
                 }
 
@@ -70,6 +71,7 @@ class FieldFactory implements FieldFactoryInterface
 
                 if (!empty($class)) {
                     $this->cachedTypes[$type] = $class;
+
                     return new $class();
                 }
             }

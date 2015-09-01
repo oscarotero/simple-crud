@@ -23,7 +23,7 @@ class Entity implements ArrayAccess
 
     /**
      * Constructor
-     * 
+     *
      * @param string     $name
      * @param SimpleCrud $db
      */
@@ -59,7 +59,6 @@ class Entity implements ArrayAccess
      */
     protected function init()
     {
-
     }
 
     /**
@@ -334,9 +333,9 @@ class Entity implements ArrayAccess
 
     /**
      * Returns the entity that works as a bridge between this entity and other
-     * 
+     *
      * @param Entity $entity
-     * 
+     *
      * @return Entity|null
      */
     public function getBridge(Entity $entity)

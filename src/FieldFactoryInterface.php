@@ -11,7 +11,7 @@ interface FieldFactoryInterface
      *
      * @param string $name
      * @param string $type
-     * 
+     *
      * @throws SimpleCrudException
      *
      * @return FieldInterface

@@ -15,7 +15,7 @@ class EntityFactory implements EntityFactoryInterface
 
     /**
      * Constructor.
-     * 
+     *
      * @param QueryFactory|null $queryFactory
      * @param FieldFactory|null $fieldFactory
      */
@@ -27,7 +27,7 @@ class EntityFactory implements EntityFactoryInterface
 
     /**
      * @see EntityFactoryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function setDb(SimpleCrud $db)
@@ -95,7 +95,7 @@ class EntityFactory implements EntityFactoryInterface
 
     /**
      * @see EntityFactoryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function has($name)
@@ -105,7 +105,7 @@ class EntityFactory implements EntityFactoryInterface
 
     /**
      * @see EntityFactoryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function get($name)

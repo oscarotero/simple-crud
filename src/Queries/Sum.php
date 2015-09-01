@@ -8,7 +8,7 @@ use PDO;
 /**
  * Manages a database select count query in Mysql databases
  */
-class Count extends BaseQuery
+class Sum extends BaseQuery
 {
     use WhereTrait;
     use LimitTrait;

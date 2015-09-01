@@ -254,7 +254,7 @@ class SimpleCrud
 
     /**
      * Returns the field info of a table
-     * 
+     *
      * @param string $table
      *
      * @return array

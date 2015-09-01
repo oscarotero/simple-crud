@@ -13,7 +13,7 @@ class QueryFactory implements QueryFactoryInterface
 
     /**
      * @see QueryFactoryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function setEntity(Entity $entity)
@@ -40,7 +40,7 @@ class QueryFactory implements QueryFactoryInterface
 
     /**
      * @see QueryFactoryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function has($name)
@@ -58,7 +58,7 @@ class QueryFactory implements QueryFactoryInterface
 
     /**
      * @see QueryFactoryInterface
-     * 
+     *
      * {@inheritdoc}
      */
     public function get($name)

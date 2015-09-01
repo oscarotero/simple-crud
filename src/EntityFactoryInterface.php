@@ -8,9 +8,9 @@ interface EntityFactoryInterface
 {
     /**
      * Set the database used for the entities
-     * 
+     *
      * @param SimpleCrud $db
-     * 
+     *
      * @return self
      */
     public function setDb(SimpleCrud $db);
@@ -28,7 +28,7 @@ interface EntityFactoryInterface
      * Creates a new instance of an Entity.
      *
      * @param string $name
-     * 
+     *
      * @throws SimpleCrudException
      *
      * @return Entity

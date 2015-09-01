@@ -8,9 +8,9 @@ class Float extends Integer
 {
     /**
      * Normalize a float
-     * 
+     *
      * @param mixed $number
-     * 
+     *
      * @return float|null
      */
     protected static function normalize($number)

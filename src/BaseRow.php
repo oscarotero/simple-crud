@@ -12,7 +12,7 @@ abstract class BaseRow implements RowInterface
 
     /**
      * Constructor
-     * 
+     *
      * @param Entity $entity
      */
     public function __construct(Entity $entity)
@@ -64,7 +64,7 @@ abstract class BaseRow implements RowInterface
     /**
      * Creates and return a Select query related with this entity
      *
-     * @param string      $entity
+     * @param string $entity
      *
      * @return QueryInterface
      */
@@ -95,9 +95,9 @@ abstract class BaseRow implements RowInterface
 
     /**
      * Set a custom function
-     * 
+     *
      * {@inheritdoc}
-     * 
+     *
      * @return self
      */
     public function setCustomFunction($name, callable $function)

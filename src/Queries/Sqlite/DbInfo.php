@@ -11,7 +11,7 @@ class DbInfo
 {
     /**
      * Build and return the query
-     * 
+     *
      * @param SimpleCrud $db
      *
      * @return array
@@ -23,7 +23,7 @@ class DbInfo
 
     /**
      * Build and return the fields of a table
-     * 
+     *
      * @param SimpleCrud $db
      * @param string     $table
      *

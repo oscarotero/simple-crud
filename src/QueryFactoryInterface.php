@@ -28,7 +28,7 @@ interface QueryFactoryInterface
      * Creates a new instance of a Field
      *
      * @param string $name
-     * 
+     *
      * @throws SimpleCrudException
      *
      * @return FieldInterface

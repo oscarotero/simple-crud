@@ -150,7 +150,7 @@ class Select extends BaseQuery
 
     /**
      * Run the query and return all values
-     * 
+     *
      * @param boolean $idAsKey
      *
      * @return RowCollection

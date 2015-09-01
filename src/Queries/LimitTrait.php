@@ -39,7 +39,7 @@ trait LimitTrait
 
     /**
      * Generate LIMIT clause
-     * 
+     *
      * @return string
      */
     protected function limitToString()
