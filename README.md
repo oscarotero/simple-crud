@@ -438,12 +438,14 @@ class Posts extends Entity
 {
     public function init()
     {
-        //Use my own row class
-        $this->setRow(new MyCustomRow($this));
-
-        //Add some methods to rowcollection default class
-        $this->collection->setCustomFunction('sumIds', function ($collection) {
+        //Add some methods to collections
+        $this->collection->registerMethod('sumIds', function ($collection) {
             return array_sum($collection->id);
+        });
+
+        //Add some properties to row
+        $this->row->registerProperty('titleLowerCase', function ($row) {
+            return strtolower($row->title);
         });
     }
 }
@@ -454,12 +456,12 @@ Now, on use the entity:
 ```php
 $posts = $db->post->select()->all();
 
-//Execute the registered function in the collection
+//Execute the registered method in the collection
 echo $posts->sumIds();
 
-//Execute custom functions in each row
+//Execute the registered property in the row
 foreach ($posts as $post) {
-    $post->customFunction();
+    echo $post->titleLowerCase;
 }
 ```
 

@@ -7,8 +7,8 @@ namespace SimpleCrud;
 abstract class BaseRow implements RowInterface
 {
     protected $entity;
-    protected $db;
-    protected $functions = [];
+    protected $methods = [];
+    protected $properties = [];
 
     /**
      * Constructor
@@ -18,7 +18,6 @@ abstract class BaseRow implements RowInterface
     public function __construct(Entity $entity)
     {
         $this->entity = $entity;
-        $this->db = $entity->getDb();
     }
 
     /**
@@ -36,19 +35,37 @@ abstract class BaseRow implements RowInterface
      *
      * {@inheritdoc}
      */
-    public function getDb()
+    public function getAttribute($name)
     {
-        return $this->db;
+        return $this->entity->getDb()->getAttribute($name);
     }
 
     /**
      * @see RowInterface
      *
      * {@inheritdoc}
+     *
+     * @return self
      */
-    public function getAttribute($name)
+    public function registerMethod($name, callable $callable)
     {
-        return $this->db->getAttribute($name);
+        $this->methods[$name] = $callable;
+
+        return $this;
+    }
+
+    /**
+     * @see RowInterface
+     *
+     * {@inheritdoc}
+     *
+     * @return self
+     */
+    public function registerProperty($name, callable $callable)
+    {
+        $this->properties[$name] = $callable;
+
+        return $this;
     }
 
     /**
@@ -70,7 +87,9 @@ abstract class BaseRow implements RowInterface
      */
     public function select($entity)
     {
-        return $this->db->$entity->select()->relatedWith($this);
+        $db = $this->entity->getDb();
+
+        return $db->$entity->select()->relatedWith($this);
     }
 
     /**
@@ -94,30 +113,16 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
-     * Set a custom function
-     *
-     * {@inheritdoc}
-     *
-     * @return self
-     */
-    public function setCustomFunction($name, callable $function)
-    {
-        $this->functions[$name] = $function;
-
-        return $this;
-    }
-
-    /**
      * Magic method to execute custom method defined in the entity class
      *
      * @param string $name
      */
     public function __call($name, $arguments)
     {
-        if (isset($this->functions[$name])) {
+        if (isset($this->methods[$name])) {
             array_unshift($arguments, $this);
 
-            return call_user_func_array($this->functions[$name], $arguments);
+            return call_user_func_array($this->methods[$name], $arguments);
         }
     }
 }

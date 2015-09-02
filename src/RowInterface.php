@@ -26,13 +26,6 @@ interface RowInterface extends JsonSerializable
     public function getEntity();
 
     /**
-     * Return the database connection
-     *
-     * @return SimpleCrud
-     */
-    public function getDb();
-
-    /**
      * Returns an attribute
      *
      * @param string $name
@@ -45,9 +38,19 @@ interface RowInterface extends JsonSerializable
      * Register a new custom method
      *
      * @param string   $name
-     * @param callable $function
+     * @param callable $callable
      *
      * @return self
      */
-    public function setCustomFunction($name, callable $function);
+    public function registerMethod($name, callable $callable);
+
+    /**
+     * Register a new custom property
+     *
+     * @param string   $name
+     * @param callable $callable
+     *
+     * @return self
+     */
+    public function registerProperty($name, callable $callable);
 }

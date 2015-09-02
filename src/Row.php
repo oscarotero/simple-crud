@@ -34,18 +34,19 @@ class Row extends BaseRow implements JsonSerializable
             return $this->values[$name];
         }
 
-        //Custom method
-        if (method_exists($this->entity, "row{$name}")) {
-            return $this->values[$name] = $this->__call($name, []);
+        //Custom property
+        if (isset($this->properties[$name])) {
+            return $this->values[$name] = call_user_func($this->properties[$name], $this);
         }
 
         //Load related data
-        if ($this->entity->hasOne($name)) {
-            return $this->values[$name] = $this->select($name)->one();
-        }
-
-        if ($this->entity->hasMany($name)) {
-            return $this->values[$name] = $this->select($name)->all();
+        switch ($this->entity->getRelation($name)) {
+            case Entity::RELATION_HAS_ONE:
+                return $this->values[$name] = $this->select($name)->one();
+            
+            case Entity::RELATION_HAS_MANY:
+            case Entity::RELATION_HAS_BRIDGE:
+                return $this->values[$name] = $this->select($name)->all();
         }
     }
 

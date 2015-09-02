@@ -318,6 +318,14 @@ class Entity implements ArrayAccess
      */
     public function getRelation($entity)
     {
+        if (is_string($entity)) {
+            if (!$this->db->has($entity)) {
+                return false;
+            }
+
+            $entity = $this->db->get($entity);
+        }
+
         if ($this->hasOne($entity)) {
             return self::RELATION_HAS_ONE;
         }
@@ -329,6 +337,42 @@ class Entity implements ArrayAccess
         if ($this->hasBridge($entity)) {
             return self::RELATION_HAS_BRIDGE;
         }
+    }
+
+    /**
+     * Returns whether the relation type of this entity with other is HAS_MANY.
+     *
+     * @param Entity $entity
+     *
+     * @return boolean
+     */
+    public function hasMany(Entity $entity)
+    {
+        return isset($entity->fields[$this->foreignKey]);
+    }
+
+    /**
+     * Returns whether the relation type of this entity with other is HAS_MANY.
+     *
+     * @param Entity $entity
+     *
+     * @return boolean
+     */
+    public function hasOne(Entity $entity)
+    {
+        return isset($this->fields[$entity->foreignKey]);
+    }
+
+    /**
+     * Returns whether the relation type of this entity with other is HAS_BRIDGE.
+     *
+     * @param Entity $entity
+     *
+     * @return boolean
+     */
+    public function hasBridge(Entity $entity)
+    {
+        return $this->getBridge($entity) !== null;
     }
 
     /**
@@ -353,57 +397,5 @@ class Entity implements ArrayAccess
                 return $bridge;
             }
         }
-    }
-
-    /**
-     * Returns whether the relation type of this entity with other is HAS_MANY.
-     *
-     * @param Entity|string $entity
-     *
-     * @return boolean
-     */
-    public function hasMany($entity)
-    {
-        if (is_string($entity)) {
-            if (!isset($this->db->$entity)) {
-                return false;
-            }
-
-            $entity = $this->db->$entity;
-        }
-
-        return isset($entity->fields[$this->foreignKey]);
-    }
-
-    /**
-     * Returns whether the relation type of this entity with other is HAS_MANY.
-     *
-     * @param Entity|string $entity
-     *
-     * @return boolean
-     */
-    public function hasOne($entity)
-    {
-        if (is_string($entity)) {
-            if (!isset($this->db->$entity)) {
-                return false;
-            }
-
-            $entity = $this->db->$entity;
-        }
-
-        return isset($this->fields[$entity->foreignKey]);
-    }
-
-    /**
-     * Returns whether the relation type of this entity with other is HAS_BRIDGE.
-     *
-     * @param Entity|string $entity
-     *
-     * @return boolean
-     */
-    public function hasBridge($entity)
-    {
-        return $this->getBridge($entity) !== null;
     }
 }
