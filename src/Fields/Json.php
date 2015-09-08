@@ -1,0 +1,24 @@
+<?php
+namespace SimpleCrud\Fields;
+
+/**
+ * To stringify json values before save
+ */
+class Json extends Field
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function dataToDatabase($data)
+    {
+        return json_encode($data);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function dataFromDatabase($data)
+    {
+        return empty($data) ? [] : json_decode($data, true);
+    }
+}
