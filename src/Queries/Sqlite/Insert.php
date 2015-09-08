@@ -1,12 +1,12 @@
 <?php
 namespace SimpleCrud\Queries\Sqlite;
 
-use SimpleCrud\Queries\Insert as InsertQuery;
+use SimpleCrud\Queries\Mysql\Insert as BaseInsert;
 
 /**
- * Manages a database insert query in Mysql databases
+ * Manages a database insert query in Sqlite databases
  */
-class Insert extends InsertQuery
+class Insert extends BaseInsert
 {
     /**
      * Build and return the query

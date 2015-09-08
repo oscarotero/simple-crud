@@ -1,6 +1,7 @@
 <?php
-namespace SimpleCrud\Queries;
+namespace SimpleCrud\Queries\Mysql;
 
+use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Entity;
 use PDOStatement;
 

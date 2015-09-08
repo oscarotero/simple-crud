@@ -1,6 +1,9 @@
 <?php
-namespace SimpleCrud\Queries;
+namespace SimpleCrud\Queries\Mysql;
 
+use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\WhereExtendedTrait;
+use SimpleCrud\Queries\LimitTrait;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Row;
 use SimpleCrud\Entity;

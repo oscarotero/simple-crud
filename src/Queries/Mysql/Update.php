@@ -1,6 +1,9 @@
 <?php
-namespace SimpleCrud\Queries;
+namespace SimpleCrud\Queries\Mysql;
 
+use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\WhereTrait;
+use SimpleCrud\Queries\LimitTrait;
 use SimpleCrud\Entity;
 use PDOStatement;
 

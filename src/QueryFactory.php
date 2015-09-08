@@ -9,7 +9,7 @@ use PDO;
 class QueryFactory implements QueryFactoryInterface
 {
     protected $entity;
-    protected $namespaces = ['SimpleCrud\\Queries\\'];
+    protected $namespaces = [];
 
     /**
      * @see QueryFactoryInterface
