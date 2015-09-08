@@ -8,7 +8,7 @@ class SimpleCrud
 {
     protected $connection;
     protected $inTransaction = false;
-    protected $factory;
+    protected $entityFactory;
     protected $entities = [];
     protected $attributes = [];
 

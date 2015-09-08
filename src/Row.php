@@ -5,8 +5,6 @@ use JsonSerializable;
 
 /**
  * Stores the data of an entity row
- *
- * @property mixed $id
  */
 class Row extends BaseRow implements JsonSerializable
 {

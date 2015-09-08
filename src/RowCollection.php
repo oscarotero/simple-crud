@@ -7,8 +7,6 @@ use Countable;
 
 /**
  * Stores a collection of rows
- *
- * @property array $id
  */
 class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 {
@@ -54,7 +52,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
                             $collection[] = $r;
                         }
                     } else {
-                        $collection = $r;
+                        $collection = $row;
                     }
                 }
 
@@ -74,7 +72,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
         //Returns values
         if ($first->has($name)) {
-            return $this->get($name, isset($arguments[0]) ? $arguments[0] : null);
+            return $this->get($name);
         }
     }
 

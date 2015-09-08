@@ -3,6 +3,8 @@ namespace SimpleCrud\Queries;
 
 /**
  * Common function to manage LIMIT clause
+ * 
+ * @property \SimpleCrud\Entity $entity
  */
 trait LimitTrait
 {

@@ -6,6 +6,8 @@ use PDO;
 
 /**
  * Manages a database select count query in Mysql databases
+ * 
+ * @property \SimpleCrud\Entity $entity
  */
 trait CompiledOptionsTrait
 {

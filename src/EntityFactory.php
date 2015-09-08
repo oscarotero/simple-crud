@@ -124,7 +124,7 @@ class EntityFactory implements EntityFactoryInterface
 
                 return new $class($name, $this->db, $queryFactory, $fieldFactory);
             }
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             throw new SimpleCrudException("Error getting the '{$name}' entity", 0, $exception);
         }
 

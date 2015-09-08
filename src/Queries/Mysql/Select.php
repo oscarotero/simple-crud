@@ -162,7 +162,7 @@ class Select extends BaseQuery
         $query .= ' '.static::buildFields($this->entity->name, array_keys($this->entity->fields));
 
         foreach ($this->leftJoin as $join) {
-            $query .= ', '.static::buildFields($join['entity']->name, array_keys($join['entity']->fields), $join['entity']->name);
+            $query .= ', '.static::buildFields($join['entity']->name, array_keys($join['entity']->fields), true);
         }
 
         $query .= $this->fieldsToString();
@@ -191,19 +191,19 @@ class Select extends BaseQuery
     /**
      * Generates the fields/tables part of a SELECT query
      *
-     * @param string      $table
-     * @param array       $fields
-     * @param string|null $rename
+     * @param string $table
+     * @param array  $fields
+     * @param bool   $rename
      *
      * @return string
      */
-    protected static function buildFields($table, array $fields, $rename = null)
+    protected static function buildFields($table, array $fields, $rename = false)
     {
         $query = [];
 
         foreach ($fields as $field) {
             if ($rename) {
-                $query[] = "`{$table}`.`{$field}` as `{$rename}.{$field}`";
+                $query[] = "`{$table}`.`{$field}` as `{$table}.{$field}`";
             } else {
                 $query[] = "`{$table}`.`{$field}`";
             }

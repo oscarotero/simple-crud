@@ -73,7 +73,7 @@ class QueryFactory implements QueryFactoryInterface
                     return new $class($this->entity);
                 }
             }
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             throw new SimpleCrudException("Error getting the '{$name}' query", 0, $exception);
         }
 

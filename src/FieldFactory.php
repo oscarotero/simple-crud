@@ -79,7 +79,7 @@ class FieldFactory implements FieldFactoryInterface
             $class = $this->cachedTypes[$type] = $this->defaultType;
 
             return new $class();
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             throw new SimpleCrudException("Error getting the '{$type}' field", 0, $exception);
         }
     }
