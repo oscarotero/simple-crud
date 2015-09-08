@@ -16,6 +16,7 @@ class Entity implements ArrayAccess
     protected $row;
     protected $collection;
     protected $queryFactory;
+    protected $fieldFactory;
 
     public $name;
     public $fields = [];
@@ -33,23 +34,22 @@ class Entity implements ArrayAccess
         $this->name = $name;
         $this->foreignKey = "{$this->name}_id";
 
+        $this->fieldFactory = $fieldFactory;
+        $this->queryFactory = $queryFactory->setEntity($this);
+        $this->setRow(new Row($this));
+        $this->setCollection(new RowCollection($this));
+
         if (empty($this->fields)) {
             $this->fields = $this->db->getFields($this->name);
         }
 
         foreach ($this->fields as $name => $type) {
             if (is_int($name)) {
-                $name = $type;
-                $type = null;
+                $this->setField($type);
+            } else {
+                $this->setField($name, $type);
             }
-
-            $this->fields[$name] = $fieldFactory->get($name, $type);
         }
-
-        $this->queryFactory = $queryFactory->setEntity($this);
-
-        $this->setRow(new Row($this));
-        $this->setCollection(new RowCollection($this));
 
         $this->init();
     }
@@ -59,6 +59,17 @@ class Entity implements ArrayAccess
      */
     protected function init()
     {
+    }
+
+    /**
+     * Register a new field type
+     * 
+     * @param string      $name
+     * @param string|null $type
+     */
+    protected function setField($name, $type = null)
+    {
+        $this->fields[$name] = $this->fieldFactory->get($name, $type);
     }
 
     /**
