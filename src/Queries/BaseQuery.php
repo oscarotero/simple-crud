@@ -20,24 +20,4 @@ abstract class BaseQuery implements QueryInterface
     {
         $this->entity = $entity;
     }
-
-    /**
-     * Magic method to execute Entity's queries
-     *
-     * @param string $name
-     * @param array  $arguments
-     */
-    public function __call($name, $arguments)
-    {
-        $fn_name = "query{$name}";
-
-        if (method_exists($this->entity, $fn_name)) {
-            array_unshift($arguments, $this);
-            call_user_func_array([$this->entity, $fn_name], $arguments);
-
-            return $this;
-        }
-
-        throw new \Exception("Not valid function '{$fn_name}' in the entity '{$this->entity->name}'");
-    }
 }
