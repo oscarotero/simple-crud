@@ -42,8 +42,8 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
         //Returns related entities
         $db = $this->entity->getDb();
 
-        if (isset($db->$name)) {
-            $entity = $db->$name;
+        if ($db->has($name)) {
+            $entity = $db->get($name);
 
             if ($first->has($name)) {
                 $collection = $entity->createCollection();
@@ -63,7 +63,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
             $collection = $this->select($name)->all();
 
-            if ($this->entity->hasOne($name)) {
+            if ($this->entity->hasOne($entity)) {
                 $this->joinOne($collection);
             } else {
                 $this->joinMany($collection);
