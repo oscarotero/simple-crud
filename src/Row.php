@@ -171,11 +171,12 @@ class Row extends BaseRow implements JsonSerializable
     /**
      * Saves this row in the database.
      *
-     * @param boolean $duplications Set true to detect duplicates index
+     * @param boolean $duplications      Set true to detect duplicates index
+     * @param boolean $externalRelations Set true to save the relations with other entities
      *
      * @return $this
      */
-    public function save($duplications = false)
+    public function save($duplications = false, $externalRelations = false)
     {
         $data = array_intersect_key($this->values, $this->entity->fields);
 
@@ -184,15 +185,73 @@ class Row extends BaseRow implements JsonSerializable
                 ->data($data)
                 ->duplications($duplications)
                 ->get();
-
-            return $this;
+        } else {
+            $this->entity->update()
+                ->data($data)
+                ->byId($this->id)
+                ->limit(1)
+                ->run();
         }
 
-        $this->entity->update()
-            ->data($data)
-            ->byId($this->id)
-            ->limit(1)
-            ->run();
+        if ($externalRelations) {
+            $this->saveExternalRelations();
+        }
+
+        return $this;
+    }
+
+    /**
+     * Saves the extenal relations (RELATION_HAS_MANY|RELATION_HAS_BRIDGE) of this row with other row directly in the database.
+     *
+     * @return $this
+     */
+    protected function saveExternalRelations() {
+        $extData = array_diff_key($this->values, $this->entity->fields);
+        $db = $this->entity->getDb();
+
+        foreach ($extData as $name => $ids) {
+            if (!$db->has($name)) {
+                continue;
+            }
+
+            $entity = $db->get($name);
+
+            if ($this->entity->hasOne($entity)) {
+                continue;
+            }
+
+            $ids = ($ids instanceof RowInterface) ? (array) $ids->id : (array) $ids;
+
+            if ($this->entity->hasMany($entity)) {
+                $entity->update()
+                    ->data([
+                        $this->entity->foreignKey => $this->id
+                    ])
+                    ->by('id', $ids)
+                    ->run();
+
+                return $this;
+            }
+
+            if ($this->entity->hasBridge($entity)) {
+                $bridge = $this->entity->getBridge($entity);
+
+                $bridge->delete()
+                    ->by($this->entity->foreignKey, $this->id)
+                    ->run();
+
+                foreach ($ids as $id) {
+                    $bridge->insert()
+                        ->data([
+                            $this->entity->foreignKey => $this->id,
+                            $entity->foreignKey => $id
+                        ])
+                        ->run();
+                }
+
+                return $this;
+            }
+        }
 
         return $this;
     }
