@@ -41,7 +41,7 @@ class Row extends BaseRow implements JsonSerializable
         switch ($this->entity->getRelation($name)) {
             case Entity::RELATION_HAS_ONE:
                 return $this->values[$name] = $this->select($name)->one();
-            
+
             case Entity::RELATION_HAS_MANY:
             case Entity::RELATION_HAS_BRIDGE:
                 return $this->values[$name] = $this->select($name)->all();
@@ -205,7 +205,8 @@ class Row extends BaseRow implements JsonSerializable
      *
      * @return $this
      */
-    protected function saveExternalRelations() {
+    protected function saveExternalRelations()
+    {
         $extData = array_diff_key($this->values, $this->entity->fields);
         $db = $this->entity->getDb();
 
@@ -225,7 +226,7 @@ class Row extends BaseRow implements JsonSerializable
             if ($this->entity->hasMany($entity)) {
                 $entity->update()
                     ->data([
-                        $this->entity->foreignKey => $this->id
+                        $this->entity->foreignKey => $this->id,
                     ])
                     ->by('id', $ids)
                     ->run();
@@ -244,7 +245,7 @@ class Row extends BaseRow implements JsonSerializable
                     $bridge->insert()
                         ->data([
                             $this->entity->foreignKey => $this->id,
-                            $entity->foreignKey => $id
+                            $entity->foreignKey => $id,
                         ])
                         ->run();
                 }

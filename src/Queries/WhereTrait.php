@@ -3,7 +3,7 @@ namespace SimpleCrud\Queries;
 
 /**
  * Common function to manage WHERE clause
- * 
+ *
  * @property \SimpleCrud\Entity $entity
  */
 trait WhereTrait

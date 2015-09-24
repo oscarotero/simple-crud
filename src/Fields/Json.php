@@ -11,7 +11,11 @@ class Json extends Field
      */
     public function dataToDatabase($data)
     {
-        return json_encode($data);
+        if (!is_string($data)) {
+            return json_encode($data);
+        }
+
+        return $data;
     }
 
     /**

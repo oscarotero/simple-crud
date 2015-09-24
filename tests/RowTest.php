@@ -47,7 +47,7 @@ class RowTest extends PHPUnit_Framework_TestCase
     public function testCustomFunction()
     {
         $post = $this->db->post->create([
-            'title' => 'THIS IS THE TITLE'
+            'title' => 'THIS IS THE TITLE',
         ])->save();
 
         $this->assertSame('this is the title', $post->getTitleLowerCase());
@@ -58,7 +58,7 @@ class RowTest extends PHPUnit_Framework_TestCase
     }
 }
 
-class DefaultEntity extends Entity 
+class DefaultEntity extends Entity
 {
     protected function init()
     {
@@ -70,7 +70,7 @@ class DefaultEntity extends Entity
                 return $row->getTitleLowerCase();
             });
 
-        $this->collection->registerMethod('sumIds', function($collection) {
+        $this->collection->registerMethod('sumIds', function ($collection) {
             return array_sum($collection->id);
         });
     }

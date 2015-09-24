@@ -5,7 +5,7 @@ use SimpleCrud\RowInterface;
 
 /**
  * Common function to manage WHERE clause
- * 
+ *
  * @property \SimpleCrud\Entity $entity
  */
 trait WhereExtendedTrait

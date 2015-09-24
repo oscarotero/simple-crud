@@ -3,7 +3,7 @@ namespace SimpleCrud;
 
 /**
  * Base class used by Row and RowCollection
- * 
+ *
  * @property mixed $id
  */
 abstract class BaseRow implements RowInterface

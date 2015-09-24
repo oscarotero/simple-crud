@@ -63,7 +63,7 @@ class Entity implements ArrayAccess
 
     /**
      * Register a new field type
-     * 
+     *
      * @param string      $name
      * @param string|null $type
      */
