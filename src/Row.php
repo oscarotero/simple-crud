@@ -231,7 +231,7 @@ class Row extends BaseRow implements JsonSerializable
                     ->by('id', $ids)
                     ->run();
 
-                return $this;
+                continue;
             }
 
             if ($this->entity->hasBridge($entity)) {
@@ -250,7 +250,7 @@ class Row extends BaseRow implements JsonSerializable
                         ->run();
                 }
 
-                return $this;
+                continue;
             }
         }
 
