@@ -1,8 +1,9 @@
 <?php
+
 namespace SimpleCrud\Fields;
 
 /**
- * To normalize integer values
+ * To normalize integer values.
  */
 class Integer extends Field
 {
@@ -23,7 +24,7 @@ class Integer extends Field
     }
 
     /**
-     * Normalize a number
+     * Normalize a number.
      *
      * @param mixed $number
      *

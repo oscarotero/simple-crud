@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud;
 
 use PDO;
@@ -25,7 +26,7 @@ class QueryFactory implements QueryFactoryInterface
     }
 
     /**
-     * Set the namespace for the fields classes
+     * Set the namespace for the fields classes.
      *
      * @param string $namespace
      *

@@ -1,8 +1,9 @@
 <?php
+
 namespace SimpleCrud\Fields;
 
 /**
- * To normalize boolean values
+ * To normalize boolean values.
  */
 class Boolean extends Field
 {

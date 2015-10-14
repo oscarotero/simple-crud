@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
@@ -9,7 +10,7 @@ use PDOStatement;
 use PDO;
 
 /**
- * Manages a database select count query in Mysql databases
+ * Manages a database select count query in Mysql databases.
  */
 class Sum extends BaseQuery
 {
@@ -19,7 +20,7 @@ class Sum extends BaseQuery
     protected $field;
 
     /**
-     * Set the field name to count
+     * Set the field name to count.
      *
      * @param string $field
      *
@@ -33,7 +34,7 @@ class Sum extends BaseQuery
     }
 
     /**
-     * Adds new marks to the query
+     * Adds new marks to the query.
      *
      * @param array $marks
      *
@@ -47,7 +48,7 @@ class Sum extends BaseQuery
     }
 
     /**
-     * Run the query and return a statement with the result
+     * Run the query and return a statement with the result.
      *
      * @return PDOStatement
      */
@@ -60,9 +61,9 @@ class Sum extends BaseQuery
     }
 
     /**
-     * Run the query and return the value
+     * Run the query and return the value.
      *
-     * @return integer
+     * @return int
      */
     public function get()
     {
@@ -72,7 +73,7 @@ class Sum extends BaseQuery
     }
 
     /**
-     * Build and return the query
+     * Build and return the query.
      *
      * @return string
      */

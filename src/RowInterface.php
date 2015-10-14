@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud;
 
 use JsonSerializable;
@@ -11,22 +12,22 @@ interface RowInterface extends JsonSerializable
     /**
      * Generate an array with all values and subvalues of the row.
      *
-     * @param boolean $keysAsId       If the keys of the arrays are the ids
-     * @param array   $parentEntities Parent entities of this row. It's used to avoid infinite recursions
+     * @param bool  $keysAsId       If the keys of the arrays are the ids
+     * @param array $parentEntities Parent entities of this row. It's used to avoid infinite recursions
      *
      * @return array
      */
     public function toArray($keysAsId = false, array $parentEntities = array());
 
     /**
-     * Return the entity
+     * Return the entity.
      *
      * @return Entity
      */
     public function getEntity();
 
     /**
-     * Returns an attribute
+     * Returns an attribute.
      *
      * @param string $name
      *
@@ -35,7 +36,7 @@ interface RowInterface extends JsonSerializable
     public function getAttribute($name);
 
     /**
-     * Register a new custom method
+     * Register a new custom method.
      *
      * @param string   $name
      * @param callable $callable
@@ -45,7 +46,7 @@ interface RowInterface extends JsonSerializable
     public function registerMethod($name, callable $callable);
 
     /**
-     * Register a new custom property
+     * Register a new custom property.
      *
      * @param string   $name
      * @param callable $callable

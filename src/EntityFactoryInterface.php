@@ -1,13 +1,14 @@
 <?php
+
 namespace SimpleCrud;
 
 /**
- * Interface used by the entity factory
+ * Interface used by the entity factory.
  */
 interface EntityFactoryInterface
 {
     /**
-     * Set the database used for the entities
+     * Set the database used for the entities.
      *
      * @param SimpleCrud $db
      *
@@ -20,7 +21,7 @@ interface EntityFactoryInterface
      *
      * @param string $name
      *
-     * @return boolean
+     * @return bool
      */
     public function has($name);
 

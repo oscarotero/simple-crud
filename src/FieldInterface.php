@@ -1,13 +1,14 @@
 <?php
+
 namespace SimpleCrud;
 
 /**
- * Interface used by all fields
+ * Interface used by all fields.
  */
 interface FieldInterface
 {
     /**
-     * Convert the data before insert into the database
+     * Convert the data before insert into the database.
      *
      * @param mixed $data
      *
@@ -16,7 +17,7 @@ interface FieldInterface
     public function dataToDatabase($data);
 
     /**
-     * Convert the data after read from the database
+     * Convert the data after read from the database.
      *
      * @param mixed $data
      *

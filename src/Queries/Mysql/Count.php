@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
@@ -9,7 +10,7 @@ use PDOStatement;
 use PDO;
 
 /**
- * Manages a database select count query
+ * Manages a database select count query.
  */
 class Count extends BaseQuery
 {
@@ -17,7 +18,7 @@ class Count extends BaseQuery
     use LimitTrait;
 
     /**
-     * Adds new marks to the query
+     * Adds new marks to the query.
      *
      * @param array $marks
      *
@@ -31,7 +32,7 @@ class Count extends BaseQuery
     }
 
     /**
-     * Run the query and return a statement with the result
+     * Run the query and return a statement with the result.
      *
      * @return PDOStatement
      */
@@ -44,9 +45,9 @@ class Count extends BaseQuery
     }
 
     /**
-     * Run the query and return the value
+     * Run the query and return the value.
      *
-     * @return integer
+     * @return int
      */
     public function get()
     {
@@ -56,7 +57,7 @@ class Count extends BaseQuery
     }
 
     /**
-     * Build and return the query
+     * Build and return the query.
      *
      * @return string
      */

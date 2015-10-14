@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud;
 
 /**
@@ -16,7 +17,7 @@ class FieldFactory implements FieldFactoryInterface
     ];
 
     /**
-     * Set the namespace for the fields classes
+     * Set the namespace for the fields classes.
      *
      * @param string $namespace
      *
@@ -30,7 +31,7 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * Set new smart names
+     * Set new smart names.
      *
      * @param string $name
      * @param string $type
@@ -85,7 +86,7 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * Retrieves the field type to use
+     * Retrieves the field type to use.
      *
      * @param string $name
      *
@@ -105,7 +106,7 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * Retrieves a class name if exists
+     * Retrieves a class name if exists.
      *
      * @param string $name
      *

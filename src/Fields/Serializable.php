@@ -1,8 +1,9 @@
 <?php
+
 namespace SimpleCrud\Fields;
 
 /**
- * To serialize values before save
+ * To serialize values before save.
  */
 class Serializable extends Field
 {

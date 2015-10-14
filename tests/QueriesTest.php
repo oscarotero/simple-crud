@@ -1,4 +1,5 @@
 <?php
+
 use SimpleCrud\SimpleCrud;
 
 class QueriesTest extends PHPUnit_Framework_TestCase

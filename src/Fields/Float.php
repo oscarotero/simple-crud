@@ -1,13 +1,14 @@
 <?php
+
 namespace SimpleCrud\Fields;
 
 /**
- * To normalize float values
+ * To normalize float values.
  */
 class Float extends Integer
 {
     /**
-     * Normalize a float
+     * Normalize a float.
      *
      * @param mixed $number
      *

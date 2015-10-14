@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud\Fields;
 
 use SimpleCrud\FieldInterface;

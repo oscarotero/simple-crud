@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
@@ -8,7 +9,7 @@ use SimpleCrud\Entity;
 use PDOStatement;
 
 /**
- * Manages a database update query
+ * Manages a database update query.
  */
 class Update extends BaseQuery
 {
@@ -18,7 +19,7 @@ class Update extends BaseQuery
     protected $data = [];
 
     /**
-     * Set the data to update
+     * Set the data to update.
      *
      * @param array $data
      *
@@ -32,7 +33,7 @@ class Update extends BaseQuery
     }
 
     /**
-     * Adds new marks to the query
+     * Adds new marks to the query.
      *
      * @param array $marks
      *
@@ -46,7 +47,7 @@ class Update extends BaseQuery
     }
 
     /**
-     * Run the query and return all values
+     * Run the query and return all values.
      *
      * @return PDOStatement
      */
@@ -62,7 +63,7 @@ class Update extends BaseQuery
     }
 
     /**
-     * Build and return the query
+     * Build and return the query.
      *
      * @return string
      */
@@ -78,7 +79,7 @@ class Update extends BaseQuery
     }
 
     /**
-     * Generates the data part of a UPDATE query
+     * Generates the data part of a UPDATE query.
      *
      * @param array $fields
      *

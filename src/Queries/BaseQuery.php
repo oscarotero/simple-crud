@@ -1,18 +1,19 @@
 <?php
+
 namespace SimpleCrud\Queries;
 
 use SimpleCrud\Entity;
 use SimpleCrud\QueryInterface;
 
 /**
- * Base class used by all queries
+ * Base class used by all queries.
  */
 abstract class BaseQuery implements QueryInterface
 {
     protected $entity;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param Entity $entity
      */

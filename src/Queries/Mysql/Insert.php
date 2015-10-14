@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
@@ -6,7 +7,7 @@ use SimpleCrud\Entity;
 use PDOStatement;
 
 /**
- * Manages a database insert query in Mysql databases
+ * Manages a database insert query in Mysql databases.
  */
 class Insert extends BaseQuery
 {
@@ -14,7 +15,7 @@ class Insert extends BaseQuery
     protected $duplications;
 
     /**
-     * Set the data to update
+     * Set the data to update.
      *
      * @param array $data
      *
@@ -28,9 +29,9 @@ class Insert extends BaseQuery
     }
 
     /**
-     * Set true to handle duplications
+     * Set true to handle duplications.
      *
-     * @param boolean $handle
+     * @param bool $handle
      *
      * @return self
      */
@@ -42,7 +43,7 @@ class Insert extends BaseQuery
     }
 
     /**
-     * Run the query and return all values
+     * Run the query and return all values.
      *
      * @return PDOStatement
      */
@@ -58,9 +59,9 @@ class Insert extends BaseQuery
     }
 
     /**
-     * Run the query and return the id
+     * Run the query and return the id.
      *
-     * @return integer
+     * @return int
      */
     public function get()
     {
@@ -72,7 +73,7 @@ class Insert extends BaseQuery
     }
 
     /**
-     * Build and return the query
+     * Build and return the query.
      *
      * @return string
      */
@@ -97,7 +98,7 @@ class Insert extends BaseQuery
     }
 
     /**
-     * Generates the data part of a UPDATE query
+     * Generates the data part of a UPDATE query.
      *
      * @param array $fields
      *

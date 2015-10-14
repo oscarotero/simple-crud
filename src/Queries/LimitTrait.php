@@ -1,8 +1,9 @@
 <?php
+
 namespace SimpleCrud\Queries;
 
 /**
- * Common function to manage LIMIT clause
+ * Common function to manage LIMIT clause.
  *
  * @property \SimpleCrud\Entity $entity
  */
@@ -12,9 +13,9 @@ trait LimitTrait
     protected $offset;
 
     /**
-     * Adds a LIMIT clause
+     * Adds a LIMIT clause.
      *
-     * @param integer $limit
+     * @param int $limit
      *
      * @return self
      */
@@ -26,9 +27,9 @@ trait LimitTrait
     }
 
     /**
-     * Adds an offset to the LIMIT clause
+     * Adds an offset to the LIMIT clause.
      *
-     * @param integer $offset
+     * @param int $offset
      *
      * @return self
      */
@@ -40,7 +41,7 @@ trait LimitTrait
     }
 
     /**
-     * Generate LIMIT clause
+     * Generate LIMIT clause.
      *
      * @return string
      */

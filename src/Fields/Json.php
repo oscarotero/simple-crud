@@ -1,8 +1,9 @@
 <?php
+
 namespace SimpleCrud\Fields;
 
 /**
- * To stringify json values before save
+ * To stringify json values before save.
  */
 class Json extends Field
 {

@@ -1,4 +1,5 @@
 <?php
+
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Entity;
 

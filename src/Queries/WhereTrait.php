@@ -1,8 +1,9 @@
 <?php
+
 namespace SimpleCrud\Queries;
 
 /**
- * Common function to manage WHERE clause
+ * Common function to manage WHERE clause.
  *
  * @property \SimpleCrud\Entity $entity
  */
@@ -12,7 +13,7 @@ trait WhereTrait
     protected $marks = [];
 
     /**
-     * Adds a WHERE clause
+     * Adds a WHERE clause.
      *
      * @param string     $where
      * @param null|array $marks
@@ -31,7 +32,7 @@ trait WhereTrait
     }
 
     /**
-     * Adds a OR WHERE clause
+     * Adds a OR WHERE clause.
      *
      * @param string     $where
      * @param null|array $marks
@@ -54,7 +55,7 @@ trait WhereTrait
     }
 
     /**
-     * Adds a WHERE field = :value clause
+     * Adds a WHERE field = :value clause.
      *
      * @param string    $field
      * @param int|array $value
@@ -71,7 +72,7 @@ trait WhereTrait
     }
 
     /**
-     * Adds a WHERE id = :id clause
+     * Adds a WHERE id = :id clause.
      *
      * @param int|array $id
      *
@@ -85,7 +86,7 @@ trait WhereTrait
     }
 
     /**
-     * Generate WHERE clause
+     * Generate WHERE clause.
      *
      * @return string
      */

@@ -1,10 +1,11 @@
 <?php
+
 namespace SimpleCrud\Queries;
 
 use SimpleCrud\RowInterface;
 
 /**
- * Common function to manage WHERE clause
+ * Common function to manage WHERE clause.
  *
  * @property \SimpleCrud\Entity $entity
  */
@@ -16,7 +17,7 @@ trait WhereExtendedTrait
     protected $fields = [];
 
     /**
-     * Adds new extra table to the query
+     * Adds new extra table to the query.
      *
      * @param string $table
      *
@@ -30,7 +31,7 @@ trait WhereExtendedTrait
     }
 
     /**
-     * Adds a new extra field to the query
+     * Adds a new extra field to the query.
      *
      * @param string $field
      *
@@ -44,7 +45,7 @@ trait WhereExtendedTrait
     }
 
     /**
-     * Adds a WHERE according with the relation of other entity
+     * Adds a WHERE according with the relation of other entity.
      *
      * @param RowInterface $row
      *
@@ -81,7 +82,7 @@ trait WhereExtendedTrait
     }
 
     /**
-     * add extra fields to the code
+     * add extra fields to the code.
      *
      * @return string
      */
@@ -91,7 +92,7 @@ trait WhereExtendedTrait
     }
 
     /**
-     * add extra fields to the code
+     * add extra fields to the code.
      *
      * @return string
      */

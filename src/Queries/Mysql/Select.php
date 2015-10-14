@@ -1,18 +1,18 @@
 <?php
+
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Queries\WhereExtendedTrait;
 use SimpleCrud\Queries\LimitTrait;
 use SimpleCrud\RowCollection;
-use SimpleCrud\Row;
 use SimpleCrud\Entity;
 use SimpleCrud\SimpleCrudException;
 use PDOStatement;
 use PDO;
 
 /**
- * Manages a database select query
+ * Manages a database select query.
  */
 class Select extends BaseQuery
 {
@@ -24,7 +24,7 @@ class Select extends BaseQuery
     protected $statement;
 
     /**
-     * Adds an ORDER BY clause
+     * Adds an ORDER BY clause.
      *
      * @param string      $orderBy
      * @param string|null $direction
@@ -43,7 +43,7 @@ class Select extends BaseQuery
     }
 
     /**
-     * Adds a LEFT JOIN clause
+     * Adds a LEFT JOIN clause.
      *
      * @param Entity     $entity
      * @param string     $on
@@ -70,7 +70,7 @@ class Select extends BaseQuery
     }
 
     /**
-     * Adds new marks to the query
+     * Adds new marks to the query.
      *
      * @param array $marks
      *
@@ -84,7 +84,7 @@ class Select extends BaseQuery
     }
 
     /**
-     * Run the query and return a statement with the result
+     * Run the query and return a statement with the result.
      *
      * @return PDOStatement
      */
@@ -97,9 +97,9 @@ class Select extends BaseQuery
     }
 
     /**
-     * Run the query and return all values
+     * Run the query and return all values.
      *
-     * @param boolean $idAsKey
+     * @param bool $idAsKey
      *
      * @return RowCollection
      */
@@ -118,7 +118,7 @@ class Select extends BaseQuery
     }
 
     /**
-     * Run the query and return the first value
+     * Run the query and return the first value.
      *
      * @return RowCollection
      */
@@ -134,7 +134,7 @@ class Select extends BaseQuery
     }
 
     /**
-     * Run the query and return the first value
+     * Run the query and return the first value.
      *
      * @return RowCollection
      */
@@ -152,7 +152,7 @@ class Select extends BaseQuery
     }
 
     /**
-     * Build and return the query
+     * Build and return the query.
      *
      * @return string
      */
@@ -189,7 +189,7 @@ class Select extends BaseQuery
     }
 
     /**
-     * Generates the fields/tables part of a SELECT query
+     * Generates the fields/tables part of a SELECT query.
      *
      * @param string $table
      * @param array  $fields

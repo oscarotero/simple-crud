@@ -1,10 +1,11 @@
 <?php
+
 namespace SimpleCrud;
 
 use JsonSerializable;
 
 /**
- * Stores the data of an entity row
+ * Stores the data of an entity row.
  */
 class Row extends BaseRow implements JsonSerializable
 {
@@ -21,7 +22,7 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to return properties or load them automatically
+     * Magic method to return properties or load them automatically.
      *
      * @param string $name
      */
@@ -49,7 +50,7 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to store properties
+     * Magic method to store properties.
      *
      * @param string $name
      * @param mixed  $value
@@ -64,7 +65,7 @@ class Row extends BaseRow implements JsonSerializable
      *
      * @param string $name Property name
      *
-     * @return boolean
+     * @return bool
      */
     public function __isset($name)
     {
@@ -114,7 +115,7 @@ class Row extends BaseRow implements JsonSerializable
     public function relateWith(RowInterface $row)
     {
         if (!$this->entity->hasOne($row->getEntity())) {
-            throw new SimpleCrudException("Not valid relation");
+            throw new SimpleCrudException('Not valid relation');
         }
 
         if (empty($row->id)) {
@@ -157,11 +158,11 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Return whether a value is defined or not
+     * Return whether a value is defined or not.
      *
      * @param string $name
      *
-     * @return boolean
+     * @return bool
      */
     public function has($name)
     {
@@ -171,8 +172,8 @@ class Row extends BaseRow implements JsonSerializable
     /**
      * Saves this row in the database.
      *
-     * @param boolean $duplications      Set true to detect duplicates index
-     * @param boolean $externalRelations Set true to save the relations with other entities
+     * @param bool $duplications      Set true to detect duplicates index
+     * @param bool $externalRelations Set true to save the relations with other entities
      *
      * @return $this
      */

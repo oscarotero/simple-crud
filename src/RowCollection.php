@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud;
 
 use ArrayAccess;
@@ -6,7 +7,7 @@ use Iterator;
 use Countable;
 
 /**
- * Stores a collection of rows
+ * Stores a collection of rows.
  */
 class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 {
@@ -14,7 +15,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     private $idAsKey = true;
 
     /**
-     * Magic method to set properties to all rows
+     * Magic method to set properties to all rows.
      *
      * @see self::set()
      */
@@ -24,7 +25,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Magic method to get properties from all rows
+     * Magic method to get properties from all rows.
      *
      * @see self::get()
      */
@@ -47,7 +48,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
                 $collection = $entity->createCollection();
 
                 foreach ($this->get($name) as $row) {
-                    if ($row instanceof RowCollection) {
+                    if ($row instanceof self) {
                         foreach ($row as $r) {
                             $collection[] = $r;
                         }
@@ -77,9 +78,9 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Set whether or not use the id as key
+     * Set whether or not use the id as key.
      *
-     * @param boolean $idAsKey
+     * @param bool $idAsKey
      *
      * @return self
      */
@@ -116,7 +117,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
         }
 
         if (empty($value->id)) {
-            throw new SimpleCrudException("Only rows with the defined id must be added to collections");
+            throw new SimpleCrudException('Only rows with the defined id must be added to collections');
         }
 
         $this->rows[$value->id] = $value;
@@ -213,7 +214,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Set values to all children
+     * Set values to all children.
      *
      * @param string $name
      * @param string $value
@@ -281,10 +282,10 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     }
 
     /**
-     * Returns a slice of the content
+     * Returns a slice of the content.
      *
-     * @param integer           $offset
-     * @param integer|null|true $length
+     * @param int           $offset
+     * @param int|null|true $length
      *
      * @return array
      */
@@ -306,7 +307,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function add($rows)
     {
-        if (is_array($rows) || ($rows instanceof RowCollection)) {
+        if (is_array($rows) || ($rows instanceof self)) {
             foreach ($rows as $row) {
                 $this->offsetSet(null, $row);
             }
@@ -320,9 +321,9 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     /**
      * Filter the rows by a value.
      *
-     * @param string  $name  The value name
-     * @param mixed   $value The value to filter
-     * @param boolean $first Set true to return only the first row found
+     * @param string $name  The value name
+     * @param mixed  $value The value to filter
+     * @param bool   $first Set true to return only the first row found
      *
      * @return null|RowInterface The rows found or null if no value is found and $first parameter is true
      */
@@ -379,7 +380,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
     /**
      * Distribute a rowcollection througth all rows.
-     * Its the opposite of $this->joinMany()
+     * Its the opposite of $this->joinMany().
      *
      * @param RowCollection $rows
      *

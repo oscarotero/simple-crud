@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
@@ -8,7 +9,7 @@ use SimpleCrud\Entity;
 use PDOStatement;
 
 /**
- * Manages a database delete query in Mysql databases
+ * Manages a database delete query in Mysql databases.
  */
 class Delete extends BaseQuery
 {
@@ -16,7 +17,7 @@ class Delete extends BaseQuery
     use LimitTrait;
 
     /**
-     * Adds new marks to the query
+     * Adds new marks to the query.
      *
      * @param array $marks
      *
@@ -30,7 +31,7 @@ class Delete extends BaseQuery
     }
 
     /**
-     * Run the query and return all values
+     * Run the query and return all values.
      *
      * @return PDOStatement
      */
@@ -40,7 +41,7 @@ class Delete extends BaseQuery
     }
 
     /**
-     * Build and return the query
+     * Build and return the query.
      *
      * @return string
      */

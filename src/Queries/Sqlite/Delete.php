@@ -1,20 +1,21 @@
 <?php
+
 namespace SimpleCrud\Queries\Sqlite;
 
 use SimpleCrud\Queries\Mysql\Delete as BaseDelete;
 
 /**
- * Manages a database delete query in Sqlite databases
+ * Manages a database delete query in Sqlite databases.
  */
 class Delete extends BaseDelete
 {
     use CompiledOptionsTrait;
 
     /**
-     * Adds a LIMIT clause
+     * Adds a LIMIT clause.
      *
-     * @param integer $limit
-     * @param boolean $force
+     * @param int  $limit
+     * @param bool $force
      *
      * @return self
      */
@@ -28,10 +29,10 @@ class Delete extends BaseDelete
     }
 
     /**
-     * Adds an offset to the LIMIT clause
+     * Adds an offset to the LIMIT clause.
      *
-     * @param integer $offset
-     * @param boolean $force
+     * @param int  $offset
+     * @param bool $force
      *
      * @return self
      */

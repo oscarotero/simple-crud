@@ -1,4 +1,5 @@
 <?php
+
 include 'src/autoloader.php';
 
 use SimpleCrud\SimpleCrud;

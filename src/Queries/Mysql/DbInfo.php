@@ -1,16 +1,17 @@
 <?php
+
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\SimpleCrud;
 use PDO;
 
 /**
- * Class to retrieve info from a mysql database
+ * Class to retrieve info from a mysql database.
  */
 class DbInfo
 {
     /**
-     * Build and return the query
+     * Build and return the query.
      *
      * @param SimpleCrud $db
      *
@@ -22,7 +23,7 @@ class DbInfo
     }
 
     /**
-     * Build and return the fields of a table
+     * Build and return the fields of a table.
      *
      * @param SimpleCrud $db
      * @param string     $table

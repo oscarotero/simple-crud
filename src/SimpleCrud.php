@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud;
 
 use Exception;
@@ -32,7 +33,7 @@ class SimpleCrud
     }
 
     /**
-     * Returns an entity
+     * Returns an entity.
      *
      * @param string $name The entity name
      *
@@ -50,7 +51,7 @@ class SimpleCrud
     }
 
     /**
-     * Check whether an entity exists
+     * Check whether an entity exists.
      *
      * @param string $name The entity name
      *
@@ -82,7 +83,7 @@ class SimpleCrud
      *
      * @param string $name
      *
-     * @return boolean
+     * @return bool
      */
     public function __isset($name)
     {
@@ -166,7 +167,7 @@ class SimpleCrud
     /**
      * Starts a transaction if it's not started yet.
      *
-     * @return boolean True if a the transaction is started or false if don't
+     * @return bool True if a the transaction is started or false if don't
      */
     public function beginTransaction()
     {
@@ -202,7 +203,7 @@ class SimpleCrud
     }
 
     /**
-     * Check if there is a transaction opened currently in this adapter
+     * Check if there is a transaction opened currently in this adapter.
      */
     public function inTransaction()
     {
@@ -210,7 +211,7 @@ class SimpleCrud
     }
 
     /**
-     * Saves a new attribute
+     * Saves a new attribute.
      *
      * @param string $name
      * @param mixed  $value
@@ -225,7 +226,7 @@ class SimpleCrud
     }
 
     /**
-     * Returns an attribute
+     * Returns an attribute.
      *
      * @param string|int $name
      *
@@ -241,7 +242,7 @@ class SimpleCrud
     }
 
     /**
-     * Returns all tables
+     * Returns all tables.
      *
      * @return array
      */
@@ -253,7 +254,7 @@ class SimpleCrud
     }
 
     /**
-     * Returns the field info of a table
+     * Returns the field info of a table.
      *
      * @param string $table
      *

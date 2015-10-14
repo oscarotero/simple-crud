@@ -1,8 +1,9 @@
 <?php
+
 namespace SimpleCrud;
 
 /**
- * Base class used by Row and RowCollection
+ * Base class used by Row and RowCollection.
  *
  * @property mixed $id
  */
@@ -13,7 +14,7 @@ abstract class BaseRow implements RowInterface
     protected $properties = [];
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param Entity $entity
      */
@@ -81,7 +82,7 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
-     * Creates and return a Select query related with this entity
+     * Creates and return a Select query related with this entity.
      *
      * @param string $entity
      *
@@ -115,7 +116,7 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
-     * Magic method to execute custom method defined in the entity class
+     * Magic method to execute custom method defined in the entity class.
      *
      * @param string $name
      */

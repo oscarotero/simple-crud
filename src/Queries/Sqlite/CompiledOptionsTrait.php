@@ -1,11 +1,12 @@
 <?php
+
 namespace SimpleCrud\Queries\Sqlite;
 
 use SimpleCrud\Queries\Mysql;
 use PDO;
 
 /**
- * Manages a database select count query in Mysql databases
+ * Manages a database select count query in Mysql databases.
  *
  * @property \SimpleCrud\Entity $entity
  */
@@ -14,11 +15,11 @@ trait CompiledOptionsTrait
     protected static $options;
 
     /**
-     * Check whether the sqlite has a compiled option
+     * Check whether the sqlite has a compiled option.
      *
      * @param string $name
      *
-     * @return boolean
+     * @return bool
      */
     public function hasCompiledOption($name)
     {

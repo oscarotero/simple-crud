@@ -1,13 +1,14 @@
 <?php
+
 namespace SimpleCrud;
 
 /**
- * Interface used by the QueryFactory class
+ * Interface used by the QueryFactory class.
  */
 interface QueryFactoryInterface
 {
     /**
-     * Set the entity used for the queries
+     * Set the entity used for the queries.
      *
      * @param Entity $entity
      *
@@ -20,12 +21,12 @@ interface QueryFactoryInterface
      *
      * @param string $name
      *
-     * @return boolean
+     * @return bool
      */
     public function has($name);
 
     /**
-     * Creates a new instance of a Field
+     * Creates a new instance of a Field.
      *
      * @param string $name
      *

@@ -1,10 +1,11 @@
 <?php
+
 namespace SimpleCrud;
 
 use ArrayAccess;
 
 /**
- * Manages a database entity (table)
+ * Manages a database entity (table).
  */
 class Entity implements ArrayAccess
 {
@@ -23,7 +24,7 @@ class Entity implements ArrayAccess
     public $foreignKey;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param string     $name
      * @param SimpleCrud $db
@@ -55,14 +56,14 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Callback used to init the entity
+     * Callback used to init the entity.
      */
     protected function init()
     {
     }
 
     /**
-     * Register a new field type
+     * Register a new field type.
      *
      * @param string      $name
      * @param string|null $type
@@ -73,7 +74,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Magic method to create queries related with this entity
+     * Magic method to create queries related with this entity.
      *
      * @param string $name
      * @param array  $arguments
@@ -88,11 +89,11 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Check if a row with a specific id exists
+     * Check if a row with a specific id exists.
      *
      * @see ArrayAccess
      *
-     * @return boolean
+     * @return bool
      */
     public function offsetExists($offset)
     {
@@ -103,7 +104,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Returns a row with a specific id
+     * Returns a row with a specific id.
      *
      * @see ArrayAccess
      *
@@ -117,7 +118,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Store a row with a specific id
+     * Store a row with a specific id.
      *
      * @see ArrayAccess
      */
@@ -138,7 +139,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Remove a row with a specific id
+     * Remove a row with a specific id.
      *
      * @see ArrayAccess
      */
@@ -151,7 +152,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Returns the SimpleCrud instance associated with this entity
+     * Returns the SimpleCrud instance associated with this entity.
      *
      * @return SimpleCrud
      */
@@ -161,7 +162,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Returns an attribute
+     * Returns an attribute.
      *
      * @param string $name
      *
@@ -173,7 +174,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Defines the Row class used by this entity
+     * Defines the Row class used by this entity.
      *
      * @param Row $row
      */
@@ -183,7 +184,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Defines the RowCollection class used by this entity
+     * Defines the RowCollection class used by this entity.
      *
      * @param RowCollection $collection
      */
@@ -195,8 +196,8 @@ class Entity implements ArrayAccess
     /**
      * Creates a new row instance.
      *
-     * @param array   $data               The values of the row
-     * @param boolean $onlyDeclaredFields Set true to discard values in undeclared fields
+     * @param array $data               The values of the row
+     * @param bool  $onlyDeclaredFields Set true to discard values in undeclared fields
      *
      * @return Row
      */
@@ -232,8 +233,8 @@ class Entity implements ArrayAccess
     /**
      * Default data converter/validator from database.
      *
-     * @param array   $data The values before insert to database
-     * @param boolean $new  True for inserts, false for updates
+     * @param array $data The values before insert to database
+     * @param bool  $new  True for inserts, false for updates
      */
     public function dataToDatabase(array $data, $new)
     {
@@ -251,7 +252,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Prepares the data from the result of a database selection
+     * Prepares the data from the result of a database selection.
      *
      * @param array $data
      *
@@ -281,7 +282,7 @@ class Entity implements ArrayAccess
         }
 
         if (!is_array($data = $this->dataFromDatabase($data))) {
-            throw new SimpleCrudException("Data not valid");
+            throw new SimpleCrudException('Data not valid');
         }
 
         //handle left-joins
@@ -305,11 +306,11 @@ class Entity implements ArrayAccess
     public function prepareDataToDatabase(array $data, $new)
     {
         if (!is_array($data = $this->dataToDatabase($data, $new))) {
-            throw new SimpleCrudException("Data not valid");
+            throw new SimpleCrudException('Data not valid');
         }
 
         if (array_diff_key($data, $this->fields)) {
-            throw new SimpleCrudException("Invalid fields");
+            throw new SimpleCrudException('Invalid fields');
         }
 
         //Transform data before save to database
@@ -325,7 +326,7 @@ class Entity implements ArrayAccess
      *
      * @param Entity|string $entity
      *
-     * @return null|integer
+     * @return null|int
      */
     public function getRelation($entity)
     {
@@ -355,7 +356,7 @@ class Entity implements ArrayAccess
      *
      * @param Entity $entity
      *
-     * @return boolean
+     * @return bool
      */
     public function hasMany(Entity $entity)
     {
@@ -367,7 +368,7 @@ class Entity implements ArrayAccess
      *
      * @param Entity $entity
      *
-     * @return boolean
+     * @return bool
      */
     public function hasOne(Entity $entity)
     {
@@ -379,7 +380,7 @@ class Entity implements ArrayAccess
      *
      * @param Entity $entity
      *
-     * @return boolean
+     * @return bool
      */
     public function hasBridge(Entity $entity)
     {
@@ -387,7 +388,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Returns the entity that works as a bridge between this entity and other
+     * Returns the entity that works as a bridge between this entity and other.
      *
      * @param Entity $entity
      *

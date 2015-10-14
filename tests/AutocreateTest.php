@@ -1,4 +1,5 @@
 <?php
+
 use SimpleCrud\SimpleCrud;
 
 class AutocreateTest extends PHPUnit_Framework_TestCase

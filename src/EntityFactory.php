@@ -1,4 +1,5 @@
 <?php
+
 namespace SimpleCrud;
 
 /**
@@ -38,7 +39,7 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Set the namespace for the entities classes
+     * Set the namespace for the entities classes.
      *
      * @param string $namespace
      *
@@ -52,7 +53,7 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Set the queryFactory instance used by the entities
+     * Set the queryFactory instance used by the entities.
      *
      * @param QueryFactory $queryFactory
      *
@@ -66,7 +67,7 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Set the fieldFactory instance used by the entities
+     * Set the fieldFactory instance used by the entities.
      *
      * @param FieldFactory $fieldFactory
      *
@@ -80,7 +81,7 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Set whether the entities are autocreated or not
+     * Set whether the entities are autocreated or not.
      *
      * @param string $entity Default class used by the entities
      *
@@ -132,7 +133,7 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Returns all tables in the database
+     * Returns all tables in the database.
      *
      * @return array
      */
