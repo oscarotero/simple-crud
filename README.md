@@ -7,7 +7,7 @@ PHP library to (Create, Read, Update, Delete) in Mysql/Sqlite databases with zer
 
 ## Naming conventions:
 
-This library relies in some conventions for simplify (or avoid) the configuration.
+This library relies in some conventions to avoid configuration.
 
 * Table names SHOULD be in [singular](http://stackoverflow.com/a/5841297) and **camelCase**
 * Fields names SHOULD be in **singular** and **camelCase**
@@ -20,11 +20,11 @@ This library relies in some conventions for simplify (or avoid) the configuratio
 SimpleCrud has the following classes:
 
 * **SimpleCrud:** Manage the database connection, execute the queries and create all entities. 
-* **Query:** Creates the database queries needed. Currently there are support for mysql and sqlite
-* **Entity:** Manages an entity (database table).
-* **Row:** Stores/modifies the data of a row
+* **Query:** Creates the database queries. Currently there are adapters for mysql and sqlite
+* **Entity:** Manages a database table
+* **Row:** Stores/modifies a row
 * **RowCollection:** Is a collection of rows
-* **Fields:** Converts the values before save into the database (for example: convert datetime values to be compatible with mysql)
+* **Fields:** Used to modify the values from/to the database according with its format
 
 ## Usage example
 
@@ -37,6 +37,7 @@ CREATE TABLE "post" (
     `category_id` INTEGER,
     `pubdate`   TEXT,
     `type`  TEXT,
+
     FOREIGN KEY(`category_id`) REFERENCES category(id)
 );
 
@@ -54,23 +55,24 @@ CREATE TABLE `post_tag` (
     `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `tag_id`   INTEGER NOT NULL,
     `post_id`  INTEGER NOT NULL,
+
     FOREIGN KEY(`tag_id`) REFERENCES tag(id),
     FOREIGN KEY(`post_id`) REFERENCES post(id)
 );
 ```
 
-To use the database, just create an instance of `SimpleCrud\SimpleCrud` passing the `PDO` connection.
+To get starting, create an instance of `SimpleCrud\SimpleCrud` passing the `PDO` connection.
 
 ```php
 use SimpleCrud\SimpleCrud;
 
 $db = new SimpleCrud($pdo);
 
-//To get any entity, just use the properties, they will be created on demand:
+//Get any entity, using magic properties, they will be created on demand:
 $post = $db->post;
 ```
 
-SimpleCrud can detect automatically all relationship between tables using the naming conventions described above. To do that, uses the `foreignKey` know the relation type `RELATION_HAS_ONE | RELATION_HAS_MANY | RELATION_HAS_BRIDGE`. For example: the foreignKey for the table "category" is "category_id" and the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category (`RELATION_HAS_ONE`).
+SimpleCrud detects automatically all relationships between the tables using the naming conventions described above. For example the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category (`RELATION_HAS_ONE`).
 
 
 ### Using the library
@@ -104,23 +106,24 @@ $db->posts[] = [
 ];
 ```
 
-#### Use queries:
+#### Database queries:
 
-Each time you use a method like `select()`, `update()`, `count()`, `delete()`, etc... an instance of a Query class is created. Each query has modifiers like `orderBy()`, `limit()`, etc, and the method `run()` to execute the query and return the result. For example:
+Use magic methods to create database queries. For example `select()`, `update()`, `count()`, `delete()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, and the method `run()` to execute the query and return the result. For example:
 
 ```php
-$query = $db->post->update();
+//create the query
+$updateQuery = $db->post->update();
 
-//modify the query
-$query
+//apply some modifiers
+$updateQuery
     ->data(['title' => 'New title'])
     ->where('id = :id', [':id' => 23])
-    ->limit();
+    ->limit(1);
 
-//you can stringify the query
-echo $query; //UPDATE `posts` ...
+//get the query as string
+echo $updateQuery; //UPDATE `posts` ...
 
-//and run the query
+//execute the query
 $query->run();
 ```
 
@@ -141,7 +144,7 @@ $db->post->delete()
     ->run();
 ```
 
-The `select()` query has a lot of modifiers to add conditions, sort values, limit, etc. It has also the methods `all()` and `one()` to return all results of just the first one:
+The `select()` query has also the methods `all()` and `one()` to return all results (`RowCollection`) of just the first one (`Row`):
 
 ```php
 $posts = $db->post->select()
@@ -154,7 +157,7 @@ $posts = $db->post->select()
 The method `relatedWith()` allows select related data easily:
 
 ```php
-//Select a post by id
+//Get the post id = 23
 $post = $db->post[23];
 
 //Select the category related with this posts
@@ -165,23 +168,27 @@ $category = $db->category->select()
 
 #### Working with rows
 
-When you select data from the database using `one()`, it's saved in a `Row` instance. This class allows read and modify the data:
+The `Row` class allows to read and modify the data of a database row:
 
 ```php
+//get a row
 $post = $db->post->select()->one();
 
-echo $post->title; //Get the post title
+//Get/set the post title
+echo $post->title;
 
 $post->title = 'New title';
 
-$post->save(); //Save the data
+//Update the data into database
+$post->save();
 
-$post->delete(); //remove the row in the database
+//Remove the row in the database
+$post->delete();
 
 //Create a new row (but it's not inserted in the database yet)
 $newPost = $db->post->create(['title' => 'The title']);
 
-//Use an array to edit more values at once
+//Edit the values using an array
 $newPost->set([
     'title' => 'New title',
     'description' => 'Another description'
@@ -192,7 +199,7 @@ $newPost->save(); //Insert the post in the database.
 
 #### Working with collections
 
-If you use `all()` to get the result of a selection, no mather how many rows are selected, you get a `RowCollection` instance (it can be empty, one result or more).
+If you use `all()` to get the result of a selection, you get a `RowCollection` instance with all rows found.
 
 ```php
 $allPosts = $db->post->select()->all();
@@ -202,33 +209,34 @@ foreach ($allPosts as $post) {
 }
 ```
 
-The collection allows to get arrays with the values of a column. For example, to get all titles:
+The collection allows to get arrays with the values of a column. For example:
 
 ```php
-$allPosts->title; //array with all titles of all posts. The keys are the ids
+$allPosts->title; //array with all titles of all posts. It uses the id as key
 ```
 
 #### Fields classes
 
-The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime converts any string or `Datetime` instance to this format. This conversion will be done just before execute the query and won't change the value of the `Row` instance. The available fields are:
+The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
 
-* Boolean: To converts boolean values
-* Field: It's the default field and keeps the value as is.
-* Datetime: Converts a string or Datetime instance to "Y-M-d H:i:s"
-* Date: Converts a string or Datetime instance to "Y-M-d"
-* Set: an array of values to a string. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
+* Boolean: To manage boolean values
+* Field: It's the default field and doesn't transform the value
+* Datetime: To manage datetime values
+* Date: To manage date values
+* Set: Manages multiple values. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
 * Integer: Converts values to integers or NULL
 * Float: Converts values to float numbers or NULL
-* Serializable: To store arrays or any other serializable data structure
+* Serializable: To store arrays or any other serializable data structure as strings.
 
-If the fields in the entity are not specified, they will be asigned automatically according with the field type in the database. There is also a naming convention to set formats automatically to fields with the following names:
+The Field classes are asigned automatically according with the field type in the database. There are also "special names" that have specific types asigned:
 
-* Integer format will be asigned to fields named `id` or any field ending by `_id`.
-* Datetime format will be asigned to fields named `pubdate`, `createdAt` and `updatedAt`.
-* Boolean format will be asigned to fields named `active`
+* Integer format will be asigned to any field named `id` or ending by `_id`.
+* Datetime format will be asigned to any field named `pubdate`, `createdAt` and `updatedAt`.
+* Boolean format will be asigned to any field named `active`
+
+Example:
 
 ```php
-//Create a post. We don't care about the Datetime
 $post = $db->post->create([
     'title' => 'My post',
     'text' => 'My post text',
@@ -238,11 +246,9 @@ $post = $db->post->create([
 $post->save();
 ```
 
-You can create more "smart names". This will be explained latter.
-
 ### Lazy loads
 
-Both `Row` and `RowCollection` can load automatically the related rows if you call them by the entity name:
+Both `Row` and `RowCollection` can load automatically other related data:
 
 ```php
 //Get post id=34
@@ -253,9 +259,6 @@ $category = $post->category;
 
 //This is equivalent to:
 $category = $db->category->select()->relatedWith($post)->one();
-
-//To get the query instance (because you want to modify the selection):
-$category = $post->select('category')->one();
 ```
 
 This allows make awesome (and dangerous :D) things like this:
@@ -269,9 +272,25 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
+### Solving the n+1 problem
+
+The [n+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) can be solved in the following way:
+
+```php
+$posts = $db->post->select()->all();
+
+//preload all categories
+$posts->categories;
+
+//now you can iterate with the posts
+foreach ($posts as $post) {
+    echo $post->category;
+}
+```
+
 ## Customization
 
-SimpleCrud uses factory classes to create instances of entities, queries and fields. You can configure or create your own factories to customize how these instances are created. 
+SimpleCrud uses factory classes to create instances of entities, queries and fields. You can configure or create other factories to customize how these instances are created. 
 
 ### EntityFactory
 
@@ -328,7 +347,7 @@ $db = new SimpleCrud\SimpleCrud($pdo, $entityFactory);
 
 ### FieldFactory
 
-This factory creates intances of the fields uses by the entities to convert the values. By default uses `SimpleCrud\FieldFactory` but you can create your own factory extending `SimpleCrud\FieldFactoryInstance`. The default FieldFactory has the following options:
+This factory creates intances of the fields used by the entities to convert the values. By default uses `SimpleCrud\FieldFactory` but you can create your own factory extending `SimpleCrud\FieldFactoryInstance`. The default FieldFactory has the following options:
 
 * `addNamespace` Add more namespaces where find more field classes.
 * `addSmartName` Add more smart names to asign automatically types to specific field names.
@@ -363,14 +382,6 @@ use SimpleCrud\Entity;
 
 class Posts extends Entity
 {
-    public $fields = [
-        'id' => 'Integer',
-        'createdAt' => 'Datetime',
-        'updatedAt' => 'Datetime',
-        'active' => 'Boolean',
-        'text' => 'Field',
-    ];
-
     public function getLatests()
     {
         return $this->select()
@@ -427,7 +438,7 @@ class Posts extends Entity
 
 ### Customize Row and RowCollection
 
-The Entity has the method `init` that you can use to initialize things. It's called at the end of the `__construct`. For example, you can use your own `Row` and `RowCollection` classes or customize them adding more methods:
+The Entity class has the method `init` that you can use to initialize things. It's called at the end of the `__construct`. For example, you can use your own `Row` and `RowCollection` classes or customize them adding more methods:
 
 ```php
 namespace MyModels;
@@ -438,12 +449,12 @@ class Posts extends Entity
 {
     public function init()
     {
-        //Add some methods to collections
+        //Add some methods to RowCollections
         $this->collection->registerMethod('sumIds', function ($collection) {
             return array_sum($collection->id);
         });
 
-        //Add some properties to row
+        //Add some properties to Rows
         $this->row->registerProperty('titleLowerCase', function ($row) {
             return strtolower($row->title);
         });
@@ -554,14 +565,13 @@ $db = new SimpleCrud\SimpleCrud($pdo, $entityFactory);
 $posts = $db->post->select()
     ->isActive()
     ->olderThan(new Datetime('now'))
-    ->orderBy('id DESC')
     ->all();
 ```
 
 
 ### Shared attributes
 
-Sometimes, you want to share some values across all entities, rows and collections. For example a language configuration, the basepath where the files are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
+Sometimes, you want to share some values across all entities, rows and collections. For example a language configuration, the basepath where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
 
 ```php
 //Save an attribute, for example, the language code:
