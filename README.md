@@ -533,7 +533,7 @@ To extend the Select query with custom methods:
 ```php
 namespace MyModels\Queries;
 
-use SimpleCrud\Queries\Select as BaseSelect;
+use SimpleCrud\Queries\Mysql\Select as BaseSelect;
 
 class Select extends BaseSelect
 {
@@ -556,7 +556,7 @@ $entityFactory = new SimpleCrud\EntityFactory();
 $queryFactory = new SimpleCrud\QueryFactory();
 
 //Add the namespace of my custom queries
-$fieldFactory->addNamespace('MyModels\\Queries\\');
+$queryFactory->addNamespace('MyModels\\Queries\\');
 
 $entityFactory->setQueryFactory($queryFactory);
 
