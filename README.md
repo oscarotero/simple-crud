@@ -217,7 +217,7 @@ $allPosts->title; //array with all titles of all posts. It uses the id as key
 
 #### Fields classes
 
-The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
+The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
 
 * Boolean: To manage boolean values
 * Field: It's the default field and doesn't transform the value
@@ -231,8 +231,8 @@ The purpose of the `SimpleCrud\Fields` classes is to convert the data between th
 The Field classes are asigned automatically according with the field type in the database. There are also "special names" that have specific types asigned:
 
 * Integer format will be asigned to any field named `id` or ending by `_id`.
-* Datetime format will be asigned to any field named `pubdate`, `createdAt` and `updatedAt`.
-* Boolean format will be asigned to any field named `active`
+* Datetime format will be asigned to any field named `pubdate` or ending by `At` (for example: `createdAt`, `updatedAt` etc).
+* Boolean format will be asigned to any field named `active` or starting by `is` or `has` (for example: `isActive`, `hasContent`, etc)
 
 Example:
 
