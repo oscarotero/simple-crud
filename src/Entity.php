@@ -7,12 +7,12 @@ use ArrayAccess;
 /**
  * Manages a database entity (table).
  *
- * @method QueryInterface count()
- * @method QueryInterface delete()
- * @method QueryInterface insert()
- * @method QueryInterface select()
- * @method QueryInterface sum()
- * @method QueryInterface update()
+ * @method Queries\Mysql\Count  count()
+ * @method Queries\Mysql\Delete delete()
+ * @method Queries\Mysql\Insert insert()
+ * @method Queries\Mysql\Select select()
+ * @method Queries\Mysql\Sum    sum()
+ * @method Queries\Mysql\Update update()
  */
 class Entity implements ArrayAccess
 {
