@@ -18,15 +18,16 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('SimpleCrud\\Entity', $post);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDb());
 
-        $this->assertCount(5, $post->fields);
+        $this->assertCount(6, $post->fields);
 
         $this->assertEquals('post', $post->name);
         $this->assertEquals('post_id', $post->foreignKey);
 
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post->fields['id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post->fields['id']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post->fields['title']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post->fields['category_id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post->fields['pubdate']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post->fields['category_id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Datetime', $post->fields['publishedAt']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Boolean', $post->fields['isActive']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post->fields['type']);
     }
 
@@ -42,7 +43,7 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('category', $category->name);
         $this->assertEquals('category_id', $category->foreignKey);
 
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $category->fields['id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $category->fields['id']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $category->fields['name']);
     }
 
@@ -58,7 +59,7 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('tag', $tag->name);
         $this->assertEquals('tag_id', $tag->foreignKey);
 
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tag->fields['id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $tag->fields['id']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tag->fields['name']);
     }
 
@@ -74,8 +75,8 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('post_tag', $post_tag->name);
         $this->assertEquals('post_tag_id', $post_tag->foreignKey);
 
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post_tag->fields['id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post_tag->fields['tag_id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post_tag->fields['post_id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['tag_id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['post_id']);
     }
 }

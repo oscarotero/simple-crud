@@ -21,7 +21,7 @@ class QueriesTest extends PHPUnit_Framework_TestCase
             ->offset(3)
             ->orderBy('title');
 
-        $this->assertEquals((string) $query, 'SELECT `post`.`id`, `post`.`title`, `post`.`category_id`, `post`.`pubdate`, `post`.`type` FROM `post` WHERE (title NOT NULL) AND (type = 1 OR type = 2) AND (`post`.`category_id` = :category_id) ORDER BY title LIMIT 3, 1');
+        $this->assertEquals((string) $query, 'SELECT `post`.`id`, `post`.`title`, `post`.`category_id`, `post`.`publishedAt`, `post`.`isActive`, `post`.`type` FROM `post` WHERE (title NOT NULL) AND (type = 1 OR type = 2) AND (`post`.`category_id` = :category_id) ORDER BY title LIMIT 3, 1');
     }
 
     public function testInsert()
@@ -29,15 +29,15 @@ class QueriesTest extends PHPUnit_Framework_TestCase
         $query = $this->db->post->insert()
             ->data([
                 'title' => 'Hello world',
-                'pubdate' => new Datetime(),
+                'publishedAt' => new Datetime(),
                 'type' => 2,
             ]);
 
-        $this->assertEquals((string) $query, 'INSERT INTO `post` (`title`, `pubdate`, `type`) VALUES (:title, :pubdate, :type)');
+        $this->assertEquals((string) $query, 'INSERT INTO `post` (`title`, `publishedAt`, `type`) VALUES (:title, :publishedAt, :type)');
 
         $query->duplications();
 
-        $this->assertEquals((string) $query, 'INSERT OR REPLACE INTO `post` (`title`, `pubdate`, `type`) VALUES (:title, :pubdate, :type)');
+        $this->assertEquals((string) $query, 'INSERT OR REPLACE INTO `post` (`title`, `publishedAt`, `type`) VALUES (:title, :publishedAt, :type)');
     }
 
     public function testUpdate()
@@ -45,13 +45,13 @@ class QueriesTest extends PHPUnit_Framework_TestCase
         $query = $this->db->post->update()
             ->data([
                 'title' => 'Hello world',
-                'pubdate' => new Datetime(),
+                'publishedAt' => new Datetime(),
                 'type' => 2,
             ])
             ->where('id = 3')
             ->limit(1, true);
 
-        $this->assertEquals((string) $query, 'UPDATE `post` SET `title` = :__title, `pubdate` = :__pubdate, `type` = :__type WHERE (id = 3) LIMIT 1');
+        $this->assertEquals((string) $query, 'UPDATE `post` SET `title` = :__title, `publishedAt` = :__publishedAt, `type` = :__type WHERE (id = 3) LIMIT 1');
     }
 
     public function testDelete()

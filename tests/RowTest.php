@@ -25,13 +25,13 @@ class RowTest extends PHPUnit_Framework_TestCase
         $this->assertNull($post->id);
         $this->assertNull($post->title);
         $this->assertNull($post->categories_id);
-        $this->assertNull($post->pubdate);
+        $this->assertNull($post->publishedAt);
         $this->assertNull($post->type);
 
         $this->assertNull($post->get('id'));
         $this->assertNull($post->get('title'));
         $this->assertNull($post->get('categories_id'));
-        $this->assertNull($post->get('pubdate'));
+        $this->assertNull($post->get('publishedAt'));
         $this->assertNull($post->get('type'));
 
         $post->title = 'Hello world';

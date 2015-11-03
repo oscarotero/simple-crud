@@ -12,7 +12,7 @@ class FieldFactory implements FieldFactoryInterface
     protected $defaultType = 'SimpleCrud\\Fields\\Field';
     protected $smartNames = [
         'Boolean' => ['active'],
-        'Datetime' => ['pubdate', 'createdAt', 'updatedAt'],
+        'Datetime' => ['pubdate'],
         'Integer' => ['id'],
     ];
 
@@ -102,6 +102,16 @@ class FieldFactory implements FieldFactoryInterface
 
         if (substr($name, -3) === '_id') {
             return 'Integer';
+        }
+
+        //Begin with is|has (for example: isActive, hasContent)
+        if (preg_match('/^(is|has)[A-Z]/', $name)) {
+            return 'Boolean';
+        }
+
+        //End with At (for example: publishedAt)
+        if (preg_match('/[a-z]At$/', $name)) {
+            return 'Datetime';
         }
     }
 
