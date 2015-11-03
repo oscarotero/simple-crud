@@ -528,14 +528,14 @@ $db->session->insert()
 
 ### Create your own custom queries
 
-Because it's the same than for Fields, let's extend a Select query with custom methods:
+To extend the Select query with custom methods:
 
 ```php
 namespace MyModels\Queries;
 
-use SimpleCrud\Queries\Select;
+use SimpleCrud\Queries\Mysql\Select as BaseSelect;
 
-class Select extends Select
+class Select extends BaseSelect
 {
     public function isActive()
     {
@@ -547,6 +547,7 @@ class Select extends Select
         return $this->where('createdAt < :date', [':date' => $date->format('Y-m-d H:i:s')]);
     }
 }
+```
 
 Now to use it:
 
@@ -555,7 +556,7 @@ $entityFactory = new SimpleCrud\EntityFactory();
 $queryFactory = new SimpleCrud\QueryFactory();
 
 //Add the namespace of my custom queries
-$fieldFactory->addNamespace('MyModels\\Queries\\');
+$queryFactory->addNamespace('MyModels\\Queries\\');
 
 $entityFactory->setQueryFactory($queryFactory);
 
