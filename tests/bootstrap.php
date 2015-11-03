@@ -55,6 +55,14 @@ EOT
         );
 EOT
 );
+    //View
+    $pdo->exec(<<<EOT
+        CREATE VIEW `tagsCounter` AS
+            SELECT `tag_id`, count(*) `total`
+            FROM `post_tag`
+            GROUP BY `tag_id`
+EOT
+);
 
     $pdo->commit();
 

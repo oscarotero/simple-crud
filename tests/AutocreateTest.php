@@ -79,4 +79,20 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['tag_id']);
         $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['post_id']);
     }
+
+    public function testTagsCounter()
+    {
+        $tagsCounter = $this->db->tagsCounter;
+
+        $this->assertInstanceOf('SimpleCrud\\Entity', $tagsCounter);
+        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $tagsCounter->getDb());
+
+        $this->assertCount(2, $tagsCounter->fields);
+
+        $this->assertEquals('tagsCounter', $tagsCounter->name);
+        $this->assertEquals('tagsCounter_id', $tagsCounter->foreignKey);
+
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $tagsCounter->fields['tag_id']);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tagsCounter->fields['total']);
+    }
 }

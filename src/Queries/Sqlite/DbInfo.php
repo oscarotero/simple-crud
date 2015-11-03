@@ -19,7 +19,7 @@ class DbInfo
      */
     public static function getTables(SimpleCrud $db)
     {
-        return $db->execute('SELECT name FROM sqlite_master WHERE type="table"')->fetchAll(PDO::FETCH_COLUMN, 0);
+        return $db->execute('SELECT name FROM sqlite_master WHERE type="table" OR type="view"')->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     /**

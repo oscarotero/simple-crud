@@ -40,11 +40,9 @@ class Entity implements ArrayAccess
         $this->setRow(new Row($this));
         $this->setCollection(new RowCollection($this));
 
-        if (empty($this->fields)) {
-            $this->fields = $this->db->getFields($this->name);
-        }
+        $fields = $this->db->getFields($this->name);
 
-        foreach ($this->fields as $name => $type) {
+        foreach ($fields as $name => $type) {
             if (is_int($name)) {
                 $this->setField($type);
             } else {
@@ -67,10 +65,12 @@ class Entity implements ArrayAccess
      *
      * @param string      $name
      * @param string|null $type
+     * 
+     * @return FieldInterface
      */
     protected function setField($name, $type = null)
     {
-        $this->fields[$name] = $this->fieldFactory->get($name, $type);
+        return $this->fields[$name] = $this->fieldFactory->get($name, $type);
     }
 
     /**
