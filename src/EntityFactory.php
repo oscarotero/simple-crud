@@ -83,7 +83,7 @@ class EntityFactory implements EntityFactoryInterface
     /**
      * Set whether the entities are autocreated or not.
      *
-     * @param string $entity Default class used by the entities
+     * @param string $defaultEntity Default class used by the entities
      *
      * @return self
      */

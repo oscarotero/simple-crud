@@ -6,6 +6,13 @@ use ArrayAccess;
 
 /**
  * Manages a database entity (table).
+ *
+ * @method QueryInterface count()
+ * @method QueryInterface delete()
+ * @method QueryInterface insert()
+ * @method QueryInterface select()
+ * @method QueryInterface sum()
+ * @method QueryInterface update()
  */
 class Entity implements ArrayAccess
 {
@@ -196,8 +203,7 @@ class Entity implements ArrayAccess
     /**
      * Creates a new row instance.
      *
-     * @param array $data               The values of the row
-     * @param bool  $onlyDeclaredFields Set true to discard values in undeclared fields
+     * @param array $data The values of the row
      *
      * @return Row
      */
