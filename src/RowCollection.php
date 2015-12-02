@@ -321,27 +321,23 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     /**
      * Filter the rows by a value.
      *
-     * @param string $name  The value name
-     * @param mixed  $value The value to filter
-     * @param bool   $first Set true to return only the first row found
+     * @param string $name   The value name
+     * @param mixed  $value  The value to filter
+     * @param bool   $strict Strict mode
      *
-     * @return null|RowInterface The rows found or null if no value is found and $first parameter is true
+     * @return RowInterface The rows found
      */
-    public function filter($name, $value, $first = false)
+    public function filter($name, $value, $strict = true)
     {
         $rows = [];
 
         foreach ($this->rows as $row) {
-            if (($row->$name === $value) || (is_array($value) && in_array($row->$name, $value, true))) {
-                if ($first === true) {
-                    return $row;
-                }
-
+            if (($row->$name === $value) || (!$strict && $row->$name == $value) || (is_array($value) && in_array($row->$name, $value, $strict))) {
                 $rows[] = $row;
             }
         }
 
-        return $first ? null : $this->entity->createCollection($rows);
+        return $this->entity->createCollection($rows);
     }
 
     /**
