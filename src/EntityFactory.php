@@ -53,7 +53,7 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Set the queryFactory instance used by the entities.
+     * Set the QueryFactory instance used by the entities.
      *
      * @param QueryFactory $queryFactory
      *
@@ -67,7 +67,17 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Set the fieldFactory instance used by the entities.
+     * Returns the QueryFactory instance used by the entities.
+     *
+     * @return QueryFactory
+     */
+    public function getQueryFactory()
+    {
+        return $this->queryFactory;
+    }
+
+    /**
+     * Set the FieldFactory instance used by the entities.
      *
      * @param FieldFactory $fieldFactory
      *
@@ -78,6 +88,16 @@ class EntityFactory implements EntityFactoryInterface
         $this->fieldFactory = $fieldFactory;
 
         return $this;
+    }
+
+    /**
+     * Returns the FieldFactory instance used by the entities.
+     *
+     * @return FieldFactory
+     */
+    public function getFieldFactory(FieldFactory $fieldFactory)
+    {
+        return $this->fieldFactory;
     }
 
     /**

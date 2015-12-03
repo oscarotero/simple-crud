@@ -21,15 +21,32 @@ class SimpleCrud
      */
     public function __construct(PDO $connection, EntityFactory $entityFactory = null)
     {
-        if ($entityFactory === null) {
-            $entityFactory = (new EntityFactory())->setAutocreate();
-        }
-
-        $entityFactory->setDb($this);
-        $this->entityFactory = $entityFactory;
-
         $this->connection = $connection;
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $this->setEntityFactory($entityFactory ?: (new EntityFactory())->setAutocreate());
+    }
+
+    /**
+     * Set the EntityFactory instance used to create all entities.
+     *
+     * @param EntityFactory $entityFactory
+     */
+    public function setEntityFactory(EntityFactory $entityFactory)
+    {
+        $entityFactory->setDb($this);
+
+        $this->entityFactory = $entityFactory;
+    }
+
+    /**
+     * Returns the EntityFactory instance used.
+     *
+     * @return EntityFactory
+     */
+    public function getEntityFactory()
+    {
+        return $this->entityFactory;
     }
 
     /**
