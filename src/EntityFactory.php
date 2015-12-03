@@ -95,7 +95,7 @@ class EntityFactory implements EntityFactoryInterface
      *
      * @return FieldFactory
      */
-    public function getFieldFactory(FieldFactory $fieldFactory)
+    public function getFieldFactory()
     {
         return $this->fieldFactory;
     }
