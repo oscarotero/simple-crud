@@ -10,6 +10,9 @@ class FieldFactory implements FieldFactoryInterface
     protected $cachedTypes = [];
     protected $namespaces = ['SimpleCrud\\Fields\\'];
     protected $defaultType = 'SimpleCrud\\Fields\\Field';
+    protected $smartTypes = [
+        'Decimal' => ['float'],
+    ];
     protected $smartNames = [
         'Boolean' => ['active'],
         'Datetime' => ['pubdate'],
@@ -122,9 +125,16 @@ class FieldFactory implements FieldFactoryInterface
      *
      * @return string|null
      */
-    protected function getClass($name)
+    protected function getClass($type)
     {
-        $name = ucfirst($name);
+        foreach ($this->smartTypes as $smartType => $types) {
+            if (in_array($type, $types, true)) {
+                $type = $smartType;
+                break;
+            }
+        }
+
+        $name = ucfirst($type);
 
         foreach ($this->namespaces as $namespace) {
             $class = $namespace.$name;

@@ -5,7 +5,7 @@ namespace SimpleCrud\Fields;
 /**
  * To normalize float values.
  */
-class Float extends Integer
+class Decimal extends Integer
 {
     /**
      * Normalize a float.
