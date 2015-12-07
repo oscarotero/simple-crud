@@ -119,9 +119,9 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * Retrieves a class name if exists.
+     * Retrieves the class name for a specific type if exists.
      *
-     * @param string $name
+     * @param string $type
      *
      * @return string|null
      */
