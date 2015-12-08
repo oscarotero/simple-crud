@@ -325,7 +325,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      * @param mixed  $value  The value to filter
      * @param bool   $strict Strict mode
      *
-     * @return RowInterface The rows found
+     * @return RowCollection
      */
     public function filter($name, $value, $strict = true)
     {
@@ -338,6 +338,24 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
         }
 
         return $this->entity->createCollection($rows);
+    }
+
+    /**
+     * Find a row by a value.
+     *
+     * @param string $name   The value name
+     * @param mixed  $value  The value to filter
+     * @param bool   $strict Strict mode
+     *
+     * @return Row|null The rows found
+     */
+    public function find($name, $value, $strict = true)
+    {
+        foreach ($this->rows as $row) {
+            if (($row->$name === $value) || (!$strict && $row->$name == $value) || (is_array($value) && in_array($row->$name, $value, $strict))) {
+                return $row;
+            }
+        }
     }
 
     /**
