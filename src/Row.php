@@ -69,7 +69,7 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function __isset($name)
     {
-        return !empty($this->values[$name]);
+        return !empty($this->values[$name]) && !($this->values[$name] instanceof NullValue);
     }
 
     /**
