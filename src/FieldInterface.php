@@ -8,6 +8,11 @@ namespace SimpleCrud;
 interface FieldInterface
 {
     /**
+     * @param Entity $entity
+     */
+    public function __construct(Entity $entity);
+
+    /**
      * Set the configuration of this field
      *
      * @param array $config

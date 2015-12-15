@@ -3,13 +3,23 @@
 namespace SimpleCrud\Fields;
 
 use SimpleCrud\FieldInterface;
+use SimpleCrud\Entity;
 
 /**
  * Generic field. The data won't be converted.
  */
 class Field implements FieldInterface
 {
+    protected $entity;
     protected $config = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    public function __construct(Entity $entity)
+    {
+        $this->entity = $entity;
+    }
 
     /**
      * {@inheritdoc}

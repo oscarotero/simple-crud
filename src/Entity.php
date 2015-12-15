@@ -77,7 +77,7 @@ class Entity implements ArrayAccess
      */
     protected function setField($name, $type = null)
     {
-        return $this->fields[$name] = $this->fieldFactory->get($name, $type);
+        return $this->fields[$name] = $this->fieldFactory->get($this, $name, $type);
     }
 
     /**
