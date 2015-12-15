@@ -7,6 +7,10 @@ namespace SimpleCrud\Fields;
  */
 class Json extends Field
 {
+    protected $config = [
+        'assoc' => true
+    ];
+
     /**
      * {@inheritdoc}
      */
@@ -24,6 +28,6 @@ class Json extends Field
      */
     public function dataFromDatabase($data)
     {
-        return empty($data) ? [] : json_decode($data, true);
+        return empty($data) ? [] : json_decode($data, $this->config['assoc']);
     }
 }
