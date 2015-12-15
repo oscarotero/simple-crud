@@ -8,6 +8,20 @@ namespace SimpleCrud;
 interface FieldInterface
 {
     /**
+     * Set the configuration of this field
+     *
+     * @param array $config
+     */
+    public function setConfig(array $config);
+
+    /**
+     * Returns configuration of this field
+     *
+     * @return array
+     */
+    public function getConfig();
+
+    /**
      * Convert the data before insert into the database.
      *
      * @param mixed $data

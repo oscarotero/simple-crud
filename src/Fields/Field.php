@@ -9,6 +9,24 @@ use SimpleCrud\FieldInterface;
  */
 class Field implements FieldInterface
 {
+    protected $config = [];
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setConfig(array $config)
+    {
+        $this->config = $config;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getConfig()
+    {
+        return $this->config;
+    }
+
     /**
      * {@inheritdoc}
      */
