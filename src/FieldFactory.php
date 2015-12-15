@@ -57,7 +57,7 @@ class FieldFactory implements FieldFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function get(Entity $entity, $name, $type = null)
+    public function get(Entity $entity, $name, $type = null, array $config = null)
     {
         try {
             if (($smartType = $this->getTypeByName($name))) {
@@ -68,7 +68,7 @@ class FieldFactory implements FieldFactoryInterface
                 if (isset($this->cachedTypes[$type])) {
                     $class = $this->cachedTypes[$type];
 
-                    return new $class($entity);
+                    return new $class($entity, $config);
                 }
 
                 $class = $this->getClass($type);
@@ -76,13 +76,13 @@ class FieldFactory implements FieldFactoryInterface
                 if (!empty($class)) {
                     $this->cachedTypes[$type] = $class;
 
-                    return new $class($entity);
+                    return new $class($entity, $config);
                 }
             }
 
             $class = $this->cachedTypes[$type] = $this->defaultType;
 
-            return new $class($entity);
+            return new $class($entity, $config);
         } catch (\Exception $exception) {
             throw new SimpleCrudException("Error getting the '{$type}' field", 0, $exception);
         }

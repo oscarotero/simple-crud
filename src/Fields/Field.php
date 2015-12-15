@@ -16,25 +16,13 @@ class Field implements FieldInterface
     /**
      * {@inheritdoc}
      */
-    public function __construct(Entity $entity)
+    public function __construct(Entity $entity, array $config = null)
     {
         $this->entity = $entity;
-    }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function setConfig(array $config)
-    {
-        $this->config = $config;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getConfig()
-    {
-        return $this->config;
+        if ($config !== null) {
+            $this->config = $config;
+        }
     }
 
     /**
