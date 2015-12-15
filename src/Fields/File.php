@@ -5,12 +5,12 @@ namespace SimpleCrud\Fields;
 use RuntimeException;
 
 /**
- * To save files
+ * To save files.
  */
 class File extends Field
 {
     protected $config = [
-        'uploader' => null
+        'uploader' => null,
     ];
 
     /**
@@ -26,14 +26,14 @@ class File extends Field
     }
 
     /**
-     * Upload the file and return the value
+     * Upload the file and return the value.
      */
     private function upload($file)
     {
         $uploader = $this->config['uploader'];
 
         if (empty($uploader) || !is_callable($uploader)) {
-            throw new RuntimeException("Not valid uploader");
+            throw new RuntimeException('Not valid uploader');
         }
 
         return $uploader($file);

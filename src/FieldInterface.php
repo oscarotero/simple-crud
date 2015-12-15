@@ -13,14 +13,14 @@ interface FieldInterface
     public function __construct(Entity $entity);
 
     /**
-     * Set the configuration of this field
+     * Set the configuration of this field.
      *
      * @param array $config
      */
     public function setConfig(array $config);
 
     /**
-     * Returns configuration of this field
+     * Returns configuration of this field.
      *
      * @return array
      */

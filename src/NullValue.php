@@ -6,7 +6,7 @@ use JsonSerializable;
 
 /**
  * Represent a null value.
- * Used to allow chaining even when the result is null
+ * Used to allow chaining even when the result is null.
  */
 class NullValue implements JsonSerializable
 {
@@ -17,7 +17,7 @@ class NullValue implements JsonSerializable
      */
     public function __get($name)
     {
-        return new NullValue();
+        return new self();
     }
 
     /**
@@ -28,7 +28,7 @@ class NullValue implements JsonSerializable
      */
     public function __set($name, $value)
     {
-        throw new \Exception("No values can be stored in a RowNull");
+        throw new \Exception('No values can be stored in a RowNull');
     }
 
     /**
@@ -50,7 +50,7 @@ class NullValue implements JsonSerializable
      */
     public function __toString()
     {
-        return "";
+        return '';
     }
 
     /**
@@ -60,6 +60,6 @@ class NullValue implements JsonSerializable
      */
     public function jsonSerialize()
     {
-        return null;
+        return;
     }
 }
