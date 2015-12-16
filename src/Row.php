@@ -69,7 +69,9 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function __isset($name)
     {
-        return isset($this->values[$name]) && !($this->values[$name] instanceof NullValue);
+        $value = static::__get($name);
+
+        return isset($value) && !($value instanceof NullValue);
     }
 
     /**
@@ -158,7 +160,7 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Return whether a value is defined or not.
+     * Return whether a value is already defined or not.
      *
      * @param string $name
      *
