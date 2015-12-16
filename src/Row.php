@@ -61,7 +61,7 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to check if a property is defined or is empty.
+     * Magic method to check if a property is defined or not
      *
      * @param string $name Property name
      *
@@ -69,7 +69,7 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function __isset($name)
     {
-        return !empty($this->values[$name]) && !($this->values[$name] instanceof NullValue);
+        return isset($this->values[$name]) && !($this->values[$name] instanceof NullValue);
     }
 
     /**
@@ -166,7 +166,7 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function has($name)
     {
-        return array_key_exists($name, $this->values);
+        return array_key_exists($name, $this->values) && !($this->values[$name] instanceof NullValue);
     }
 
     /**
