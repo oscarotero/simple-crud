@@ -107,8 +107,8 @@ class FieldFactory implements FieldFactoryInterface
             return 'Integer';
         }
 
-        //Begin with is|has (for example: isActive, hasContent)
-        if (preg_match('/^(is|has)[A-Z]/', $name)) {
+        //Begin with is|in|has (for example: isActive, inHome, hasContent)
+        if (preg_match('/^(is|in|has)[A-Z]/', $name)) {
             return 'Boolean';
         }
 

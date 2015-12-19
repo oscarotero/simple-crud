@@ -232,7 +232,7 @@ The Field classes are asigned automatically according with the field type in the
 
 * Integer format will be asigned to any field named `id` or ending by `_id`.
 * Datetime format will be asigned to any field named `pubdate` or ending by `At` (for example: `createdAt`, `updatedAt` etc).
-* Boolean format will be asigned to any field named `active` or starting by `is` or `has` (for example: `isActive`, `hasContent`, etc)
+* Boolean format will be asigned to any field named `active` or starting by `is`, `in` or `has` (for example: `isActive`, `inHome`, `hasContent`, etc)
 
 Example:
 
