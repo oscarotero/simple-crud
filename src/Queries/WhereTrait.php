@@ -57,15 +57,23 @@ trait WhereTrait
     /**
      * Adds a WHERE field = :value clause.
      *
-     * @param string    $field
-     * @param int|array $value
+     * @param string         $field
+     * @param null|int|array $value
      *
      * @return self
      */
     public function by($field, $value)
     {
         if (is_array($value)) {
+            if (empty($value)) {
+                return $this->where("`{$this->entity->name}`.`{$field}` IS NULL");
+            }
+
             return $this->where("`{$this->entity->name}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
+        }
+
+        if ($value === null) {
+            return $this->where("`{$this->entity->name}`.`{$field}` IS NULL");
         }
 
         return $this->where("`{$this->entity->name}`.`{$field}` = :{$field}", [":{$field}" => $value]);
@@ -74,7 +82,7 @@ trait WhereTrait
     /**
      * Adds a WHERE id = :id clause.
      *
-     * @param int|array $id
+     * @param null|int|array $id
      *
      * @return self
      */

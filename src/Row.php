@@ -61,7 +61,7 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to check if a property is defined or not
+     * Magic method to check if a property is defined or not.
      *
      * @param string $name Property name
      *
