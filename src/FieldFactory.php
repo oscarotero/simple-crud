@@ -12,6 +12,7 @@ class FieldFactory implements FieldFactoryInterface
     protected $defaultType = 'SimpleCrud\\Fields\\Field';
     protected $smartTypes = [
         'Decimal' => ['float'],
+        'Integer' => ['tinyint', 'smallint', 'mediumint', 'bigint', 'year'],
     ];
     protected $smartNames = [
         'Boolean' => ['active'],
