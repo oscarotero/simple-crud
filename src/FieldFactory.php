@@ -58,10 +58,12 @@ class FieldFactory implements FieldFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function get(Entity $entity, $name, $type = null, array $config = null)
+    public function get(Entity $entity, array $config)
     {
         try {
-            if (($smartType = $this->getTypeByName($name))) {
+            $type = $config['type'];
+
+            if (($smartType = $this->getTypeByName($config['name']))) {
                 $type = $smartType;
             }
 

@@ -8,10 +8,10 @@ namespace SimpleCrud;
 interface FieldInterface
 {
     /**
-     * @param Entity     $entity
-     * @param array|null $config
+     * @param Entity $entity
+     * @param array  $config
      */
-    public function __construct(Entity $entity, array $config = null);
+    public function __construct(Entity $entity, array $config);
 
     /**
      * Convert the data before insert into the database.
@@ -30,4 +30,23 @@ interface FieldInterface
      * @return mixed
      */
     public function dataFromDatabase($data);
+
+    /**
+     * Returns a config value
+     * 
+     * @param string $name
+     * 
+     * @return mixed
+     */
+    public function getConfig($name);
+
+    /**
+     * Set a config value
+     * 
+     * @param string $name
+     * @param mixed  $value
+     * 
+     * @return mixed
+     */
+    public function setConfig($name, $value);
 }

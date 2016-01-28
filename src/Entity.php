@@ -24,7 +24,6 @@ class Entity implements ArrayAccess
     protected $row;
     protected $collection;
     protected $queryFactory;
-    protected $fieldFactory;
 
     public $name;
     public $fields = [];
@@ -36,25 +35,18 @@ class Entity implements ArrayAccess
      * @param string     $name
      * @param SimpleCrud $db
      */
-    public function __construct($name, SimpleCrud $db, QueryFactory $queryFactory, FieldFactory $fieldFactory)
+    final public function __construct($name, SimpleCrud $db, QueryFactory $queryFactory, FieldFactory $fieldFactory)
     {
         $this->db = $db;
         $this->name = $name;
         $this->foreignKey = "{$this->name}_id";
 
-        $this->fieldFactory = $fieldFactory;
         $this->queryFactory = $queryFactory->setEntity($this);
         $this->setRow(new Row($this));
         $this->setCollection(new RowCollection($this));
 
-        $fields = $this->db->getFields($this->name);
-
-        foreach ($fields as $name => $type) {
-            if (is_int($name)) {
-                $this->setField($type);
-            } else {
-                $this->setField($name, $type);
-            }
+        foreach ($this->db->getFields($this->name) as $config) {
+            $this->fields[$config['name']] = $fieldFactory->get($this, $config);
         }
 
         $this->init();
@@ -65,20 +57,6 @@ class Entity implements ArrayAccess
      */
     protected function init()
     {
-    }
-
-    /**
-     * Register a new field type.
-     *
-     * @param string      $name
-     * @param string|null $type
-     * @param array|null  $config
-     * 
-     * @return FieldInterface
-     */
-    protected function setField($name, $type = null, array $config = null)
-    {
-        return $this->fields[$name] = $this->fieldFactory->get($this, $name, $type, $config);
     }
 
     /**

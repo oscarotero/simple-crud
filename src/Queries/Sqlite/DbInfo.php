@@ -36,7 +36,15 @@ class DbInfo
         $fields = [];
 
         foreach ($result as $field) {
-            $fields[$field['name']] = strtolower($field['type']);
+            $fields[] = [
+                'type' => strtolower($field['type']),
+                'name' => $field['name'],
+                'null' => ($field['notnull'] !== '1'),
+                'default' => $field['dflt_value'],
+                'unsigned' => null,
+                'length' => null,
+                'values' => null,
+            ];
         }
 
         return $fields;
