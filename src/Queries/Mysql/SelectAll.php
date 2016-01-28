@@ -14,7 +14,7 @@ use PDO;
 /**
  * Manages a database select query.
  */
-class Select extends BaseQuery
+class SelectAll extends BaseQuery
 {
     use WhereExtendedTrait;
     use LimitTrait;
@@ -103,7 +103,7 @@ class Select extends BaseQuery
      *
      * @return RowCollection
      */
-    public function all($idAsKey = true)
+    public function get($idAsKey = true)
     {
         $statement = $this->run();
         $result = $this->entity->createCollection();
@@ -115,40 +115,6 @@ class Select extends BaseQuery
         }
 
         return $result;
-    }
-
-    /**
-     * Run the query and return the first value.
-     *
-     * @return RowCollection
-     */
-    public function one()
-    {
-        if ($this->limit === null) {
-            $this->limit(1);
-        }
-
-        $this->statement = null;
-
-        return $this->fetch();
-    }
-
-    /**
-     * Run the query and return the first value.
-     *
-     * @return RowCollection
-     */
-    public function fetch()
-    {
-        if (!$this->statement) {
-            $this->statement = $this->run();
-        }
-
-        $row = $this->statement->fetch();
-
-        if ($row !== false) {
-            return $this->entity->create($this->entity->prepareDataFromDatabase($row));
-        }
     }
 
     /**

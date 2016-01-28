@@ -98,9 +98,9 @@ class Entity implements ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return $this->select()
+        return $this->selectOne()
             ->byId($offset)
-            ->one();
+            ->get();
     }
 
     /**

@@ -60,7 +60,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
                 return $collection;
             }
 
-            $collection = $this->select($name)->all(false);
+            $collection = $this->selectAll($name)->get(false);
 
             if ($this->entity->hasOne($entity)) {
                 $this->joinOne($collection);

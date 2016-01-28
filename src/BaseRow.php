@@ -91,8 +91,13 @@ abstract class BaseRow implements RowInterface
     public function select($entity)
     {
         $db = $this->entity->getDb();
+        $entity = $db->get($entity);
 
-        return $db->$entity->select()->relatedWith($this);
+        if ($this->hasOne($entity)) {
+            return $entity->selectOne()->relatedWith($this);
+        }
+
+        return $entity->selectAll()->relatedWith($this);
     }
 
     /**
