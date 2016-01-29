@@ -41,11 +41,11 @@ class Row extends BaseRow implements JsonSerializable
         //Load related data
         switch ($this->entity->getRelation($name)) {
             case Entity::RELATION_HAS_ONE:
-                return $this->values[$name] = $this->selectOne($name)->get() ?: new NullValue();
+                return $this->values[$name] = $this->select($name)->get() ?: new NullValue();
 
             case Entity::RELATION_HAS_MANY:
             case Entity::RELATION_HAS_BRIDGE:
-                return $this->values[$name] = $this->selectAll($name)->get();
+                return $this->values[$name] = $this->select($name)->get();
         }
     }
 
