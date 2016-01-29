@@ -9,7 +9,7 @@ class EntityFactory implements EntityFactoryInterface
 {
     protected $db;
     protected $tables;
-    protected $namespace;
+    protected $namespaces = [];
     protected $defaultEntity;
     protected $queryFactory;
     protected $fieldFactory;
@@ -39,15 +39,15 @@ class EntityFactory implements EntityFactoryInterface
     }
 
     /**
-     * Set the namespace for the entities classes.
+     * Add a namespace for the entities classes.
      *
      * @param string $namespace
      *
      * @return self
      */
-    public function setNamespace($namespace)
+    public function addNamespace($namespace)
     {
-        $this->namespace = $namespace;
+        array_unshift($this->namespaces, $namespace);
 
         return $this;
     }
@@ -121,7 +121,19 @@ class EntityFactory implements EntityFactoryInterface
      */
     public function has($name)
     {
-        return ($this->defaultEntity && in_array($name, $this->getTables())) || class_exists($this->namespace.ucfirst($name));
+        if ($this->defaultEntity && in_array($name, $this->getTables())) {
+            return true;
+        }
+
+        $ucname = ucfirst($name);
+
+        foreach ($this->namespaces as $namespace) {
+            $class = $namespace.$ucname;
+
+            if (class_exists($class)) {
+                return true;
+            }
+        }
     }
 
     /**
@@ -132,12 +144,17 @@ class EntityFactory implements EntityFactoryInterface
     public function get($name)
     {
         try {
-            $class = $this->namespace.ucfirst($name);
             $queryFactory = clone $this->queryFactory;
             $fieldFactory = clone $this->fieldFactory;
 
-            if (class_exists($class)) {
-                return new $class($name, $this->db, $queryFactory, $fieldFactory);
+            $ucname = ucfirst($name);
+
+            foreach ($this->namespaces as $namespace) {
+                $class = $namespace.$ucname;
+
+                if (class_exists($class)) {
+                    return new $class($name, $this->db, $queryFactory, $fieldFactory);
+                }
             }
 
             if ($this->defaultEntity && in_array($name, $this->getTables())) {
