@@ -6,8 +6,6 @@ use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Queries\SelectTrait;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Entity;
-use PDOStatement;
-use PDO;
 
 /**
  * Manages a database select query.

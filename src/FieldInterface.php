@@ -32,7 +32,7 @@ interface FieldInterface
     public function dataFromDatabase($data);
 
     /**
-     * Returns a config value
+     * Returns a config value.
      * 
      * @param string $name
      * 
@@ -41,7 +41,7 @@ interface FieldInterface
     public function getConfig($name);
 
     /**
-     * Set a config value
+     * Set a config value.
      * 
      * @param string $name
      * @param mixed  $value

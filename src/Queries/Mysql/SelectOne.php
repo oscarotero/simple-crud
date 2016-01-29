@@ -4,11 +4,8 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
 use SimpleCrud\Queries\SelectTrait;
-use SimpleCrud\RowCollection;
 use SimpleCrud\Entity;
 use SimpleCrud\SimpleCrudException;
-use PDOStatement;
-use PDO;
 
 /**
  * Manages a database select query with just one result.
@@ -27,7 +24,7 @@ class SelectOne extends BaseQuery
     }
 
     /**
-     * Prevent to change the limit clause
+     * Prevent to change the limit clause.
      */
     public function limit($limit)
     {
