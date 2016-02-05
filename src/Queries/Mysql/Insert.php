@@ -43,11 +43,23 @@ class Insert extends BaseQuery
     }
 
     /**
-     * Run the query and return all values.
+     * Run the query and return the id.
      *
-     * @return PDOStatement
+     * @return int
      */
     public function run()
+    {
+        $this->__invoke();
+
+        $id = $this->entity->getDb()->lastInsertId();
+
+        return $this->entity->fields['id']->dataFromDatabase($id);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function __invoke()
     {
         $marks = [];
 
@@ -59,23 +71,7 @@ class Insert extends BaseQuery
     }
 
     /**
-     * Run the query and return the id.
-     *
-     * @return int
-     */
-    public function get()
-    {
-        $this->run();
-
-        $id = $this->entity->getDb()->lastInsertId();
-
-        return $this->entity->fields['id']->dataFromDatabase($id);
-    }
-
-    /**
-     * Build and return the query.
-     *
-     * @return string
+     * {@inheritdoc}
      */
     public function __toString()
     {

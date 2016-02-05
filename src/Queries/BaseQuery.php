@@ -21,4 +21,16 @@ abstract class BaseQuery implements QueryInterface
     {
         $this->entity = $entity;
     }
+
+    /**
+     * Executes the query and returns true if it's ok
+     * 
+     * @return bool
+     */
+    public function run()
+    {
+        $this->__invoke();
+
+        return true;
+    }
 }

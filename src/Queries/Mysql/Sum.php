@@ -3,7 +3,7 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\Queries\WhereExtendedTrait;
+use SimpleCrud\Queries\ExtendedSelectionTrait;
 use SimpleCrud\Queries\LimitTrait;
 use SimpleCrud\Entity;
 use PDOStatement;
@@ -14,8 +14,7 @@ use PDO;
  */
 class Sum extends BaseQuery
 {
-    use WhereExtendedTrait;
-    use LimitTrait;
+    use ExtendedSelectionTrait;
 
     protected $field;
 
@@ -34,42 +33,26 @@ class Sum extends BaseQuery
     }
 
     /**
-     * Adds new marks to the query.
-     *
-     * @param array $marks
-     *
-     * @return self
+     * Run the query and return the value.
+     * 
+     * @return int
      */
-    public function marks(array $marks)
+    public function run()
     {
-        $this->marks += $marks;
+        $result = $this->__invoke()->fetch();
 
-        return $this;
+        return (int) $result[0];
     }
 
     /**
-     * Run the query and return a statement with the result.
-     *
-     * @return PDOStatement
+     * {@inheritdoc}
      */
-    public function run()
+    public function __invoke()
     {
         $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_NUM);
 
         return $statement;
-    }
-
-    /**
-     * Run the query and return the value.
-     *
-     * @return int
-     */
-    public function get()
-    {
-        $result = $this->run()->fetch();
-
-        return (int) $result[0];
     }
 
     /**

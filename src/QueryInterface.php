@@ -17,11 +17,11 @@ interface QueryInterface
     public function __construct(Entity $entity);
 
     /**
-     * Run the query and return a statement with the result.
+     * Run the query and return the statement object.
      *
      * @return PDOStatement
      */
-    public function run();
+    public function __invoke();
 
     /**
      * Build and return the query.
@@ -29,4 +29,11 @@ interface QueryInterface
      * @return string
      */
     public function __toString();
+
+    /**
+     * Run the query and return the result.
+     *
+     * @return mixed
+     */
+    public function run();
 }

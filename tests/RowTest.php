@@ -55,7 +55,7 @@ class RowTest extends PHPUnit_Framework_TestCase
         $this->assertSame('this is the title', $post->titleLowerCase);
 
         $this->db->post->insert()->data(['title' => 'second'])->run();
-        $this->assertSame(3, $this->db->post->selectAll()->get()->sumIds());
+        $this->assertSame(3, $this->db->post->select()->run()->sumIds());
     }
 }
 

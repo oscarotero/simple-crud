@@ -1,5 +1,7 @@
 # SimpleCrud
 
+> ## New v6.x version with some breaking changes!!
+
 [![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
 
@@ -61,7 +63,7 @@ CREATE TABLE `post_tag` (
 );
 ```
 
-To get starting, create an instance of `SimpleCrud\SimpleCrud` passing the `PDO` connection.
+To start, create an instance of `SimpleCrud\SimpleCrud` passing the `PDO` connection.
 
 ```php
 use SimpleCrud\SimpleCrud;
@@ -108,7 +110,7 @@ $db->posts[] = [
 
 #### Database queries:
 
-Use magic methods to create database queries. For example `selectAll()`, `update()`, `count()`, `delete()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, and the method `run()` to execute the query and return the PDOStatement. For example:
+Use magic methods to create database queries. For example `select()`, `update()`, `count()`, `delete()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, and the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
 
 ```php
 //create the query
@@ -124,13 +126,13 @@ $updateQuery
 echo $updateQuery; //UPDATE `posts` ...
 
 //execute the query
-$query->run();
+$updateQuery();
 ```
 
-Here's more examples:
+If you don't need the PDOStatement (the most cases) you can use the method `run()`:
 
 ```php
-//insert new posts
+//insert a new post
 $db->post->insert()
     ->data([
         'title' => 'My first post',
@@ -144,43 +146,59 @@ $db->post->delete()
     ->run();
 ```
 
-As said before, the method `run()` executes the query and returns a `PDOStatement` instance with the result. But there are some queries that can return values, for example `sum()` or `count()`:
+The method `run()` returns also the data from queries like `count()` or `sum()`:
 
 ```php
 $count = $db->post->count();
-$statement = $count->run(); //execute the query and returns the statement
-$total = $count->get(); //execute the query and returns the result as a integer
+$statement = $count();  //execute the query and returns the statement
+$total = $count->run(); //execute the query and returns the result as a integer
 ```
 
-To select data from the database, there are the methods `selectOne()` and `selectAll()`. The only difference is the first select just one row and return a `Row` instance and the second select all rows and return a `RowCollection` instance:
+Use `select()` to get data from the database. `run()` returns an instance of `RowCollection` with the result:
 
 ```php
-$posts = $db->post->selectAll()
+$posts = $db->post->select()
     ->where('id > :id', [':id' => 10])
     ->orderBy('id ASC')
     ->limit(100)
-    ->get();
+    ->run();
+
+foreach ($posts as $post) {
+    echo $post->title;
+}
 ```
 
-The method `relatedWith()` allows select related data easily:
+To select only one row, use the modifier `->one()`:
+
+```php
+$post = $db->post->select()
+    ->by('id', 23)
+    ->one()
+    ->run();
+
+echo $post->title;
+```
+
+The method `relatedWith()` allows to select related data easily:
 
 ```php
 //Get the post id = 23
 $post = $db->post[23];
 
 //Select the category related with this posts
-$category = $db->category->selectOne()
+$category = $db->category->select()
     ->relatedWith($post)
-    ->get();
+    ->one()
+    ->run();
 ```
 
 #### Working with rows
 
-The `Row` class allows to read and modify the data of a database row:
+The `Row` class is used to read and modify the data of a row:
 
 ```php
 //get a row
-$post = $db->post->selectOne()->get();
+$post = $db->post[34];
 
 //Get/set the post title
 echo $post->title;
@@ -207,20 +225,21 @@ $newPost->save(); //Insert the post in the database.
 
 #### Working with collections
 
-Using `selectAll()` you get a `RowCollection` instance with all rows found.
+The `RowCollection` class is like an array of `Row` using the id as the key.
 
 ```php
-$allPosts = $db->post->selectAll()->get();
+$allPosts = $db->post->select()->run();
 
 foreach ($allPosts as $post) {
     echo $post->title;
 }
-```
 
-The collection allows to get arrays with the values of a column. For example:
+//Get an array with the values of a column:
+$allPostsTitles = $allPosts->title;
 
-```php
-$allPosts->title; //array with all titles of all posts. It uses the id as key
+foreach ($allPostsTitles as $title) {
+    echo $title;
+}
 ```
 
 #### Fields classes
@@ -242,7 +261,7 @@ The Field classes are asigned automatically according with the field type in the
 
 * Integer format will be asigned to any field named `id` or ending by `_id`.
 * Datetime format will be asigned to any field named `pubdate` or ending by `At` (for example: `createdAt`, `updatedAt` etc).
-* Boolean format will be asigned to any field named `active` or starting by `is`, `in` or `has` (for example: `isActive`, `inHome`, `hasContent`, etc)
+* Boolean format will be asigned to any field named `active` or starting by `is`, `in` or `has` (for example: `isActived`, `inHome`, `hasContent`, etc)
 
 Example:
 
@@ -250,7 +269,7 @@ Example:
 $post = $db->post->create([
     'title' => 'My post',
     'text' => 'My post text',
-    'pubdate' => new Datetime('now'),
+    'createdAt' => new Datetime('now'),
     'isActive' => true
 ]);
 
@@ -259,20 +278,19 @@ $post->save();
 
 ### Lazy loads
 
-Both `Row` and `RowCollection` can load automatically other related data:
+Both `Row` and `RowCollection` can load automatically other related data. Just use a property with the same name than a related entity. For example:
 
 ```php
-//Get post id=34
-$post = $db->post[34];
+//Get the category id=34
+$category = $db->category[34];
 
-//Load the category related with this post
-$category = $post->category;
+//Load the posts of this category
+$posts = $category->post;
 
 //This is equivalent to:
-$category = $db->category->selectOne()->relatedWith($post)->get();
-
-//Or using the Entity::select() method that returns a selectOne or selectAll query, according of the type of the relationship.
-$category = $post->select('category')->get();
+$posts = $db->post->select()
+    ->relatedWith($category)
+    ->run();
 ```
 
 This allows make awesome (and dangerous :D) things like this:
@@ -286,12 +304,22 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
+You may want to modify the query before get the result. Use the magic method instead the property:
+
+```php
+$category = $db->category[34];
+
+$posts = $category->post()
+    ->where('pubdate > :date', date('Y-m-d'))
+    ->run();
+```
+
 ### Solving the n+1 problem
 
 The [n+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) can be solved in the following way:
 
 ```php
-$posts = $db->post->selectAll()->get();
+$posts = $db->post->select()->run();
 
 //preload all categories
 $posts->category;
@@ -311,9 +339,11 @@ SimpleCrud uses factory classes to create instances of entities, queries and fie
 This class creates the instances of all entities. If it's not provided, by default uses the `SimpleCrud\EntityFactory` but you can create your own factory implementing the `SimpleCrud\EntityFactoryInterface`. The default EntityFactory, can be configured using the following methods:
 
 * `addNamespace` Useful if you want to create custom entity classes. For example, if the namespace is `App\MyModels` and you load the entity `post`, the EntityFactory will check whether the class `App\MyModels\Post` exists and use it instead the default.
-* `setAutocreate` Set false to avoid to create instances of entities using the default class.
-* `setFieldFactory` To set a custom factory to create Field instances
-* `setQueryFactory` To set a custom factory to create Query instances
+* `setAutocreate` Set false to NOT create instances of entities using the default class.
+* `getFieldFactory` Returns the FieldFactory.
+* `setFieldFactory` To set a custom factory to create Field instances.
+* `getQueryFactory` Returns the QueryFactory.
+* `setQueryFactory` To set a custom factory to create Query instances.
 
 ```php
 //Create the simplecrud instance
@@ -351,7 +381,7 @@ $queryFactory->addNamespace('App\\Models\\Queries\\');
 
 //Use the queries:
 
-$db->posts->selectOne(); //Returns an instance of App\Models\Queries\SelectOne
+$db->posts->customSelect()->run(); //Returns and execute an instance of App\Models\Queries\CustomSelect
 ```
 
 ### FieldFactory
@@ -380,7 +410,7 @@ $fieldFactory->addNamespace('App\\Models\\Fields\\');
 $fieldFactory->addSmartName('year', 'Integer');
 
 //Use it:
-$db->post->fields['year']; //returns an instance of App\Models\Fields\Year
+$db->post->fields['year']; //returns an instance of App\Models\Fields\Integer
 ```
 
 ## Creating your own entities
@@ -396,10 +426,10 @@ class Posts extends Entity
 {
     public function getLatests()
     {
-        return $this->selectAll()
+        return $this->select()
             ->orderBy('createdAt DESC')
             ->limit(10)
-            ->get();
+            ->run();
     }
 }
 ```
@@ -475,7 +505,7 @@ class Posts extends Entity
 Now, on use the entity:
 
 ```php
-$posts = $db->post->selectAll()->get();
+$posts = $db->post->select()->run();
 
 //Execute the registered method in the collection
 echo $posts->sumIds();
@@ -569,10 +599,10 @@ $fieldFactory = $db->getEntityFactory()->getQueryFactory();
 $queryFactory->addNamespace('MyModels\\Queries\\');
 
 //use in your select queries
-$posts = $db->post->selectAll()
+$posts = $db->post->select()
     ->actived()
     ->olderThan(new Datetime('now'))
-    ->get();
+    ->run();
 ```
 
 

@@ -82,25 +82,6 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
-     * Creates and return a Select query related with this entity.
-     *
-     * @param string $entity
-     *
-     * @return QueryInterface
-     */
-    public function select($entity)
-    {
-        $db = $this->entity->getDb();
-        $entity = $db->get($entity);
-
-        if ($this->hasOne($entity)) {
-            return $entity->selectOne()->relatedWith($this);
-        }
-
-        return $entity->selectAll()->relatedWith($this);
-    }
-
-    /**
      * Deletes the row(s) in the database.
      *
      * @return self
@@ -121,7 +102,7 @@ abstract class BaseRow implements RowInterface
     }
 
     /**
-     * Magic method to execute custom method defined in the entity class.
+     * Magic method to execute custom methods defined in the entity class.
      *
      * @param string $name
      */
@@ -132,5 +113,19 @@ abstract class BaseRow implements RowInterface
 
             return call_user_func_array($this->methods[$name], $arguments);
         }
+
+        //Queries of related entities
+        switch ($this->entity->getRelation($name)) {
+            case Entity::RELATION_HAS_ONE:
+                $entity = $this->entity->getDb()->get($name);
+                return $entity->select()->one()->relatedWith($this);
+
+            case Entity::RELATION_HAS_MANY:
+            case Entity::RELATION_HAS_BRIDGE:
+                $entity = $this->entity->getDb()->get($name);
+                return $entity->select()->relatedWith($this);
+        }
+
+        throw new \BadMethodCallException(sprintf('Call to undefined method %s', $name));
     }
 }

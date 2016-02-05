@@ -54,9 +54,9 @@ class RelationsTest extends PHPUnit_Framework_TestCase
             ->save();
 
         $this->assertSame($post->category_id, $category->id);
-        $this->assertSame($category->name, $post->select('category')->get()->name);
+        $this->assertSame($category->name, $post->category()->run()->name);
 
-        $post = $category->select('post')->get();
+        $post = $category->post()->run();
 
         $this->assertCount(1, $post);
         $this->assertEquals(1, $post[1]->id);
@@ -74,7 +74,7 @@ class RelationsTest extends PHPUnit_Framework_TestCase
             ->relateWith($tag)
             ->save();
 
-        $relatedTag = $post->select('tag')->get();
+        $relatedTag = $post->tag()->run();
 
         $this->assertCount(1, $relatedTag);
         $this->assertEquals($tag->id, $relatedTag[1]->id);

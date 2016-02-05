@@ -3,8 +3,7 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\Queries\WhereExtendedTrait;
-use SimpleCrud\Queries\LimitTrait;
+use SimpleCrud\Queries\ExtendedSelectionTrait;
 use SimpleCrud\Entity;
 use PDOStatement;
 use PDO;
@@ -14,29 +13,26 @@ use PDO;
  */
 class Count extends BaseQuery
 {
-    use WhereExtendedTrait;
-    use LimitTrait;
+    use ExtendedSelectionTrait;
 
     /**
-     * Adds new marks to the query.
+     * Returns the count
+     * 
+     * {@inheritdoc}
      *
-     * @param array $marks
-     *
-     * @return self
+     * @return int
      */
-    public function marks(array $marks)
+    public function run()
     {
-        $this->marks += $marks;
+        $result = $this->__invoke()->fetch();
 
-        return $this;
+        return (int) $result[0];
     }
 
     /**
-     * Run the query and return a statement with the result.
-     *
-     * @return PDOStatement
+     * {@inheritdoc}
      */
-    public function run()
+    public function __invoke()
     {
         $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_NUM);
@@ -45,21 +41,7 @@ class Count extends BaseQuery
     }
 
     /**
-     * Run the query and return the value.
-     *
-     * @return int
-     */
-    public function get()
-    {
-        $result = $this->run()->fetch();
-
-        return (int) $result[0];
-    }
-
-    /**
-     * Build and return the query.
-     *
-     * @return string
+     * {@inheritdoc}
      */
     public function __toString()
     {

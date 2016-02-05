@@ -10,9 +10,7 @@ use SimpleCrud\Queries\Mysql\Insert as BaseInsert;
 class Insert extends BaseInsert
 {
     /**
-     * Build and return the query.
-     *
-     * @return string
+     * {@inheritdoc}
      */
     public function __toString()
     {

@@ -3,8 +3,7 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\Queries\WhereTrait;
-use SimpleCrud\Queries\LimitTrait;
+use SimpleCrud\Queries\SelectionTrait;
 use SimpleCrud\Entity;
 use PDOStatement;
 
@@ -13,8 +12,7 @@ use PDOStatement;
  */
 class Update extends BaseQuery
 {
-    use WhereTrait;
-    use LimitTrait;
+    use SelectionTrait;
 
     protected $data = [];
 
@@ -47,11 +45,9 @@ class Update extends BaseQuery
     }
 
     /**
-     * Run the query and return all values.
-     *
-     * @return PDOStatement
+     * {@inheritdoc}
      */
-    public function run()
+    public function __invoke()
     {
         $marks = $this->marks;
 
@@ -63,9 +59,7 @@ class Update extends BaseQuery
     }
 
     /**
-     * Build and return the query.
-     *
-     * @return string
+     * {@inheritdoc}
      */
     public function __toString()
     {

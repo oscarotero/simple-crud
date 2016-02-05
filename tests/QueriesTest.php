@@ -13,7 +13,8 @@ class QueriesTest extends PHPUnit_Framework_TestCase
 
     public function testSelect()
     {
-        $query = $this->db->post->selectOne()
+        $query = $this->db->post->select()
+            ->one()
             ->where('title NOT NULL')
             ->where('type = 1 OR type = 2')
             ->by('category_id', 5)

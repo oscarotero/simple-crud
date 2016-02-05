@@ -5,13 +5,13 @@ namespace SimpleCrud\Queries;
 use SimpleCrud\RowInterface;
 
 /**
- * Common function to manage WHERE clause.
+ * Extended trait
  *
  * @property \SimpleCrud\Entity $entity
  */
-trait WhereExtendedTrait
+trait ExtendedSelectionTrait
 {
-    use WhereTrait;
+    use SelectionTrait;
 
     protected $from = [];
     protected $fields = [];

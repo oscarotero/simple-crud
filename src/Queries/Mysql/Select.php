@@ -1,23 +1,86 @@
 <?php
 
-namespace SimpleCrud\Queries;
+namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Entity;
 use SimpleCrud\SimpleCrudException;
+use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\ExtendedSelectionTrait;
+use SimpleCrud\RowCollection;
+use SimpleCrud\Entity;
 use PDOStatement;
 use PDO;
 
 /**
  * Manages a database select query.
  */
-trait SelectTrait
+class Select extends BaseQuery
 {
-    use WhereExtendedTrait;
-    use LimitTrait;
+    const MODE_ONE = 1;
+    const MODE_ALL = 2;
+
+    use ExtendedSelectionTrait;
 
     protected $leftJoin = [];
     protected $orderBy = [];
     protected $statement;
+    protected $mode;
+
+    /**
+     * Change the mode to returns just the first row
+     * 
+     * @return self
+     */
+    public function one()
+    {
+        $this->mode = self::MODE_ONE;
+
+        return $this->limit(1);
+    }
+
+    /**
+     * Change the mode to returns all rows (even duplicated)
+     * 
+     * @return self
+     */
+    public function all()
+    {
+        $this->mode = self::MODE_ALL;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return Row|RowCollection|null
+     */
+    public function run()
+    {
+        $statement = $this->__invoke();
+
+        //Returns one
+        if ($this->mode === self::MODE_ONE) {
+            $row = $statement->fetch();
+            
+            if ($row !== false) {
+                return $this->entity->create($this->entity->prepareDataFromDatabase($row));
+            }
+
+            return;
+        }
+
+        $result = $this->entity->createCollection();
+
+        if ($this->mode === self::MODE_ALL) {
+            $result->idAsKey(false);
+        }
+
+        while (($row = $statement->fetch())) {
+            $result[] = $this->entity->create($this->entity->prepareDataFromDatabase($row));
+        }
+
+        return $result;
+    }
 
     /**
      * Adds an ORDER BY clause.
@@ -66,25 +129,9 @@ trait SelectTrait
     }
 
     /**
-     * Adds new marks to the query.
-     *
-     * @param array $marks
-     *
-     * @return self
+     * {@inheritdoc}
      */
-    public function marks(array $marks)
-    {
-        $this->marks += $marks;
-
-        return $this;
-    }
-
-    /**
-     * Run the query and return a statement with the result.
-     *
-     * @return PDOStatement
-     */
-    public function run()
+    public function __invoke()
     {
         $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_ASSOC);
@@ -93,9 +140,7 @@ trait SelectTrait
     }
 
     /**
-     * Build and return the query.
-     *
-     * @return string
+     * {@inheritdoc}
      */
     public function __toString()
     {

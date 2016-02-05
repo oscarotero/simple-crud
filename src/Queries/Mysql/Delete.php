@@ -3,8 +3,7 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\Queries\WhereTrait;
-use SimpleCrud\Queries\LimitTrait;
+use SimpleCrud\Queries\SelectionTrait;
 use SimpleCrud\Entity;
 use PDOStatement;
 
@@ -13,29 +12,12 @@ use PDOStatement;
  */
 class Delete extends BaseQuery
 {
-    use WhereTrait;
-    use LimitTrait;
+    use SelectionTrait;
 
     /**
-     * Adds new marks to the query.
-     *
-     * @param array $marks
-     *
-     * @return self
+     * {@inheritdoc}
      */
-    public function marks(array $marks)
-    {
-        $this->marks += $marks;
-
-        return $this;
-    }
-
-    /**
-     * Run the query and return all values.
-     *
-     * @return PDOStatement
-     */
-    public function run()
+    public function __invoke()
     {
         return $this->entity->getDb()->execute((string) $this, $this->marks);
     }

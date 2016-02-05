@@ -3,14 +3,30 @@
 namespace SimpleCrud\Queries;
 
 /**
- * Common function to manage WHERE clause.
+ * Trait with common funcions used in queries
  *
  * @property \SimpleCrud\Entity $entity
  */
-trait WhereTrait
+trait SelectionTrait
 {
     protected $where = [];
     protected $marks = [];
+    protected $limit;
+    protected $offset;
+
+    /**
+     * Adds new marks to the query.
+     *
+     * @param array $marks
+     *
+     * @return self
+     */
+    public function marks(array $marks)
+    {
+        $this->marks += $marks;
+
+        return $this;
+    }
 
     /**
      * Adds a WHERE clause.
@@ -88,9 +104,39 @@ trait WhereTrait
      */
     public function byId($id)
     {
-        $limit = is_array($id) ? count($id) : 1;
+        if ($this->limit === null) {
+            $this->limit(is_array($id) ? count($id) : 1);
+        }
 
-        return $this->limit($limit)->by('id', $id);
+        return $this->by('id', $id);
+    }
+
+    /**
+     * Adds a LIMIT clause.
+     *
+     * @param int $limit
+     *
+     * @return self
+     */
+    public function limit($limit)
+    {
+        $this->limit = $limit;
+
+        return $this;
+    }
+
+    /**
+     * Adds an offset to the LIMIT clause.
+     *
+     * @param int $offset
+     *
+     * @return self
+     */
+    public function offset($offset)
+    {
+        $this->offset = $offset;
+
+        return $this;
     }
 
     /**
@@ -106,6 +152,26 @@ trait WhereTrait
             }
 
             return ' WHERE ('.implode(') AND (', $this->where).')';
+        }
+
+        return '';
+    }
+
+    /**
+     * Generate LIMIT clause.
+     *
+     * @return string
+     */
+    protected function limitToString()
+    {
+        if (!empty($this->limit)) {
+            $query = ' LIMIT';
+
+            if (!empty($this->offset)) {
+                $query .= ' '.$this->offset.',';
+            }
+
+            return $query.' '.$this->limit;
         }
 
         return '';

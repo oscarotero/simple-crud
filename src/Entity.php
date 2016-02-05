@@ -86,7 +86,7 @@ class Entity implements ArrayAccess
         return $this->count()
             ->byId($offset)
             ->limit(1)
-            ->get() === 1;
+            ->run() === 1;
     }
 
     /**
@@ -98,9 +98,10 @@ class Entity implements ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return $this->selectOne()
+        return $this->select()
+            ->one()
             ->byId($offset)
-            ->get();
+            ->run();
     }
 
     /**
