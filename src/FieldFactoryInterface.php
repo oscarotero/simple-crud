@@ -10,12 +10,12 @@ interface FieldFactoryInterface
     /**
      * Creates a new instance of a Field.
      *
-     * @param Entity $entity
-     * @param array  $config
+     * @param Table  $table
+     * @param string $name
      *
      * @throws SimpleCrudException
      *
-     * @return FieldInterface
+     * @return Fields\Field
      */
-    public function get(Entity $entity, array $config);
+    public function get(Table $table, $name);
 }

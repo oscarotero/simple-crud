@@ -2,14 +2,14 @@
 
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\BaseQuery;
-use SimpleCrud\Entity;
+use SimpleCrud\Queries\Query;
+use SimpleCrud\Table;
 use PDOStatement;
 
 /**
  * Manages a database insert query in Mysql databases.
  */
-class Insert extends BaseQuery
+class Insert extends Query
 {
     protected $data = [];
     protected $duplications;
@@ -23,7 +23,7 @@ class Insert extends BaseQuery
      */
     public function data(array $data)
     {
-        $this->data = $this->entity->prepareDataToDatabase($data, true);
+        $this->data = $this->table->prepareDataToDatabase($data, true);
 
         return $this;
     }
@@ -51,9 +51,9 @@ class Insert extends BaseQuery
     {
         $this->__invoke();
 
-        $id = $this->entity->getDb()->lastInsertId();
+        $id = $this->table->getDb()->lastInsertId();
 
-        return $this->entity->fields['id']->dataFromDatabase($id);
+        return $this->table->fields['id']->dataFromDatabase($id);
     }
 
     /**
@@ -67,7 +67,7 @@ class Insert extends BaseQuery
             $marks[":{$field}"] = $value;
         }
 
-        return $this->entity->getDb()->execute((string) $this, $marks);
+        return $this->table->getDb()->execute((string) $this, $marks);
     }
 
     /**
@@ -76,12 +76,12 @@ class Insert extends BaseQuery
     public function __toString()
     {
         if (empty($this->data)) {
-            return "INSERT INTO `{$this->entity->name}` (`id`) VALUES (NULL)";
+            return "INSERT INTO `{$this->table->name}` (`id`) VALUES (NULL)";
         }
 
         $fields = array_keys($this->data);
 
-        $query = "INSERT INTO `{$this->entity->name}`";
+        $query = "INSERT INTO `{$this->table->name}`";
         $query .= ' (`'.implode('`, `', $fields).'`)';
         $query .= ' VALUES (:'.implode(', :', $fields).')';
 

@@ -8,7 +8,7 @@ use PDO;
 /**
  * Manages a database select count query in Mysql databases.
  *
- * @property \SimpleCrud\Entity $entity
+ * @property \SimpleCrud\Table $table
  */
 trait CompiledOptionsTrait
 {
@@ -24,7 +24,7 @@ trait CompiledOptionsTrait
     public function hasCompiledOption($name)
     {
         if (self::$options === null) {
-            self::$options = $this->entity->getDb()->execute('pragma compile_options')->fetchAll(PDO::FETCH_COLUMN);
+            self::$options = $this->table->getDb()->execute('pragma compile_options')->fetchAll(PDO::FETCH_COLUMN);
         }
 
         return in_array($name, self::$options);

@@ -15,7 +15,7 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
     {
         $post = $this->db->post;
 
-        $this->assertInstanceOf('SimpleCrud\\Entity', $post);
+        $this->assertInstanceOf('SimpleCrud\\Table', $post);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDb());
 
         $this->assertCount(6, $post->fields);
@@ -35,7 +35,7 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
     {
         $category = $this->db->category;
 
-        $this->assertInstanceOf('SimpleCrud\\Entity', $category);
+        $this->assertInstanceOf('SimpleCrud\\Table', $category);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $category->getDb());
 
         $this->assertCount(2, $category->fields);
@@ -51,7 +51,7 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
     {
         $tag = $this->db->tag;
 
-        $this->assertInstanceOf('SimpleCrud\\Entity', $tag);
+        $this->assertInstanceOf('SimpleCrud\\Table', $tag);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $tag->getDb());
 
         $this->assertCount(2, $tag->fields);
@@ -67,7 +67,7 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
     {
         $post_tag = $this->db->post_tag;
 
-        $this->assertInstanceOf('SimpleCrud\\Entity', $post_tag);
+        $this->assertInstanceOf('SimpleCrud\\Table', $post_tag);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post_tag->getDb());
 
         $this->assertCount(3, $post_tag->fields);
@@ -84,7 +84,7 @@ class AutocreateTest extends PHPUnit_Framework_TestCase
     {
         $tagsCounter = $this->db->tagsCounter;
 
-        $this->assertInstanceOf('SimpleCrud\\Entity', $tagsCounter);
+        $this->assertInstanceOf('SimpleCrud\\Table', $tagsCounter);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $tagsCounter->getDb());
 
         $this->assertCount(2, $tagsCounter->fields);

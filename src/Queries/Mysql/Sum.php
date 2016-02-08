@@ -2,17 +2,17 @@
 
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\Query;
 use SimpleCrud\Queries\ExtendedSelectionTrait;
 use SimpleCrud\Queries\LimitTrait;
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 use PDOStatement;
 use PDO;
 
 /**
  * Manages a database select count query in Mysql databases.
  */
-class Sum extends BaseQuery
+class Sum extends Query
 {
     use ExtendedSelectionTrait;
 
@@ -49,7 +49,7 @@ class Sum extends BaseQuery
      */
     public function __invoke()
     {
-        $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
+        $statement = $this->table->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_NUM);
 
         return $statement;
@@ -62,7 +62,7 @@ class Sum extends BaseQuery
      */
     public function __toString()
     {
-        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->entity->name}`";
+        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->table->name}`";
 
         $query .= $this->fromToString();
         $query .= $this->whereToString();

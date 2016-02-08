@@ -3,17 +3,17 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\SimpleCrudException;
-use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\Query;
 use SimpleCrud\Queries\ExtendedSelectionTrait;
 use SimpleCrud\RowCollection;
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 use PDOStatement;
 use PDO;
 
 /**
  * Manages a database select query.
  */
-class Select extends BaseQuery
+class Select extends Query
 {
     const MODE_ONE = 1;
     const MODE_ALL = 2;
@@ -63,20 +63,20 @@ class Select extends BaseQuery
             $row = $statement->fetch();
             
             if ($row !== false) {
-                return $this->entity->create($this->entity->prepareDataFromDatabase($row));
+                return $this->table->create($this->table->prepareDataFromDatabase($row));
             }
 
             return;
         }
 
-        $result = $this->entity->createCollection();
+        $result = $this->table->createCollection();
 
         if ($this->mode === self::MODE_ALL) {
             $result->idAsKey(false);
         }
 
         while (($row = $statement->fetch())) {
-            $result[] = $this->entity->create($this->entity->prepareDataFromDatabase($row));
+            $result[] = $this->table->create($this->table->prepareDataFromDatabase($row));
         }
 
         return $result;
@@ -104,20 +104,20 @@ class Select extends BaseQuery
     /**
      * Adds a LEFT JOIN clause.
      *
-     * @param Entity     $entity
+     * @param Table     $table
      * @param string     $on
      * @param array|null $marks
      *
      * @return self
      */
-    public function leftJoin(Entity $entity, $on = null, $marks = null)
+    public function leftJoin(Table $table, $on = null, $marks = null)
     {
-        if ($this->entity->getRelation($entity) !== Entity::RELATION_HAS_ONE) {
-            throw new SimpleCrudException("The items '{$this->entity->name}' and '{$entity->name}' are no related or cannot be joined");
+        if (!$this->table->hasOne($table)) {
+            throw new SimpleCrudException("Invalid LEFT JOIN between the tables '{$this->table->name}' and '{$table->name}'");
         }
 
         $this->leftJoin[] = [
-            'entity' => $entity,
+            'table' => $table,
             'on' => $on,
         ];
 
@@ -133,7 +133,7 @@ class Select extends BaseQuery
      */
     public function __invoke()
     {
-        $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
+        $statement = $this->table->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_ASSOC);
 
         return $statement;
@@ -145,18 +145,18 @@ class Select extends BaseQuery
     public function __toString()
     {
         $query = 'SELECT';
-        $query .= ' '.static::buildFields($this->entity->name, array_keys($this->entity->fields));
+        $query .= ' '.static::buildFields($this->table->name, array_keys($this->table->fields));
 
         foreach ($this->leftJoin as $join) {
-            $query .= ', '.static::buildFields($join['entity']->name, array_keys($join['entity']->fields), true);
+            $query .= ', '.static::buildFields($join['table']->name, array_keys($join['table']->fields), true);
         }
 
         $query .= $this->fieldsToString();
-        $query .= ' FROM `'.$this->entity->name.'`';
+        $query .= ' FROM `'.$this->table->name.'`';
         $query .= $this->fromToString();
 
         foreach ($this->leftJoin as $join) {
-            $query .= ' LEFT JOIN `'.$join['entity']->name.'`"';
+            $query .= ' LEFT JOIN `'.$join['table']->name.'`"';
 
             if (!empty($join['on'])) {
                 $query .= ' ON ('.$join['on'].')';

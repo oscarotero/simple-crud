@@ -9,7 +9,7 @@ use Countable;
 /**
  * Stores a collection of rows.
  */
-class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
+class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Countable
 {
     private $rows = [];
     private $idAsKey = true;
@@ -39,13 +39,13 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
         }
 
         //Returns related entities
-        $db = $this->entity->getDb();
+        $db = $this->table->getDb();
 
         if ($db->has($name)) {
-            $entity = $db->get($name);
+            $table = $db->get($name);
 
             if ($first->has($name)) {
-                $collection = $entity->createCollection();
+                $collection = $table->createCollection();
 
                 foreach ($this->get($name) as $row) {
                     if ($row instanceof self) {
@@ -62,7 +62,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
 
             $collection = $this->__call($name, [])->all()->run();
 
-            if ($this->entity->hasOne($entity)) {
+            if ($this->table->hasOne($table)) {
                 $this->joinOne($collection);
             } else {
                 $this->joinMany($collection);
@@ -98,7 +98,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function __toString()
     {
-        return "\n".$this->entity->name.":\n".print_r($this->toArray(), true)."\n";
+        return "\n".$this->table->name.":\n".print_r($this->toArray(), true)."\n";
     }
 
     /**
@@ -198,16 +198,18 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     /**
      * {@inheritdoc}
      */
-    public function toArray($idAsKey = false, array $parentEntities = array())
+    public function toArray($idAsKey = false, array $bannedEntities = array())
     {
-        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
+        $table = $this->getTable();
+
+        if (!empty($bannedEntities) && in_array($table->name, $bannedEntities)) {
             return;
         }
 
         $rows = [];
 
         foreach ($this->rows as $id => $row) {
-            $rows[$id] = $row->toArray($parentEntities);
+            $rows[$id] = $row->toArray($bannedEntities);
         }
 
         return $idAsKey ? $rows : array_values($rows);
@@ -301,7 +303,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
     /**
      * Add new values to the collection.
      *
-     * @param array|RowInterface $rows The new rows
+     * @param array|AbstractRow $rows The new rows
      *
      * @return $this
      */
@@ -337,7 +339,7 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
             }
         }
 
-        return $this->entity->createCollection($rows);
+        return $this->table->createCollection($rows);
     }
 
     /**
@@ -367,16 +369,16 @@ class RowCollection extends BaseRow implements ArrayAccess, Iterator, Countable
      */
     public function joinMany(RowCollection $rows)
     {
-        $thisEntity = $this->entity;
-        $thatEntity = $rows->getEntity();
-        $thisName = $thisEntity->name;
-        $thatName = $thatEntity->name;
+        $thisTable = $this->table;
+        $thatTable = $rows->getTable();
+        $thisName = $thisTable->name;
+        $thatName = $thatTable->name;
 
-        $foreignKey = $thisEntity->foreignKey;
+        $foreignKey = $thisTable->foreignKey;
 
         foreach ($this->rows as $row) {
             if (!isset($row->$thatName)) {
-                $row->$thatName = $thatEntity->createCollection();
+                $row->$thatName = $thatTable->createCollection();
             }
         }
 

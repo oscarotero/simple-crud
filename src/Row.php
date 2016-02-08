@@ -2,23 +2,26 @@
 
 namespace SimpleCrud;
 
-use JsonSerializable;
-
 /**
- * Stores the data of an entity row.
+ * Stores the data of an table row.
  */
-class Row extends BaseRow implements JsonSerializable
+class Row extends AbstractRow
 {
     private $values = [];
+    private $relations = [];
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(Entity $entity)
+    public function __construct(Table $table)
     {
-        parent::__construct($entity);
+        parent::__construct($table);
 
-        $this->values = array_fill_keys(array_keys($entity->fields), null);
+        $scheme = $table->getScheme();
+
+        foreach ($scheme as $name => $field) {
+            $this->values[$name] = $field['default'];
+        }
     }
 
     /**
@@ -28,24 +31,20 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function __get($name)
     {
-        //Return properties
+        //Exists?
         if (array_key_exists($name, $this->values)) {
             return $this->values[$name];
         }
 
-        //Custom property
-        if (isset($this->properties[$name])) {
-            return $this->values[$name] = call_user_func($this->properties[$name], $this);
+        if (array_key_exists($name, $this->relations)) {
+            return $this->relations[$name];
         }
 
         //Load related data
-        switch ($this->entity->getRelation($name)) {
-            case Entity::RELATION_HAS_ONE:
-                return $this->__call($name, [])->run() ?: new NullValue();
+        $db = $this->getDatabase();
 
-            case Entity::RELATION_HAS_MANY:
-            case Entity::RELATION_HAS_BRIDGE:
-                return $this->__call($name, [])->run();
+        if (isset($db->$name)) {
+            return $this->relations[$name] = $this->__call($name, [])->run() ?: new NullValue();
         }
     }
 
@@ -57,7 +56,17 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function __set($name, $value)
     {
-        $this->values[$name] = $value;
+        if (array_key_exists($name, $this->values)) {
+            return $this->values[$name] = $value;
+        }
+
+        $db = $this->getDatabase();
+
+        if (array_key_exists($name, $this->relations) || isset($db->$name)) {
+            return $this->relations[$name] = $value;
+        }
+
+        throw new SimpleCrudException(sprintf('Undefined value %s', $name));
     }
 
     /**
@@ -75,33 +84,21 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Magic method to print the row values (and subvalues).
-     *
-     * @return string
+     * @inheritdoc
      */
-    public function __toString()
+    public function toArray($keysAsId = false, array $bannedEntities = [])
     {
-        return "\n".$this->getEntity()->name.":\n".print_r($this->toArray(), true)."\n";
-    }
+        $table = $this->getTable();
 
-    /**
-     * @see RowInterface
-     *
-     * {@inheritdoc}
-     */
-    public function toArray($keysAsId = false, array $parentEntities = array())
-    {
-        if (!empty($parentEntities) && in_array($this->entity->name, $parentEntities)) {
+        if (!empty($bannedEntities) && in_array($table->name, $bannedEntities)) {
             return;
         }
 
-        $parentEntities[] = $this->entity->name;
+        $bannedEntities[] = $table->name;
         $data = $this->values;
 
-        foreach ($data as &$value) {
-            if ($value instanceof RowInterface) {
-                $value = $value->toArray($keysAsId, $parentEntities);
-            }
+        foreach ($this->relations as $name => $value) {
+            $data[$name] = $value->toArray($keysAsId, $parentEntities);
         }
 
         return $data;
@@ -110,13 +107,16 @@ class Row extends BaseRow implements JsonSerializable
     /**
      * Relate 'has-one' elements with this row.
      *
-     * @param RowInterface $row The row to relate
+     * @param AbstractRow $row The row to relate
      *
      * @return $this
      */
-    public function relateWith(RowInterface $row)
+    public function relateWith(AbstractRow $row)
     {
-        if (!$this->entity->hasOne($row->getEntity())) {
+        $table = $this->getTable();
+        $related = $row->getTable();
+
+        if (!$table->hasOne($related)) {
             throw new SimpleCrudException('Not valid relation');
         }
 
@@ -124,51 +124,9 @@ class Row extends BaseRow implements JsonSerializable
             throw new SimpleCrudException('Rows without id value cannot be related');
         }
 
-        $this->{$row->getEntity()->foreignKey} = $row->id;
+        $this->__set($related->foreignKey, $row->id);
 
         return $this;
-    }
-
-    /**
-     * Set new values to the row.
-     *
-     * @param array $data The new values
-     *
-     * @return $this
-     */
-    public function set(array $data)
-    {
-        $this->values = $data + $this->values;
-
-        return $this;
-    }
-
-    /**
-     * Return one or all values of the row.
-     *
-     * @param null|string $name The value name to recover. If it's not defined, returns all values.
-     *
-     * @return mixed
-     */
-    public function get($name = null)
-    {
-        if ($name === null) {
-            return $this->values;
-        }
-
-        return isset($this->values[$name]) ? $this->values[$name] : null;
-    }
-
-    /**
-     * Return whether a value is already defined or not.
-     *
-     * @param string $name
-     *
-     * @return bool
-     */
-    public function has($name)
-    {
-        return array_key_exists($name, $this->values) && !($this->values[$name] instanceof NullValue);
     }
 
     /**
@@ -181,16 +139,14 @@ class Row extends BaseRow implements JsonSerializable
      */
     public function save($duplications = false, $externalRelations = false)
     {
-        $data = array_intersect_key($this->values, $this->entity->fields);
-
         if (empty($this->id)) {
-            $this->id = $this->entity->insert()
-                ->data($data)
+            $this->id = $this->table->insert()
+                ->data($this->values)
                 ->duplications($duplications)
                 ->run();
         } else {
-            $this->entity->update()
-                ->data($data)
+            $this->table->update()
+                ->data($this->values)
                 ->byId($this->id)
                 ->limit(1)
                 ->run();
@@ -204,57 +160,54 @@ class Row extends BaseRow implements JsonSerializable
     }
 
     /**
-     * Saves the extenal relations (RELATION_HAS_MANY|RELATION_HAS_BRIDGE) of this row with other row directly in the database.
+     * Saves the extenal relations of this row with other row directly in the database.
      *
      * @return $this
      */
     protected function saveExternalRelations()
     {
-        $extData = array_diff_key($this->values, $this->entity->fields);
-        $db = $this->entity->getDb();
+        $table = $this->getTable();
+        $db = $this->getDatabase();
 
-        foreach ($extData as $name => $ids) {
-            if (!$db->has($name)) {
+        foreach ($this->relations as $name => $row) {
+            $related = $db->$name;
+
+            if ($table->hasOne($related)) {
                 continue;
             }
 
-            $entity = $db->get($name);
+            $ids = (array) $row->id;
 
-            if ($this->entity->hasOne($entity)) {
-                continue;
-            }
+            $bridge = $table->getBridge($related);
 
-            $ids = ($ids instanceof RowInterface) ? (array) $ids->id : (array) $ids;
-
-            if ($this->entity->hasMany($entity)) {
-                $entity->update()
-                    ->data([
-                        $this->entity->foreignKey => $this->id,
-                    ])
-                    ->by('id', $ids)
-                    ->run();
-
-                continue;
-            }
-
-            if ($this->entity->hasBridge($entity)) {
-                $bridge = $this->entity->getBridge($entity);
-
-                $bridge->delete()
-                    ->by($this->entity->foreignKey, $this->id)
+            if ($bridge) {
+                $bridge
+                    ->delete()
+                    ->by($table->foreignKey, $this->id)
                     ->run();
 
                 foreach ($ids as $id) {
-                    $bridge->insert()
+                    $bridge
+                        ->insert()
                         ->data([
-                            $this->entity->foreignKey => $this->id,
-                            $entity->foreignKey => $id,
+                            $table->foreignKey => $this->id,
+                            $related->foreignKey => $id,
                         ])
                         ->run();
                 }
 
                 continue;
             }
+
+            $related
+                ->update()
+                ->data([
+                    $table->foreignKey => $this->id,
+                ])
+                ->by('id', $ids)
+                ->run();
+
+            continue;
         }
 
         return $this;

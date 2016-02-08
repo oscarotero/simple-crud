@@ -9,21 +9,7 @@ use PDO;
  */
 class QueryFactory implements QueryFactoryInterface
 {
-    protected $entity;
     protected $namespaces = [];
-
-    /**
-     * @see QueryFactoryInterface
-     *
-     * {@inheritdoc}
-     */
-    public function setEntity(Entity $entity)
-    {
-        $this->entity = $entity;
-        $this->addNamespace('SimpleCrud\\Queries\\'.ucfirst($entity->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\');
-
-        return $this;
-    }
 
     /**
      * Set the namespace for the fields classes.
@@ -44,38 +30,16 @@ class QueryFactory implements QueryFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function has($name)
+    public function get(Table $table, $name)
     {
         $name = ucfirst($name);
 
         foreach ($this->namespaces as $namespace) {
-            if (class_exists($namespace.$name)) {
-                return true;
+            $class = $namespace.$name;
+
+            if (class_exists($class)) {
+                return new $class($table);
             }
-        }
-
-        return false;
-    }
-
-    /**
-     * @see QueryFactoryInterface
-     *
-     * {@inheritdoc}
-     */
-    public function get($name)
-    {
-        try {
-            $name = ucfirst($name);
-
-            foreach ($this->namespaces as $namespace) {
-                $class = $namespace.$name;
-
-                if (class_exists($class)) {
-                    return new $class($this->entity);
-                }
-            }
-        } catch (\Exception $exception) {
-            throw new SimpleCrudException("Error getting the '{$name}' query", 0, $exception);
         }
 
         throw new SimpleCrudException("Query '{$name}' not found");

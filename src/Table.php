@@ -5,25 +5,13 @@ namespace SimpleCrud;
 use ArrayAccess;
 
 /**
- * Manages a database entity (table).
- *
- * @method Queries\Mysql\Count|Queries\Sqlite\Count   count()
- * @method Queries\Mysql\Delete|Queries\Sqlite\Delete delete()
- * @method Queries\Mysql\Insert|Queries\Sqlite\Insert insert()
- * @method Queries\Mysql\Select|Queries\Sqlite\Select select()
- * @method Queries\Mysql\Sum|Queries\Sqlite\Sum       sum()
- * @method Queries\Mysql\Update|Queries\Sqlite\Update update()
+ * Manages a database table.
  */
-class Entity implements ArrayAccess
+class Table implements ArrayAccess
 {
-    const RELATION_HAS_ONE = 1;
-    const RELATION_HAS_MANY = 2;
-    const RELATION_HAS_BRIDGE = 3;
-
     protected $db;
     protected $row;
     protected $collection;
-    protected $queryFactory;
 
     public $name;
     public $fields = [];
@@ -32,46 +20,47 @@ class Entity implements ArrayAccess
     /**
      * Constructor.
      *
-     * @param string     $name
      * @param SimpleCrud $db
+     * @param string     $name
      */
-    final public function __construct($name, SimpleCrud $db, QueryFactory $queryFactory, FieldFactory $fieldFactory)
+    final public function __construct(SimpleCrud $db, $name)
     {
         $this->db = $db;
         $this->name = $name;
         $this->foreignKey = "{$this->name}_id";
 
-        $this->queryFactory = $queryFactory->setEntity($this);
         $this->setRow(new Row($this));
         $this->setCollection(new RowCollection($this));
 
-        foreach ($this->db->getFields($this->name) as $config) {
-            $this->fields[$config['name']] = $fieldFactory->get($this, $config);
+        $fieldFactory = $db->getFieldFactory();
+
+        foreach (array_keys($this->getScheme()) as $name) {
+            $this->fields[$name] = $fieldFactory->get($this, $name);
         }
 
         $this->init();
     }
 
     /**
-     * Callback used to init the entity.
+     * Callback used to init the table.
      */
     protected function init()
     {
     }
 
     /**
-     * Magic method to create queries related with this entity.
+     * Magic method to create queries related with this table.
      *
      * @param string $name
      * @param array  $arguments
      *
      * @throws SimpleCrudException
      *
-     * @return QueryInterface|null
+     * @return Queries\Query|null
      */
     public function __call($name, $arguments)
     {
-        return $this->queryFactory->get($name);
+        return $this->getDb()->getQueryFactory()->get($this, $name);
     }
 
     /**
@@ -139,13 +128,23 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Returns the SimpleCrud instance associated with this entity.
+     * Returns the SimpleCrud instance associated with this table.
      *
      * @return SimpleCrud
      */
     public function getDb()
     {
         return $this->db;
+    }
+
+    /**
+     * Returns the table scheme
+     *
+     * @return array
+     */
+    public function getScheme()
+    {
+        return $this->db->getScheme()[$this->name];
     }
 
     /**
@@ -161,7 +160,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Defines the Row class used by this entity.
+     * Defines the Row class used by this table.
      *
      * @param Row $row
      */
@@ -171,7 +170,7 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Defines the RowCollection class used by this entity.
+     * Defines the RowCollection class used by this table.
      *
      * @param RowCollection $collection
      */
@@ -273,9 +272,9 @@ class Entity implements ArrayAccess
 
         //handle left-joins
         foreach ($joins as $key => $values) {
-            $entity = $this->getDb()->$key;
+            $table = $this->getDb()->$key;
 
-            $data[$key] = $entity->create($entity->prepareDataFromDatabase($values));
+            $data[$key] = $table->create($table->prepareDataFromDatabase($values));
         }
 
         return $data;
@@ -308,90 +307,48 @@ class Entity implements ArrayAccess
     }
 
     /**
-     * Returns the relation type of this entity with other.
+     * Returns if a row of this table can be related with many rows of other table
      *
-     * @param Entity|string $entity
-     *
-     * @return null|int
-     */
-    public function getRelation($entity)
-    {
-        if (is_string($entity)) {
-            if (!$this->db->has($entity)) {
-                return false;
-            }
-
-            $entity = $this->db->get($entity);
-        }
-
-        if ($this->hasOne($entity)) {
-            return self::RELATION_HAS_ONE;
-        }
-
-        if ($this->hasMany($entity)) {
-            return self::RELATION_HAS_MANY;
-        }
-
-        if ($this->hasBridge($entity)) {
-            return self::RELATION_HAS_BRIDGE;
-        }
-    }
-
-    /**
-     * Returns whether the relation type of this entity with other is HAS_MANY.
-     *
-     * @param Entity $entity
+     * @param Table $table
      *
      * @return bool
      */
-    public function hasMany(Entity $entity)
+    public function hasMany(Table $table)
     {
-        return isset($entity->fields[$this->foreignKey]);
+        return $table->hasOne($this) || ($table->getBridge($this) !== null);
     }
 
     /**
-     * Returns whether the relation type of this entity with other is HAS_MANY.
+     * Returns if a row of this table can be related with just one row of other table
      *
-     * @param Entity $entity
+     * @param Table $table
      *
      * @return bool
      */
-    public function hasOne(Entity $entity)
+    public function hasOne(Table $table)
     {
-        return isset($this->fields[$entity->foreignKey]);
+        return isset($this->fields[$table->foreignKey]);
     }
 
     /**
-     * Returns whether the relation type of this entity with other is HAS_BRIDGE.
+     * Returns the table that works as a bridge between this table and other.
      *
-     * @param Entity $entity
+     * @param Table $table
      *
-     * @return bool
+     * @return Table|null
      */
-    public function hasBridge(Entity $entity)
+    public function getBridge(Table $table)
     {
-        return $this->getBridge($entity) !== null;
-    }
-
-    /**
-     * Returns the entity that works as a bridge between this entity and other.
-     *
-     * @param Entity $entity
-     *
-     * @return Entity|null
-     */
-    public function getBridge(Entity $entity)
-    {
-        if ($this->name < $entity->name) {
-            $name = "{$this->name}_{$entity->name}";
+        if ($this->name < $table->name) {
+            $name = "{$this->name}_{$table->name}";
         } else {
-            $name = "{$entity->name}_{$this->name}";
+            $name = "{$table->name}_{$this->name}";
         }
 
-        if ($this->db->has($name)) {
+        if (isset($this->db->$name)) {
             $bridge = $this->db->$name;
 
-            if (isset($bridge->fields[$this->foreignKey]) && isset($bridge->fields[$entity->foreignKey])) {
+            if ($bridge->hasOne($this) && $bridge->hasOne($table)) {
                 return $bridge;
             }
         }

@@ -2,12 +2,12 @@
 
 namespace SimpleCrud\Queries;
 
-use SimpleCrud\RowInterface;
+use SimpleCrud\AbstractRow;
 
 /**
  * Extended trait
  *
- * @property \SimpleCrud\Entity $entity
+ * @property \SimpleCrud\Table $table
  */
 trait ExtendedSelectionTrait
 {
@@ -45,40 +45,40 @@ trait ExtendedSelectionTrait
     }
 
     /**
-     * Adds a WHERE according with the relation of other entity.
+     * Adds a WHERE according with the relation of other table.
      *
-     * @param RowInterface $row
+     * @param AbstractRow $row
      *
      * @return self
      */
-    public function relatedWith(RowInterface $row)
+    public function relatedWith(AbstractRow $row)
     {
-        $entity = $row->getEntity();
+        $table = $row->getTable();
 
-        if ($this->entity->hasOne($entity)) {
-            return $this->by($entity->foreignKey, $row->get('id'));
+        if ($this->table->hasOne($table)) {
+            return $this->by($table->foreignKey, $row->get('id'));
         }
 
-        if ($this->entity->hasMany($entity)) {
-            return $this->byId($row->get($this->entity->foreignKey));
+        if ($this->table->hasMany($table)) {
+            return $this->byId($row->get($this->table->foreignKey));
         }
 
-        $bridge = $this->entity->getBridge($entity);
+        $bridge = $this->table->getBridge($table);
 
         if ($bridge) {
             $this->from($bridge->name);
-            $this->from($entity->name);
+            $this->from($table->name);
 
-            $this->fields[] = "`{$bridge->name}`.`{$entity->foreignKey}`";
+            $this->fields[] = "`{$bridge->name}`.`{$table->foreignKey}`";
 
-            $this->where("`{$bridge->name}`.`{$this->entity->foreignKey}` = `{$this->entity->name}`.`id`");
-            $this->where("`{$bridge->name}`.`{$entity->foreignKey}` = `{$entity->name}`.`id`");
-            $this->where("`{$entity->name}`.`id` IN (:{$bridge->name})", [":{$bridge->name}" => $row->get('id')]);
+            $this->where("`{$bridge->name}`.`{$this->table->foreignKey}` = `{$this->table->name}`.`id`");
+            $this->where("`{$bridge->name}`.`{$table->foreignKey}` = `{$table->name}`.`id`");
+            $this->where("`{$table->name}`.`id` IN (:{$bridge->name})", [":{$bridge->name}" => $row->get('id')]);
 
             return $this;
         }
 
-        throw new SimpleCrudException("The tables {$this->entity->name} and {$entity->name} are no related");
+        throw new SimpleCrudException("The tables {$this->table->name} and {$table->name} are no related");
     }
 
     /**

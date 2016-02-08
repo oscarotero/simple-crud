@@ -3,9 +3,9 @@
 namespace SimpleCrud\Queries;
 
 /**
- * Trait with common funcions used in queries
+ * Trait with common functions used in queries
  *
- * @property \SimpleCrud\Entity $entity
+ * @property \SimpleCrud\Table $table
  */
 trait SelectionTrait
 {
@@ -82,17 +82,17 @@ trait SelectionTrait
     {
         if (is_array($value)) {
             if (empty($value)) {
-                return $this->where("`{$this->entity->name}`.`{$field}` IS NULL");
+                return $this->where("`{$this->table->name}`.`{$field}` IS NULL");
             }
 
-            return $this->where("`{$this->entity->name}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
+            return $this->where("`{$this->table->name}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
         }
 
         if ($value === null) {
-            return $this->where("`{$this->entity->name}`.`{$field}` IS NULL");
+            return $this->where("`{$this->table->name}`.`{$field}` IS NULL");
         }
 
-        return $this->where("`{$this->entity->name}`.`{$field}` = :{$field}", [":{$field}" => $value]);
+        return $this->where("`{$this->table->name}`.`{$field}` = :{$field}", [":{$field}" => $value]);
     }
 
     /**

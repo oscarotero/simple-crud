@@ -1,6 +1,6 @@
 # SimpleCrud
 
-> ## New v6.x version with some breaking changes!!
+> ## Working in the new v6.x version with a lot of breaking changes!!
 
 [![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
@@ -21,12 +21,12 @@ This library relies in some conventions to avoid configuration.
 
 SimpleCrud has the following classes:
 
-* **SimpleCrud:** Manage the database connection, execute the queries and create all entities. 
+* **SimpleCrud:** Manage the database connection, execute the queries and create all tables. 
+* **Table:** Manages a database table
+* **Field:** Used to modify the values from/to the database according with its format
 * **Query:** Creates the database queries. Currently there are adapters for mysql and sqlite
-* **Entity:** Manages a database table
 * **Row:** Stores/modifies a row
 * **RowCollection:** Is a collection of rows
-* **Fields:** Used to modify the values from/to the database according with its format
 
 ## Usage example
 
@@ -70,7 +70,7 @@ use SimpleCrud\SimpleCrud;
 
 $db = new SimpleCrud($pdo);
 
-//Get any entity, using magic properties, they will be created on demand:
+//To get any table, use magic properties, they will be instantiated on demand:
 $post = $db->post;
 ```
 
@@ -81,9 +81,9 @@ SimpleCrud detects automatically all relationships between the tables using the 
 
 #### Basic CRUD:
 
-You can work directly with the entities to insert/update/delete/select data:
+You can work directly with the tables to insert/update/delete/select data:
 
-Use arrayAccess interface for access to the data using the `id`:
+Use arrayAccess interface to access to the data using the `id`:
 
 ```php
 //Get the post id = 3;
@@ -151,10 +151,10 @@ The method `run()` returns also the data from queries like `count()` or `sum()`:
 ```php
 $count = $db->post->count();
 $statement = $count();  //execute the query and returns the statement
-$total = $count->run(); //execute the query and returns the result as a integer
+$total = $count->run(); //execute the query and returns an integer with the result
 ```
 
-Use `select()` to get data from the database. `run()` returns an instance of `RowCollection` with the result:
+Use `select()` to get the data from the database. `run()` returns an instance of `RowCollection` with the result:
 
 ```php
 $posts = $db->post->select()
@@ -168,7 +168,7 @@ foreach ($posts as $post) {
 }
 ```
 
-To select only one row, use the modifier `->one()`:
+To select only one row, use the modifier `one()`, it returns an instance of `Row`:
 
 ```php
 $post = $db->post->select()
@@ -179,7 +179,7 @@ $post = $db->post->select()
 echo $post->title;
 ```
 
-The method `relatedWith()` allows to select related data easily:
+The modifier `relatedWith()` add automatically the `WHERE` clauses to select related data easily:
 
 ```php
 //Get the post id = 23
@@ -244,7 +244,7 @@ foreach ($allPostsTitles as $title) {
 
 #### Fields classes
 
-The purpose of the `SimpleCrud\Fields` classes is to convert the data between the database and the entity. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
+The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to the database for its usage. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
 
 * Boolean: To manage boolean values
 * Date: To manage date values
@@ -278,7 +278,7 @@ $post->save();
 
 ### Lazy loads
 
-Both `Row` and `RowCollection` can load automatically other related data. Just use a property with the same name than a related entity. For example:
+Both `Row` and `RowCollection` can load automatically other related data. Just use a property with the same name than a related table. For example:
 
 ```php
 //Get the category id=34
@@ -304,7 +304,7 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
-You may want to modify the query before get the result. Use the magic method instead the property:
+You may want to modify the query before get the result. Use a method instead a property to return a select query:
 
 ```php
 $category = $db->category[34];
@@ -332,14 +332,14 @@ foreach ($posts as $post) {
 
 ## Customization
 
-SimpleCrud uses factory classes to create instances of entities, queries and fields. You can configure or create your own factories to customize how these instances are created. 
+SimpleCrud uses factory classes to create instances of tables, queries and fields. You can configure or create your own factories to customize how these instances are created. 
 
-### EntityFactory
+### TableFactory
 
-This class creates the instances of all entities. If it's not provided, by default uses the `SimpleCrud\EntityFactory` but you can create your own factory implementing the `SimpleCrud\EntityFactoryInterface`. The default EntityFactory, can be configured using the following methods:
+This class creates the instances of all tables. If it's not provided, by default uses the `SimpleCrud\TableFactory` but you can create your own factory implementing the `SimpleCrud\TableFactoryInterface`. The default TableFactory, can be configured using the following methods:
 
-* `addNamespace` Useful if you want to create custom entity classes. For example, if the namespace is `App\MyModels` and you load the entity `post`, the EntityFactory will check whether the class `App\MyModels\Post` exists and use it instead the default.
-* `setAutocreate` Set false to NOT create instances of entities using the default class.
+* `addNamespace` Useful if you want to create custom table classes. For example, if the namespace is `App\MyModels` and you load the table `post`, the TableFactory will check whether the class `App\MyModels\Post` exists and use it instead the default.
+* `setAutocreate` Set false to NOT create instances of tables using the default class.
 * `getFieldFactory` Returns the FieldFactory.
 * `setFieldFactory` To set a custom factory to create Field instances.
 * `getQueryFactory` Returns the QueryFactory.
@@ -349,18 +349,18 @@ This class creates the instances of all entities. If it's not provided, by defau
 //Create the simplecrud instance
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the entity factory
-$entityFactory = $db->getEntityFactory();
+//Get the table factory
+$tableFactory = $db->getTableFactory();
 
-//Add a namespace to locate custom entities:
-$entityFactory->addNamespace('App\\MyModels\\');
+//Add a namespace to locate custom tables:
+$tableFactory->addNamespace('App\\MyModels\\');
 
 $db->post; //Returns an instance of App\MyModels\Post
 ```
 
 ### QueryFactory
 
-The query factory is the responsive to instantiate all query classes of the entity. By default uses the `SimpleCrud\QueryFactory` class but you can provide your own factory extending the `SimpleCrud\QueryFactoryInterface`. The default factory has the following options:
+The query factory is the responsive to instantiate all query classes of the table. By default uses the `SimpleCrud\QueryFactory` class but you can provide your own factory extending the `SimpleCrud\QueryFactoryInterface`. The default factory has the following options:
 
 * `addNamespace` Add more namespaces where find more query classes.
 
@@ -370,11 +370,11 @@ Example:
 //Create the simplecrud instance
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the entity factory
-$entityFactory = $db->getEntityFactory();
+//Get the table factory
+$tableFactory = $db->getTableFactory();
 
-//Get the queryFactory used by the entityFactory
-$queryFactory = $entityFactory->getQueryFactory();
+//Get the queryFactory used by the tableFactory
+$queryFactory = $tableFactory->getQueryFactory();
 
 //Add a namespace with my custom query classes, with more options, etc
 $queryFactory->addNamespace('App\\Models\\Queries\\');
@@ -386,7 +386,7 @@ $db->posts->customSelect()->run(); //Returns and execute an instance of App\Mode
 
 ### FieldFactory
 
-This factory creates intances of the fields used by the entities to convert the values. By default uses `SimpleCrud\FieldFactory` but you can create your own factory extending the `SimpleCrud\FieldFactoryInstance`. The default FieldFactory has the following options:
+This factory creates intances of the fields used by the tables to convert the values. By default uses `SimpleCrud\FieldFactory` but you can create your own factory extending the `SimpleCrud\FieldFactoryInstance`. The default FieldFactory has the following options:
 
 * `addNamespace` Add more namespaces where find more field classes.
 * `addSmartName` Add more smart names to asign automatically types to specific field names.
@@ -397,11 +397,11 @@ Example:
 //Create the simplecrud instance
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the entity factory
-$entityFactory = $db->getEntityFactory();
+//Get the table factory
+$tableFactory = $db->getTableFactory();
 
-//Get the fieldFactory used by the entityFactory
-$fieldFactory = $entityFactory->getFieldFactory();
+//Get the fieldFactory used by the tableFactory
+$fieldFactory = $tableFactory->getFieldFactory();
 
 //Add a namespace with my custom field classes
 $fieldFactory->addNamespace('App\\Models\\Fields\\');
@@ -413,16 +413,16 @@ $fieldFactory->addSmartName('year', 'Integer');
 $db->post->fields['year']; //returns an instance of App\Models\Fields\Integer
 ```
 
-## Creating your own entities
+## Creating your own tables
 
-The default behaviour of simpleCrud is fine but you may want to extend the entities with your own methods, validate data, etc. So you need to create classes for your entities. The entity classes must extend the `SimpleCrud\Entity` class and be named like the database table (with uppercase first letter). For example, for a table named `post` you need a class named `Post`. In the Entity class you can configure the types of the fields and add your own methods:
+The default behaviour of simpleCrud is fine but you may want to extend the tables with your own methods, validate data, etc. So you need to create classes for your tables. The table classes must extend the `SimpleCrud\Table` class and be named like the database table (with uppercase first letter). For example, for a table named `post` you need a class named `Post`. In the Table class you can configure the types of the fields and add your own methods:
 
 ```php
 namespace MyModels;
 
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 
-class Posts extends Entity
+class Posts extends Table
 {
     public function getLatests()
     {
@@ -434,11 +434,11 @@ class Posts extends Entity
 }
 ```
 
-Now if you configure the EntityFactory to look into `MyModels` namespace, it will use this class when you need `$db->post` entity:
+Now if you configure the TableFactory to look into `MyModels` namespace, it will use this class when you need `$db->post` table:
 
 ```php
 $db = new SimpleCrud\SimpleCrud($pdo);
-$db->getEntityFactory()->addNamespace('MyModels\\');
+$db->getTableFactory()->addNamespace('MyModels\\');
 
 
 $latests = $db->post->getLatest();
@@ -446,14 +446,14 @@ $latests = $db->post->getLatest();
 
 ### Data validation
 
-Each entity has two methods to convert/validate data before push to database and after pull from it. You can overwrite this methods to customize its behaviour:
+Each table has two methods to convert/validate data before push to database and after pull from it. You can overwrite this methods to customize its behaviour:
 
 ```php
 namespace MyModels;
 
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 
-class Posts extends Entity
+class Posts extends Table
 {
     public function dataToDatabase (array $data, $new)
     {
@@ -478,14 +478,14 @@ class Posts extends Entity
 
 ### Customize Row and RowCollection
 
-The Entity class has the method `init` that you can use to initialize things. It's called at the end of the `__construct`. This allows to configure the entity after the instantiation, for example to use custom `Row` or `RowCollection` classes or extend them with other methods and properties:
+The Table class has the method `init` that you can use to initialize things. It's called at the end of the `__construct`. This allows to configure the table after the instantiation, for example to use custom `Row` or `RowCollection` classes or extend them with other methods and properties:
 
 ```php
 namespace MyModels;
 
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 
-class Posts extends Entity
+class Posts extends Table
 {
     public function init()
     {
@@ -502,7 +502,7 @@ class Posts extends Entity
 }
 ```
 
-Now, on use the entity:
+Now, on use the table:
 
 ```php
 $posts = $db->post->select()->run();
@@ -549,8 +549,8 @@ Now, to use it:
 ```php
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the field factory from the entity factory
-$fieldFactory = $db->getEntityFactory()->getFieldFactory();
+//Get the field factory from the table factory
+$fieldFactory = $db->getTableFactory()->getFieldFactory();
 
 //Add the namespace of my custom fields
 $fieldFactory->addNamespace('MyModels\\Fields\\');
@@ -592,8 +592,8 @@ Now to use it:
 ```php
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the query factory from the entity factory
-$fieldFactory = $db->getEntityFactory()->getQueryFactory();
+//Get the query factory from the table factory
+$fieldFactory = $db->getTableFactory()->getQueryFactory();
 
 //Add the namespace of my custom queries
 $queryFactory->addNamespace('MyModels\\Queries\\');
@@ -608,13 +608,13 @@ $posts = $db->post->select()
 
 ### Shared attributes
 
-You may to share some values across all entities, rows and collections. For example a language configuration, the base path where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
+You may to share some values across all tables, rows and collections. For example a language configuration, the base path where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
 
 ```php
 //Save an attribute, for example, the language code:
 $db->setAttribute('language', 'en');
 
-//This value is accessible from the entity class and row/rowCollection:
+//This value is accessible from the table class and row/rowCollection:
 echo $db->post->getAttribute('language'); //en
 
 //And rows
@@ -622,5 +622,5 @@ $post = $db->post[2];
 $post->getAttribute('language'); //en
 ```
 
-Note: The attributes are read-only for entities, rows and rowCollections, only the `SimpleCrud\SimpleCrud` instance has the method `setAttribute`.
+Note: The attributes are read-only for tables, rows and rowCollections, only the `SimpleCrud\SimpleCrud` instance has the method `setAttribute`.
 

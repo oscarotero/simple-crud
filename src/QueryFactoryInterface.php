@@ -8,31 +8,14 @@ namespace SimpleCrud;
 interface QueryFactoryInterface
 {
     /**
-     * Set the entity used for the queries.
+     * Creates a new instance of a Query.
      *
-     * @param Entity $entity
-     *
-     * @return self
-     */
-    public function setEntity(Entity $entity);
-
-    /**
-     * Check whether or not a Query class is instantiable.
-     *
-     * @param string $name
-     *
-     * @return bool
-     */
-    public function has($name);
-
-    /**
-     * Creates a new instance of a Field.
-     *
+     * @param Table  $table
      * @param string $name
      *
      * @throws SimpleCrudException
      *
-     * @return FieldInterface
+     * @return Queries\Query
      */
-    public function get($name);
+    public function get(Table $table, $name);
 }

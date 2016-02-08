@@ -2,15 +2,15 @@
 
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\Query;
 use SimpleCrud\Queries\SelectionTrait;
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 use PDOStatement;
 
 /**
  * Manages a database update query.
  */
-class Update extends BaseQuery
+class Update extends Query
 {
     use SelectionTrait;
 
@@ -25,7 +25,7 @@ class Update extends BaseQuery
      */
     public function data(array $data)
     {
-        $this->data = $this->entity->prepareDataToDatabase($data, false);
+        $this->data = $this->table->prepareDataToDatabase($data, false);
 
         return $this;
     }
@@ -55,7 +55,7 @@ class Update extends BaseQuery
             $marks[":__{$field}"] = $value;
         }
 
-        return $this->entity->getDb()->execute((string) $this, $marks);
+        return $this->table->getDb()->execute((string) $this, $marks);
     }
 
     /**
@@ -63,7 +63,7 @@ class Update extends BaseQuery
      */
     public function __toString()
     {
-        $query = "UPDATE `{$this->entity->name}`";
+        $query = "UPDATE `{$this->table->name}`";
         $query .= ' SET '.static::buildFields(array_keys($this->data));
 
         $query .= $this->whereToString();

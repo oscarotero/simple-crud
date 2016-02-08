@@ -8,95 +8,163 @@ use PDO;
 class SimpleCrud
 {
     protected $connection;
+    protected $scheme;
+    protected $tables = [];
     protected $inTransaction = false;
-    protected $entityFactory;
-    protected $entities = [];
     protected $attributes = [];
 
+    protected $tableFactory;
+    protected $queryFactory;
+    protected $fieldFactory;
+
     /**
-     * Set the connection and the entityFactory.
+     * Set the connection and the tableFactory.
      *
      * @param PDO           $connection
-     * @param EntityFactory $entityFactory
      */
-    public function __construct(PDO $connection, EntityFactory $entityFactory = null)
+    public function __construct(PDO $connection)
     {
         $this->connection = $connection;
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        $this->setEntityFactory($entityFactory ?: (new EntityFactory())->setAutocreate());
     }
 
     /**
-     * Set the EntityFactory instance used to create all entities.
-     *
-     * @param EntityFactory $entityFactory
+     * Set the database scheme
+     * 
+     * @param array $scheme
+     * 
+     * @return self
      */
-    public function setEntityFactory(EntityFactory $entityFactory)
+    public function setScheme(array $scheme)
     {
-        $entityFactory->setDb($this);
+        $this->scheme = $scheme;
 
-        $this->entityFactory = $entityFactory;
+        return $this;
     }
 
     /**
-     * Returns the EntityFactory instance used.
-     *
-     * @return EntityFactory
+     * Returns the database scheme
+     * 
+     * @return array
      */
-    public function getEntityFactory()
+    public function getScheme()
     {
-        return $this->entityFactory;
-    }
+        if ($this->scheme === null) {
+            $factory = 'SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\Scheme::get';
 
-    /**
-     * Returns an entity.
-     *
-     * @param string $name The entity name
-     *
-     * @throws SimpleCrudException If the entity cannot be instantiated
-     *
-     * @return null|Entity
-     */
-    public function get($name)
-    {
-        if (isset($this->entities[$name])) {
-            return $this->entities[$name];
+            $this->scheme = $factory($this);
         }
 
-        return $this->entities[$name] = $this->entityFactory->get($name);
+        return $this->scheme;
     }
 
     /**
-     * Check whether an entity exists.
+     * Set the TableFactory instance used to create all tables.
      *
-     * @param string $name The entity name
-     *
-     * @throws SimpleCrudException If the entity cannot be instantiated
-     *
-     * @return null|Entity
+     * @param TableFactory $tableFactory
+     * 
+     * @return self
      */
-    public function has($name)
+    public function setTableFactory(TableFactory $tableFactory)
     {
-        return isset($this->entities[$name]) || $this->entityFactory->has($name);
+        $this->tableFactory = $tableFactory;
+
+        return $this;
     }
 
     /**
-     * Magic method to initialize the entities in lazy mode.
+     * Returns the TableFactory instance used.
      *
-     * @param string $name The entity name
+     * @return TableFactory
+     */
+    public function getTableFactory()
+    {
+        if ($this->tableFactory === null) {
+            return $this->tableFactory = (new TableFactory())->setAutocreate();
+        }
+
+        return $this->tableFactory;
+    }
+
+    /**
+     * Set the QueryFactory instance used by the tables.
      *
-     * @throws SimpleCrudException If the entity cannot be instantiated
+     * @param QueryFactory $queryFactory
      *
-     * @return null|Entity
+     * @return self
+     */
+    public function setQueryFactory(QueryFactory $queryFactory)
+    {
+        $this->queryFactory = $queryFactory;
+
+        return $this;
+    }
+
+    /**
+     * Returns the QueryFactory instance used by the tables.
+     *
+     * @return QueryFactory
+     */
+    public function getQueryFactory()
+    {
+        if ($this->queryFactory === null) {
+            $queryFactory = new QueryFactory();
+            $queryFactory->addNamespace('SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\');
+        
+            return $this->queryFactory = $queryFactory;
+        }
+
+        return $this->queryFactory;
+    }
+
+    /**
+     * Set the FieldFactory instance used by the tables.
+     *
+     * @param FieldFactory $fieldFactory
+     *
+     * @return self
+     */
+    public function setFieldFactory(FieldFactory $fieldFactory)
+    {
+        $this->fieldFactory = $fieldFactory;
+
+        return $this;
+    }
+
+    /**
+     * Returns the FieldFactory instance used by the tables.
+     *
+     * @return FieldFactory
+     */
+    public function getFieldFactory()
+    {
+        if ($this->fieldFactory === null) {
+            return $this->fieldFactory = new FieldFactory();
+        }
+
+        return $this->fieldFactory;
+    }
+
+    /**
+     * Magic method to initialize the tables in lazy mode.
+     *
+     * @param string $name The table name
+     *
+     * @throws SimpleCrudException If the table cannot be instantiated
+     *
+     * @return Table
      */
     public function __get($name)
     {
-        return $this->get($name);
+        if (isset($this->tables[$name])) {
+            return $this->tables[$name];
+        }
+
+        return $this->tables[$name] = $this->getTableFactory()->get($this, $name);
     }
 
     /**
-     * Magic method to check if a entity exists or not.
+     * Magic method to check if a table exists or not.
      *
      * @param string $name
      *
@@ -104,7 +172,7 @@ class SimpleCrud
      */
     public function __isset($name)
     {
-        return $this->has($name);
+        return isset($this->scheme[$name]);
     }
 
     /**
@@ -132,6 +200,7 @@ class SimpleCrud
                     unset($marks[$name]);
                 }
             }
+
             if (empty($marks)) {
                 $marks = null;
             }
@@ -256,31 +325,5 @@ class SimpleCrud
         }
 
         return isset($this->attributes[$name]) ? $this->attributes[$name] : null;
-    }
-
-    /**
-     * Returns all tables.
-     *
-     * @return array
-     */
-    public function getTables()
-    {
-        $class = 'SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\DbInfo';
-
-        return $class::getTables($this);
-    }
-
-    /**
-     * Returns the field info of a table.
-     *
-     * @param string $table
-     *
-     * @return array
-     */
-    public function getFields($table)
-    {
-        $class = 'SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\DbInfo';
-
-        return $class::getFields($this, $table);
     }
 }

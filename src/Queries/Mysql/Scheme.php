@@ -8,18 +8,25 @@ use PDO;
 /**
  * Class to retrieve info from a mysql database.
  */
-class DbInfo
+class Scheme
 {
     /**
-     * Build and return the query.
+     * Build and return the database scheme.
      *
      * @param SimpleCrud $db
      *
      * @return array
      */
-    public static function getTables(SimpleCrud $db)
+    public static function get(SimpleCrud $db)
     {
-        return $db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
+        $scheme = [];
+        $tables = $db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
+
+        foreach ($tables as $table) {
+            $scheme[$table] = self::getFields($db, $table);
+        }
+
+        return $scheme;
     }
 
     /**
@@ -30,17 +37,18 @@ class DbInfo
      *
      * @return array
      */
-    public static function getFields(SimpleCrud $db, $table)
+    protected static function getFields(SimpleCrud $db, $table)
     {
         $result = $db->execute("DESCRIBE `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
         $fields = [];
 
         foreach ($result as $field) {
+            $name = $field['Field'];
+
             preg_match('#^(\w+)(\((.+)\))?( unsigned)?$#', $field['Type'], $matches);
 
             $config = [
                 'type' => $matches[1],
-                'name' => $field['Field'],
                 'null' => ($field['Null'] === 'YES'),
                 'default' => $field['Default'],
                 'unsigned' => !empty($matches[4]),
@@ -64,7 +72,7 @@ class DbInfo
                     }
             }
 
-            $fields[] = $config;
+            $fields[$name] = $config;
         }
 
         return $fields;

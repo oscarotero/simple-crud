@@ -7,17 +7,37 @@ namespace SimpleCrud;
  */
 class FieldFactory implements FieldFactoryInterface
 {
-    protected $cachedTypes = [];
     protected $namespaces = ['SimpleCrud\\Fields\\'];
-    protected $defaultType = 'SimpleCrud\\Fields\\Field';
-    protected $smartTypes = [
-        'Decimal' => ['float'],
-        'Integer' => ['tinyint', 'smallint', 'mediumint', 'bigint', 'year'],
+    protected $defaultType = 'Field';
+
+    protected $nameMap = [
+        'id' => 'Integer',
+        'active' => 'Boolean',
+        'pubdate' => 'Datetime',
     ];
-    protected $smartNames = [
-        'Boolean' => ['active'],
-        'Datetime' => ['pubdate'],
-        'Integer' => ['id'],
+
+    protected $regexMap = [
+        //relation fields (post_id)
+        '/_id$/' => 'Integer',
+
+        //flags (isActive, inHome, hasContent)
+        '/^(is|in|has)[A-Z]/' => 'Boolean',
+
+        //time related (createdAt, publishedAt)
+        '/[a-z]At$/' => 'Datetime',
+    ];
+
+    protected $typeMap = [
+        'bigint' => 'Integer',
+        'boolean' => 'Boolean',
+        'date' => 'Date',
+        'datetime' => 'Datetime',
+        'float' => 'Decimal',
+        'mediumint' => 'Integer',
+        'set' => 'Set',
+        'smallint' => 'Integer',
+        'tinyint' => 'Integer',
+        'year' => 'Integer',
     ];
 
     /**
@@ -35,116 +55,95 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * Set new smart names.
+     * Map names with field types.
      *
-     * @param string $name
-     * @param string $type
+     * @param array $map
      *
      * @return self
      */
-    public function addSmartName($name, $type)
+    public function mapNames(array $map)
     {
-        if (!isset($this->smartNames[$type])) {
-            $this->smartNames[$type] = [$name];
-        } else {
-            $this->smartNames[$type][] = $name;
-        }
+        $this->mapNames = $map + $this->mapNames;
 
         return $this;
     }
 
     /**
-     * @see FieldFactoryInterface
+     * Map names with field types using regexp.
+     *
+     * @param array $map
+     *
+     * @return self
+     */
+    public function mapRegex(array $map)
+    {
+        $this->regexMap = $map + $this->regexMap;
+
+        return $this;
+    }
+
+    /**
+     * Map db field types with classes
+     *
+     * @param array $map
+     *
+     * @return self
+     */
+    public function mapTypes(array $types)
+    {
+        $this->mapTypes = $map + $this->mapTypes;
+
+        return $this;
+    }
+
+    /**
+     * @see TableFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function get(Entity $entity, array $config)
+    public function get(Table $table, $name)
     {
-        try {
-            $type = $config['type'];
+        $scheme = $table->getScheme();
 
-            if (($smartType = $this->getTypeByName($config['name']))) {
-                $type = $smartType;
-            }
-
-            if ($type) {
-                if (isset($this->cachedTypes[$type])) {
-                    $class = $this->cachedTypes[$type];
-
-                    return new $class($entity, $config);
-                }
-
-                $class = $this->getClass($type);
-
-                if (!empty($class)) {
-                    $this->cachedTypes[$type] = $class;
-
-                    return new $class($entity, $config);
-                }
-            }
-
-            $class = $this->cachedTypes[$type] = $this->defaultType;
-
-            return new $class($entity, $config);
-        } catch (\Exception $exception) {
-            throw new SimpleCrudException("Error getting the '{$type}' field", 0, $exception);
+        if (!isset($scheme[$name])) {
+            throw new SimpleCrudException("The field '{$name}' does not exist in the table {$table->name}");
         }
+
+        $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;
+        
+        foreach ($this->namespaces as $namespace) {
+            $class = $namespace.$className;
+
+            if (class_exists($class)) {
+                return new $class($table, $name);
+            }
+        }
+
+        throw new SimpleCrudException("No field class found for '{$name}'");
     }
 
     /**
-     * Retrieves the field type to use.
+     * Get the field class name
      *
      * @param string $name
-     *
-     * @return string|null
-     */
-    protected function getTypeByName($name)
-    {
-        foreach ($this->smartNames as $type => $names) {
-            if (in_array($name, $names, true)) {
-                return $type;
-            }
-        }
-
-        if (substr($name, -3) === '_id') {
-            return 'Integer';
-        }
-
-        //Begin with is|in|has (for example: isActive, inHome, hasContent)
-        if (preg_match('/^(is|in|has)[A-Z]/', $name)) {
-            return 'Boolean';
-        }
-
-        //End with At (for example: publishedAt)
-        if (preg_match('/[a-z]At$/', $name)) {
-            return 'Datetime';
-        }
-    }
-
-    /**
-     * Retrieves the class name for a specific type if exists.
-     *
      * @param string $type
      *
      * @return string|null
      */
-    protected function getClass($type)
+    protected function getClassName($name, $type)
     {
-        foreach ($this->smartTypes as $smartType => $types) {
-            if (in_array($type, $types, true)) {
-                $type = $smartType;
-                break;
+        if (isset($this->nameMap[$name])) {
+            return $this->nameMap[$name];
+        }
+
+        foreach ($this->regexMap as $regex => $class) {
+            if (preg_match($regex, $name)) {
+                return $class;
             }
         }
 
-        $name = ucfirst($type);
-
-        foreach ($this->namespaces as $namespace) {
-            $class = $namespace.$name;
-
-            if (class_exists($class)) {
-                return $class;
-            }
+        if (isset($this->typeMap[$type])) {
+            return $this->typeMap[$type];
         }
     }
 }

@@ -2,24 +2,24 @@
 
 namespace SimpleCrud\Fields;
 
-use SimpleCrud\FieldInterface;
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 
 /**
- * Generic field. The data won't be converted.
+ * Generic field.
  */
-class Field implements FieldInterface
+class Field
 {
-    protected $entity;
+    protected $table;
+    protected $name;
     protected $config = [];
 
     /**
      * {@inheritdoc}
      */
-    public function __construct(Entity $entity, array $config)
+    public function __construct(Table $table, $name)
     {
-        $this->entity = $entity;
-        $this->config += $config;
+        $this->table = $table;
+        $this->name = $name;
     }
 
     /**
@@ -36,6 +36,14 @@ class Field implements FieldInterface
     public function dataFromDatabase($data)
     {
         return $data;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getScheme()
+    {
+        return $this->table->getScheme()[$this->name];
     }
 
     /**

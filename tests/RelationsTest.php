@@ -1,7 +1,7 @@
 <?php
 
 use SimpleCrud\SimpleCrud;
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 
 class RelationsTest extends PHPUnit_Framework_TestCase
 {
@@ -23,14 +23,14 @@ class RelationsTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($this->db->tag->hasBridge('post'));
         $this->assertTrue($this->db->post->hasBridge('tag'));
 
-        $this->assertSame(Entity::RELATION_HAS_ONE, $this->db->post->getRelation('category'));
-        $this->assertSame(Entity::RELATION_HAS_MANY, $this->db->category->getRelation('post'));
-        $this->assertSame(Entity::RELATION_HAS_ONE, $this->db->post_tag->getRelation('tag'));
-        $this->assertSame(Entity::RELATION_HAS_MANY, $this->db->tag->getRelation('post_tag'));
-        $this->assertSame(Entity::RELATION_HAS_ONE, $this->db->post_tag->getRelation('post'));
-        $this->assertSame(Entity::RELATION_HAS_MANY, $this->db->post->getRelation('post_tag'));
-        $this->assertSame(Entity::RELATION_HAS_BRIDGE, $this->db->post->getRelation('tag'));
-        $this->assertSame(Entity::RELATION_HAS_BRIDGE, $this->db->tag->getRelation('post'));
+        $this->assertSame(Table::RELATION_HAS_ONE, $this->db->post->getRelation('category'));
+        $this->assertSame(Table::RELATION_HAS_MANY, $this->db->category->getRelation('post'));
+        $this->assertSame(Table::RELATION_HAS_ONE, $this->db->post_tag->getRelation('tag'));
+        $this->assertSame(Table::RELATION_HAS_MANY, $this->db->tag->getRelation('post_tag'));
+        $this->assertSame(Table::RELATION_HAS_ONE, $this->db->post_tag->getRelation('post'));
+        $this->assertSame(Table::RELATION_HAS_MANY, $this->db->post->getRelation('post_tag'));
+        $this->assertSame(Table::RELATION_HAS_BRIDGE, $this->db->post->getRelation('tag'));
+        $this->assertSame(Table::RELATION_HAS_BRIDGE, $this->db->tag->getRelation('post'));
 
         $this->assertFalse($this->db->category->hasOne('post'));
         $this->assertFalse($this->db->post->hasMany('category'));

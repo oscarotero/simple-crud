@@ -2,15 +2,15 @@
 
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\Query;
 use SimpleCrud\Queries\SelectionTrait;
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 use PDOStatement;
 
 /**
  * Manages a database delete query in Mysql databases.
  */
-class Delete extends BaseQuery
+class Delete extends Query
 {
     use SelectionTrait;
 
@@ -19,7 +19,7 @@ class Delete extends BaseQuery
      */
     public function __invoke()
     {
-        return $this->entity->getDb()->execute((string) $this, $this->marks);
+        return $this->table->getDb()->execute((string) $this, $this->marks);
     }
 
     /**
@@ -29,7 +29,7 @@ class Delete extends BaseQuery
      */
     public function __toString()
     {
-        $query = "DELETE FROM `{$this->entity->name}`";
+        $query = "DELETE FROM `{$this->table->name}`";
 
         $query .= $this->whereToString();
         $query .= $this->limitToString();

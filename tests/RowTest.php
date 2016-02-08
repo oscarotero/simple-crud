@@ -1,8 +1,8 @@
 <?php
 
 use SimpleCrud\SimpleCrud;
-use SimpleCrud\EntityFactory;
-use SimpleCrud\Entity;
+use SimpleCrud\TableFactory;
+use SimpleCrud\Table;
 
 class RowTest extends PHPUnit_Framework_TestCase
 {
@@ -10,10 +10,7 @@ class RowTest extends PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $entityFactory = new EntityFactory();
-        $entityFactory->setAutocreate('DefaultEntity');
-
-        $this->db = new SimpleCrud(initSqlitePdo(), $entityFactory);
+        $this->db = new SimpleCrud(initSqlitePdo());
     }
 
     public function testPost()
@@ -43,36 +40,5 @@ class RowTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals(1, $post->id);
         $this->assertEquals(1, $post->get('id'));
-    }
-
-    public function testCustomFunction()
-    {
-        $post = $this->db->post->create([
-            'title' => 'THIS IS THE TITLE',
-        ])->save();
-
-        $this->assertSame('this is the title', $post->getTitleLowerCase());
-        $this->assertSame('this is the title', $post->titleLowerCase);
-
-        $this->db->post->insert()->data(['title' => 'second'])->run();
-        $this->assertSame(3, $this->db->post->select()->run()->sumIds());
-    }
-}
-
-class DefaultEntity extends Entity
-{
-    protected function init()
-    {
-        $this->row
-            ->registerMethod('getTitleLowerCase', function ($row) {
-                return strtolower($row->title);
-            })
-            ->registerProperty('titleLowerCase', function ($row) {
-                return $row->getTitleLowerCase();
-            });
-
-        $this->collection->registerMethod('sumIds', function ($collection) {
-            return array_sum($collection->id);
-        });
     }
 }

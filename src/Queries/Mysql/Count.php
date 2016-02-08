@@ -2,16 +2,16 @@
 
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\BaseQuery;
+use SimpleCrud\Queries\Query;
 use SimpleCrud\Queries\ExtendedSelectionTrait;
-use SimpleCrud\Entity;
+use SimpleCrud\Table;
 use PDOStatement;
 use PDO;
 
 /**
  * Manages a database select count query.
  */
-class Count extends BaseQuery
+class Count extends Query
 {
     use ExtendedSelectionTrait;
 
@@ -34,7 +34,7 @@ class Count extends BaseQuery
      */
     public function __invoke()
     {
-        $statement = $this->entity->getDb()->execute((string) $this, $this->marks);
+        $statement = $this->table->getDb()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_NUM);
 
         return $statement;
@@ -45,7 +45,7 @@ class Count extends BaseQuery
      */
     public function __toString()
     {
-        $query = "SELECT COUNT(*) FROM `{$this->entity->name}`";
+        $query = "SELECT COUNT(*) FROM `{$this->table->name}`";
 
         $query .= $this->fromToString();
         $query .= $this->whereToString();
