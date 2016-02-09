@@ -161,8 +161,6 @@ class Row extends AbstractRow
 
     /**
      * Saves the extenal relations of this row with other row directly in the database.
-     *
-     * @return $this
      */
     protected function saveExternalRelations()
     {
@@ -209,7 +207,5 @@ class Row extends AbstractRow
 
             continue;
         }
-
-        return $this;
     }
 }

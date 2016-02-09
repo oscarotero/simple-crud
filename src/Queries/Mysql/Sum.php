@@ -3,7 +3,6 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Queries\ExtendedSelectionTrait;
 use SimpleCrud\Queries\LimitTrait;
 use SimpleCrud\Table;
 use PDOStatement;
@@ -49,7 +48,7 @@ class Sum extends Query
      */
     public function __invoke()
     {
-        $statement = $this->table->getDb()->execute((string) $this, $this->marks);
+        $statement = $this->table->getDatabase()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_NUM);
 
         return $statement;

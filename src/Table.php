@@ -60,7 +60,7 @@ class Table implements ArrayAccess
      */
     public function __call($name, $arguments)
     {
-        return $this->getDb()->getQueryFactory()->get($this, $name);
+        return $this->getDatabase()->getQueryFactory()->get($this, $name);
     }
 
     /**
@@ -132,7 +132,7 @@ class Table implements ArrayAccess
      *
      * @return SimpleCrud
      */
-    public function getDb()
+    public function getDatabase()
     {
         return $this->db;
     }
@@ -272,7 +272,7 @@ class Table implements ArrayAccess
 
         //handle left-joins
         foreach ($joins as $key => $values) {
-            $table = $this->getDb()->$key;
+            $table = $this->getDatabase()->$key;
 
             $data[$key] = $table->create($table->prepareDataFromDatabase($values));
         }

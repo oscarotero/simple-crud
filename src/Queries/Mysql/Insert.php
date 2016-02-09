@@ -51,7 +51,7 @@ class Insert extends Query
     {
         $this->__invoke();
 
-        $id = $this->table->getDb()->lastInsertId();
+        $id = $this->table->getDatabase()->lastInsertId();
 
         return $this->table->fields['id']->dataFromDatabase($id);
     }
@@ -67,7 +67,7 @@ class Insert extends Query
             $marks[":{$field}"] = $value;
         }
 
-        return $this->table->getDb()->execute((string) $this, $marks);
+        return $this->table->getDatabase()->execute((string) $this, $marks);
     }
 
     /**

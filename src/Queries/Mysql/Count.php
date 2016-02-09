@@ -3,7 +3,6 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Queries\ExtendedSelectionTrait;
 use SimpleCrud\Table;
 use PDOStatement;
 use PDO;
@@ -34,7 +33,7 @@ class Count extends Query
      */
     public function __invoke()
     {
-        $statement = $this->table->getDb()->execute((string) $this, $this->marks);
+        $statement = $this->table->getDatabase()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_NUM);
 
         return $statement;

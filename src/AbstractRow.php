@@ -119,7 +119,7 @@ abstract class AbstractRow implements JsonSerializable
      */
     public function __call($name, $arguments)
     {
-        $db = $this->table->getDb();
+        $db = $this->table->getDatabase();
 
         if (isset($db->$name)) {
             $table = $db->$name;

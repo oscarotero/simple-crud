@@ -39,7 +39,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         //Returns related entities
-        $db = $this->table->getDb();
+        $db = $this->table->getDatabase();
 
         if ($db->has($name)) {
             $table = $db->get($name);

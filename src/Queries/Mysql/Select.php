@@ -4,7 +4,6 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\SimpleCrudException;
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Queries\ExtendedSelectionTrait;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
 use PDOStatement;
@@ -133,7 +132,7 @@ class Select extends Query
      */
     public function __invoke()
     {
-        $statement = $this->table->getDb()->execute((string) $this, $this->marks);
+        $statement = $this->table->getDatabase()->execute((string) $this, $this->marks);
         $statement->setFetchMode(PDO::FETCH_ASSOC);
 
         return $statement;

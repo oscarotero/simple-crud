@@ -4,95 +4,107 @@ use SimpleCrud\SimpleCrud;
 
 class AutocreateTest extends PHPUnit_Framework_TestCase
 {
-    protected $db;
+    static private $db;
 
-    public function setUp()
+    static public function setUpBeforeClass()
     {
-        $this->db = new SimpleCrud(initSqlitePdo());
+        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        
+        self::$db->executeTransaction(function ($db) {
+            $db->execute(
+<<<EOT
+CREATE TABLE "post" (
+    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `title`       TEXT,
+    `category_id` INTEGER,
+    `publishedAt` TEXT,
+    `isActive`    INTEGER,
+    `inHome`      INTEGER,
+    `hasContent`  INTEGER,
+    `type`        TEXT
+);
+EOT
+            );
+        });
     }
 
-    public function testPosts()
+    public function testDatabase()
     {
-        $post = $this->db->post;
+        $this->assertInstanceOf('SimpleCrud\\TableFactory', self::$db->getTableFactory());
+        $this->assertInstanceOf('SimpleCrud\\FieldFactory', self::$db->getFieldFactory());
+        $this->assertInstanceOf('SimpleCrud\\QueryFactory', self::$db->getQueryFactory());
+        $this->assertInternalType('array', self::$db->getScheme());
+
+        self::$db->setAttribute('bar', 'foo');
+
+        $this->assertEquals('sqlite', self::$db->getAttribute(PDO::ATTR_DRIVER_NAME));
+        $this->assertEquals('foo', self::$db->getAttribute('bar'));
+    }
+
+    public function testTable()
+    {
+        $this->assertTrue(isset(self::$db->post));
+        $this->assertFalse(isset(self::$db->invalid));
+
+        $post = self::$db->post;
 
         $this->assertInstanceOf('SimpleCrud\\Table', $post);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDb());
+        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
 
-        $this->assertCount(6, $post->fields);
-
+        $this->assertCount(8, $post->fields);
         $this->assertEquals('post', $post->name);
         $this->assertEquals('post_id', $post->foreignKey);
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post->fields['id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post->fields['title']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post->fields['category_id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Datetime', $post->fields['publishedAt']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Boolean', $post->fields['isActive']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $post->fields['type']);
+        $this->assertEquals(self::$db->getScheme()['post'], $post->getScheme());
     }
 
-    public function testCategories()
+    public function dataProviderFields()
     {
-        $category = $this->db->category;
-
-        $this->assertInstanceOf('SimpleCrud\\Table', $category);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $category->getDb());
-
-        $this->assertCount(2, $category->fields);
-
-        $this->assertEquals('category', $category->name);
-        $this->assertEquals('category_id', $category->foreignKey);
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $category->fields['id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $category->fields['name']);
+        return [
+            ['id', 'Integer'],
+            ['title', 'Field'],
+            ['category_id', 'Integer'],
+            ['publishedAt', 'Datetime'],
+            ['isActive', 'Boolean'],
+            ['inHome', 'Boolean'],
+            ['hasContent', 'Boolean'],
+            ['type', 'Field'],
+        ];
     }
 
-    public function testTags()
+    /**
+     * @dataProvider dataProviderFields
+     */
+    public function testFields($name, $type)
     {
-        $tag = $this->db->tag;
+        $post = self::$db->post;
+        $field = $post->fields[$name];
 
-        $this->assertInstanceOf('SimpleCrud\\Table', $tag);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $tag->getDb());
+        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $field);
+        $this->assertInstanceOf('SimpleCrud\\Fields\\'.$type, $field);
 
-        $this->assertCount(2, $tag->fields);
-
-        $this->assertEquals('tag', $tag->name);
-        $this->assertEquals('tag_id', $tag->foreignKey);
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $tag->fields['id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tag->fields['name']);
+        $this->assertEquals(self::$db->post->getScheme()[$name], $field->getScheme());
     }
 
-    public function testTagPost()
+    public function dataProviderQueries()
     {
-        $post_tag = $this->db->post_tag;
-
-        $this->assertInstanceOf('SimpleCrud\\Table', $post_tag);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post_tag->getDb());
-
-        $this->assertCount(3, $post_tag->fields);
-
-        $this->assertEquals('post_tag', $post_tag->name);
-        $this->assertEquals('post_tag_id', $post_tag->foreignKey);
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['tag_id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $post_tag->fields['post_id']);
+        return [
+            ['count'],
+            ['delete'],
+            ['insert'],
+            ['select'],
+            ['sum'],
+            ['update'],
+        ];
     }
 
-    public function testTagsCounter()
+    /**
+     * @dataProvider dataProviderQueries
+     */
+    public function testQueries($name)
     {
-        $tagsCounter = $this->db->tagsCounter;
+        $query = self::$db->post->$name();
 
-        $this->assertInstanceOf('SimpleCrud\\Table', $tagsCounter);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $tagsCounter->getDb());
-
-        $this->assertCount(2, $tagsCounter->fields);
-
-        $this->assertEquals('tagsCounter', $tagsCounter->name);
-        $this->assertEquals('tagsCounter_id', $tagsCounter->foreignKey);
-
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Integer', $tagsCounter->fields['tag_id']);
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $tagsCounter->fields['total']);
+        $this->assertInstanceOf('SimpleCrud\\Queries\\Sqlite\\'.ucfirst($name), $query);
+        $this->assertInstanceOf('SimpleCrud\\Queries\\Query', $query);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace SimpleCrud\Queries;
+namespace SimpleCrud\Queries\Mysql;
 
 /**
  * Trait with common functions used in queries

@@ -3,7 +3,6 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Queries\SelectionTrait;
 use SimpleCrud\Table;
 use PDOStatement;
 
@@ -19,7 +18,7 @@ class Delete extends Query
      */
     public function __invoke()
     {
-        return $this->table->getDb()->execute((string) $this, $this->marks);
+        return $this->table->getDatabase()->execute((string) $this, $this->marks);
     }
 
     /**

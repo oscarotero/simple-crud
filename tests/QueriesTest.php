@@ -4,63 +4,87 @@ use SimpleCrud\SimpleCrud;
 
 class QueriesTest extends PHPUnit_Framework_TestCase
 {
-    protected $db;
+    static private $db;
 
-    public function setUp()
+    static public function setUpBeforeClass()
     {
-        $this->db = new SimpleCrud(initSqlitePdo());
+        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        
+        self::$db->executeTransaction(function ($db) {
+            $db->execute(
+<<<EOT
+CREATE TABLE "post" (
+    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `title`       TEXT,
+    `body`        TEXT
+);
+EOT
+            );
+        });
     }
 
     public function testSelect()
     {
-        $query = $this->db->post->select()
+        $query = self::$db->post->select()
             ->one()
             ->where('title NOT NULL')
-            ->where('type = 1 OR type = 2')
-            ->by('category_id', 5)
+            ->where('id = 1 OR id = 2')
+            ->by('body', 'content')
             ->offset(3)
             ->orderBy('title');
 
-        $this->assertEquals((string) $query, 'SELECT `post`.`id`, `post`.`title`, `post`.`category_id`, `post`.`publishedAt`, `post`.`isActive`, `post`.`type` FROM `post` WHERE (title NOT NULL) AND (type = 1 OR type = 2) AND (`post`.`category_id` = :category_id) ORDER BY title LIMIT 3, 1');
+        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body` FROM `post` WHERE (title NOT NULL) AND (id = 1 OR id = 2) AND (`post`.`body` = :body) ORDER BY title LIMIT 3, 1', (string) $query);
     }
 
     public function testInsert()
     {
-        $query = $this->db->post->insert()
+        $query = self::$db->post->insert()
             ->data([
-                'title' => 'Hello world',
-                'publishedAt' => new Datetime(),
-                'type' => 2,
+                'title' => 'Title',
+                'body' => 'Body'
             ]);
 
-        $this->assertEquals((string) $query, 'INSERT INTO `post` (`title`, `publishedAt`, `type`) VALUES (:title, :publishedAt, :type)');
+        $this->assertEquals('INSERT INTO `post` (`title`, `body`) VALUES (:title, :body)', (string) $query);
 
         $query->duplications();
 
-        $this->assertEquals((string) $query, 'INSERT OR REPLACE INTO `post` (`title`, `publishedAt`, `type`) VALUES (:title, :publishedAt, :type)');
+        $this->assertEquals('INSERT OR REPLACE INTO `post` (`title`, `body`) VALUES (:title, :body)', (string) $query);
     }
 
     public function testUpdate()
     {
-        $query = $this->db->post->update()
+        $query = self::$db->post->update()
             ->data([
-                'title' => 'Hello world',
-                'publishedAt' => new Datetime(),
-                'type' => 2,
+                'title' => 'Title',
+                'body' => 'Body'
             ])
-            ->where('id = 3')
-            ->limit(1, true);
+            ->where('id = 3');
 
-        $this->assertEquals((string) $query, 'UPDATE `post` SET `title` = :__title, `publishedAt` = :__publishedAt, `type` = :__type WHERE (id = 3) LIMIT 1');
+        $this->assertEquals('UPDATE `post` SET `title` = :__title, `body` = :__body WHERE (id = 3)', (string) $query);
     }
 
     public function testDelete()
     {
-        $query = $this->db->post->delete()
-            ->where('id = 3')
-            ->offset(2, true)
-            ->limit(1, true);
+        $query = self::$db->post->delete()
+            ->where('id = 3');
 
-        $this->assertEquals((string) $query, 'DELETE FROM `post` WHERE (id = 3) LIMIT 2, 1');
+        $this->assertEquals('DELETE FROM `post` WHERE (id = 3)', (string) $query);
+    }
+
+    public function testCount()
+    {
+        $query = self::$db->post->count()
+            ->where('id = 3');
+
+        $this->assertEquals('SELECT COUNT(*) FROM `post` WHERE (id = 3)', (string) $query);
+    }
+
+    public function testSum()
+    {
+        $query = self::$db->post->sum()
+            ->field('id')
+            ->where('id > 3');
+
+        $this->assertEquals('SELECT SUM(`id`) FROM `post` WHERE (id > 3)', (string) $query);
     }
 }

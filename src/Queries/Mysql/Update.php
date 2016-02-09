@@ -3,7 +3,6 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Queries\SelectionTrait;
 use SimpleCrud\Table;
 use PDOStatement;
 
@@ -55,7 +54,7 @@ class Update extends Query
             $marks[":__{$field}"] = $value;
         }
 
-        return $this->table->getDb()->execute((string) $this, $marks);
+        return $this->table->getDatabase()->execute((string) $this, $marks);
     }
 
     /**

@@ -172,7 +172,7 @@ class SimpleCrud
      */
     public function __isset($name)
     {
-        return isset($this->scheme[$name]);
+        return isset($this->getScheme()[$name]);
     }
 
     /**
@@ -224,7 +224,7 @@ class SimpleCrud
         try {
             $transaction = $this->beginTransaction();
 
-            $return = $callable();
+            $return = $callable($this);
 
             if ($transaction) {
                 $this->commit();
