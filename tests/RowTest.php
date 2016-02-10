@@ -6,39 +6,68 @@ use SimpleCrud\Table;
 
 class RowTest extends PHPUnit_Framework_TestCase
 {
-    protected $db;
+    static private $db;
 
-    public function setUp()
+    static public function setUpBeforeClass()
     {
-        $this->db = new SimpleCrud(initSqlitePdo());
+        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        
+        self::$db->executeTransaction(function ($db) {
+            $db->execute(
+<<<EOT
+CREATE TABLE "post" (
+    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `title`       TEXT,
+    `publishedAt` TEXT,
+    `isActive`    INTEGER
+);
+EOT
+            );
+        });
     }
 
-    public function testPost()
+    public function testCreate()
     {
-        $post = $this->db->post->create();
+        $data = [
+            'title' => 'Second post',
+            'publishedAt' => new DateTime(),
+            'isActive' => true
+        ];
+
+        //Test cache        
+        $this->assertFalse(isset(self::$db->post[1]));
+
+        self::$db->post[1] = ['title' => 'First post'];
+
+        $this->assertTrue(isset(self::$db->post[1]));
+
+        //Test row
+        $post = self::$db->post->create($data);
 
         $this->assertInstanceOf('SimpleCrud\\Row', $post);
 
         $this->assertNull($post->id);
-        $this->assertNull($post->title);
-        $this->assertNull($post->categories_id);
-        $this->assertNull($post->publishedAt);
-        $this->assertNull($post->type);
+        $this->assertSame($data['title'], $post->title);
+        $this->assertSame($data['publishedAt'], $post->publishedAt);
+        $this->assertSame($data['isActive'], $post->isActive);
 
-        $this->assertNull($post->get('id'));
-        $this->assertNull($post->get('title'));
-        $this->assertNull($post->get('categories_id'));
-        $this->assertNull($post->get('publishedAt'));
-        $this->assertNull($post->get('type'));
-
-        $post->title = 'Hello world';
-
-        $this->assertSame('Hello world', $post->title);
-        $this->assertSame('Hello world', $post->get('title'));
+        $this->assertFalse(isset(self::$db->post[2]));
 
         $post->save();
 
-        $this->assertEquals(1, $post->id);
-        $this->assertEquals(1, $post->get('id'));
+        $this->assertSame(2, $post->id);
+        $this->assertTrue(isset(self::$db->post[2]));
+
+        $saved = self::$db->post[2];
+
+        $this->assertSame($saved, $post);
+
+        self::$db->post->clearCache();
+
+        $saved2 = self::$db->post[2];
+
+        $this->assertNotSame($saved2, $post);
+
+        $this->assertEquals($saved2->toArray(), $post->toArray());
     }
 }

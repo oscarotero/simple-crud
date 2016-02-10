@@ -156,6 +156,8 @@ class Row extends AbstractRow
             $this->saveExternalRelations();
         }
 
+        $this->table->cache($this);
+
         return $this;
     }
 

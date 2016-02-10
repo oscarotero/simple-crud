@@ -9,9 +9,10 @@ use ArrayAccess;
  */
 class Table implements ArrayAccess
 {
-    protected $db;
-    protected $row;
-    protected $collection;
+    private $db;
+    private $row;
+    private $collection;
+    private $cache = [];
 
     public $name;
     public $fields = [];
@@ -49,6 +50,25 @@ class Table implements ArrayAccess
     }
 
     /**
+     * Store a row in the cache
+     * 
+     * @param int $id
+     * @param Row $Row
+     */
+    public function cache(Row $row)
+    {
+        $this->cache[$row->id] = $row;
+    }
+
+    /**
+     * Clear the current cache
+     */
+    public function clearCache()
+    {
+        $this->cache = [];
+    }
+
+    /**
      * Magic method to create queries related with this table.
      *
      * @param string $name
@@ -72,10 +92,18 @@ class Table implements ArrayAccess
      */
     public function offsetExists($offset)
     {
-        return $this->count()
+        if (array_key_exists($offset, $this->cache)) {
+            return !empty($this->cache[$offset]);
+        }
+
+        $exists = $this->count()
             ->byId($offset)
             ->limit(1)
             ->run() === 1;
+
+        $this->cache[$offset] = $exists ? true : null;
+
+        return $exists;
     }
 
     /**
@@ -87,7 +115,11 @@ class Table implements ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return $this->select()
+        if (array_key_exists($offset, $this->cache)) {
+            return $this->cache[$offset];
+        }
+
+        return $this->cache[$offset] = $this->select()
             ->one()
             ->byId($offset)
             ->run();
@@ -100,18 +132,44 @@ class Table implements ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
-        if (!empty($offset) && $this->offsetExists($offset)) {
+        if ($offset === null) {
+            $value['id'] = null;
+
+            $this->insert()
+                ->data($value)
+                ->run();
+
+            return;
+        }
+
+        if (isset($this->cache[$offset]) && is_object($this->cache[$offset])) {
+            $row = $this->cache[$offset];
+
+            foreach ($value as $name => $val) {
+                $row->$name = $val;
+            }
+
+            $row->save();
+            return;
+        }
+
+        if ($this->offsetExists($offset)) {
             $this->update()
                 ->data($value)
                 ->byId($offset)
                 ->limit(1)
                 ->run();
-        } else {
-            $value['id'] = $offset;
-            $this->insert()
-                ->data($value)
-                ->run();
+
+            return;
         }
+
+        $value['id'] = $offset;
+
+        $this->insert()
+            ->data($value)
+            ->run();
+
+        $this->cache[$offset] = true;
     }
 
     /**
@@ -121,6 +179,8 @@ class Table implements ArrayAccess
      */
     public function offsetUnset($offset)
     {
+        $this->cache[$offset] = null;
+
         $this->delete()
             ->byId($offset)
             ->limit(1)
@@ -186,12 +246,16 @@ class Table implements ArrayAccess
      *
      * @return Row
      */
-    public function create(array $data = null)
+    public function create(array $data = [])
     {
+        if (isset($data['id']) && isset($this->cache[$data['id']]) && is_object($this->cache[$data['id']])) {
+            return $this->cache[$data['id']];
+        }
+
         $row = clone $this->row;
 
-        if ($data !== null) {
-            $row->set($data);
+        foreach ($data as $name => $value) {
+            $row->$name = $value;
         }
 
         return $row;
