@@ -4,7 +4,6 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
 use SimpleCrud\Table;
-use PDOStatement;
 
 /**
  * Manages a database insert query in Mysql databases.

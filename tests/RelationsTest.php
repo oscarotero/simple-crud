@@ -5,83 +5,107 @@ use SimpleCrud\Table;
 
 class RelationsTest extends PHPUnit_Framework_TestCase
 {
-    protected $db;
+    private static $db;
 
-    public function setUp()
+    public static function setUpBeforeClass()
     {
-        $this->db = new SimpleCrud(initSqlitePdo());
+        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+
+        self::$db->executeTransaction(function ($db) {
+            $db->execute(
+<<<EOT
+CREATE TABLE "post" (
+    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `title`       TEXT
+);
+EOT
+            );
+
+            $db->execute(
+<<<EOT
+CREATE TABLE "category" (
+    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `name`        TEXT
+);
+EOT
+            );
+
+            $db->execute(
+<<<EOT
+CREATE TABLE "comment" (
+    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `text`        TEXT,
+    `post_id`     INTEGER
+);
+EOT
+            );
+
+            $db->execute(
+<<<EOT
+CREATE TABLE "category_post" (
+    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `category_id` INTEGER,
+    `post_id`     INTEGER
+);
+EOT
+            );
+        });
     }
 
-    public function _testRelations()
+    public function testRelationDetection()
     {
-        $this->assertTrue($this->db->post->hasOne('category'));
-        $this->assertTrue($this->db->category->hasMany('post'));
-        $this->assertTrue($this->db->post_tag->hasOne('tag'));
-        $this->assertTrue($this->db->tag->hasMany('post_tag'));
-        $this->assertTrue($this->db->post_tag->hasOne('post'));
-        $this->assertTrue($this->db->post->hasMany('post_tag'));
-        $this->assertTrue($this->db->tag->hasBridge('post'));
-        $this->assertTrue($this->db->post->hasBridge('tag'));
+        $db = self::$db;
 
-        $this->assertSame(Table::RELATION_HAS_ONE, $this->db->post->getRelation('category'));
-        $this->assertSame(Table::RELATION_HAS_MANY, $this->db->category->getRelation('post'));
-        $this->assertSame(Table::RELATION_HAS_ONE, $this->db->post_tag->getRelation('tag'));
-        $this->assertSame(Table::RELATION_HAS_MANY, $this->db->tag->getRelation('post_tag'));
-        $this->assertSame(Table::RELATION_HAS_ONE, $this->db->post_tag->getRelation('post'));
-        $this->assertSame(Table::RELATION_HAS_MANY, $this->db->post->getRelation('post_tag'));
-        $this->assertSame(Table::RELATION_HAS_BRIDGE, $this->db->post->getRelation('tag'));
-        $this->assertSame(Table::RELATION_HAS_BRIDGE, $this->db->tag->getRelation('post'));
+        $this->assertTrue($db->comment->hasOne($db->post));
+        $this->assertTrue($db->post->hasMany($db->comment));
+        $this->assertFalse($db->comment->hasMany($db->post));
+        $this->assertFalse($db->post->hasOne($db->comment));
 
-        $this->assertFalse($this->db->category->hasOne('post'));
-        $this->assertFalse($this->db->post->hasMany('category'));
-        $this->assertFalse($this->db->tag->hasOne('post_tag'));
-        $this->assertFalse($this->db->post_tag->hasMany('tag'));
-        $this->assertFalse($this->db->post->hasOne('post_tag'));
-        $this->assertFalse($this->db->post_tag->hasMany('post'));
-        $this->assertFalse($this->db->post_tag->hasBridge('post'));
-        $this->assertFalse($this->db->post_tag->hasBridge('tag'));
+        $this->assertTrue($db->post->hasMany($db->category));
+        $this->assertTrue($db->category->hasMany($db->post));
+        $this->assertFalse($db->post->hasOne($db->category));
+        $this->assertFalse($db->category->hasOne($db->post));
 
-        $this->assertNull($this->db->category->getRelation('tag'));
+        $this->assertTrue($db->category_post->hasOne($db->category));
+        $this->assertTrue($db->category_post->hasOne($db->post));
+        $this->assertFalse($db->category_post->hasMany($db->category));
+        $this->assertFalse($db->category_post->hasMany($db->post));
+
+        $bridge = $db->post->getBridge($db->category);
+        $this->assertSame($db->category_post, $bridge);
     }
 
-    public function _testCreateRelation()
+    public function testRelatedData()
     {
-        $category = $this->db->category->create(['name' => 'Foo'])->save();
+        $db = self::$db;
 
-        $post = $this->db->post
-            ->create(['title' => 'Bar'])
-            ->relateWith($category)
-            ->save();
+        $post = $db->post->create([
+            'title' => 'first',
+        ])->save();
 
-        $this->assertSame($post->category_id, $category->id);
-        $this->assertSame($category->name, $post->category()->run()->name);
+        $this->assertInstanceOf('SimpleCrud\\RowCollection', $post->category);
+        $this->assertInstanceOf('SimpleCrud\\RowCollection', $post->comment);
 
-        $post = $category->post()->run();
+        $comment = $db->comment->create(['text' => 'Hello world']);
+        $comment->post = $post;
+        $comment->save();
 
-        $this->assertCount(1, $post);
-        $this->assertEquals(1, $post[1]->id);
+        $this->assertSame($post->id, $comment->post_id);
+        $this->assertSame($post, $comment->post);
 
-        $this->assertSame($category->id, $post->category->id);
-    }
+        $comment2 = $db->comment->create(['text' => 'Hello world 2']);
+        $comment2->post = $post;
+        $comment2->save();
 
-    public function testCreateManyToManyRelation()
-    {
-        $post = $this->db->post->create(['title' => 'Title'])->save();
-        $tag = $this->db->tag->create(['name' => 'Name'])->save();
+        $comments = $post->comment;
 
-        $this->db->post_tag->create()
-            ->relateWith($post)
-            ->relateWith($tag)
-            ->save();
+        $post->clearCache();
+        $this->assertCount(2, $post->comment);
 
-        $relatedTag = $post->tag()->run();
+        $comment2->post = null;
+        $comment2->save();
 
-        $this->assertCount(1, $relatedTag);
-        $this->assertEquals($tag->id, $relatedTag[1]->id);
-
-        $relation = $post->post_tag[1];
-
-        $this->assertSame($post->id, $relation->post_id);
-        $this->assertSame($tag->id, $relation->tag_id);
+        $post->clearCache();
+        $this->assertCount(1, $post->comment);
     }
 }

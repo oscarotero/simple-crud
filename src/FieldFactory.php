@@ -83,7 +83,7 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * Map db field types with classes
+     * Map db field types with classes.
      *
      * @param array $map
      *
@@ -110,7 +110,7 @@ class FieldFactory implements FieldFactoryInterface
         }
 
         $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;
-        
+
         foreach ($this->namespaces as $namespace) {
             $class = $namespace.$className;
 
@@ -123,7 +123,7 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * Get the field class name
+     * Get the field class name.
      *
      * @param string $name
      * @param string $type

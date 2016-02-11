@@ -4,7 +4,6 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
 use SimpleCrud\Table;
-use PDOStatement;
 use PDO;
 
 /**
@@ -15,7 +14,7 @@ class Count extends Query
     use ExtendedSelectionTrait;
 
     /**
-     * Returns the count
+     * Returns the count.
      * 
      * {@inheritdoc}
      *

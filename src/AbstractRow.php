@@ -24,7 +24,7 @@ abstract class AbstractRow implements JsonSerializable
     }
 
     /**
-     * Returns the table associated with this row
+     * Returns the table associated with this row.
      *
      * @return Table
      */
@@ -34,7 +34,7 @@ abstract class AbstractRow implements JsonSerializable
     }
 
     /**
-     * Returns the database associated with this row
+     * Returns the database associated with this row.
      *
      * @return SimpleCrud
      */
@@ -64,7 +64,7 @@ abstract class AbstractRow implements JsonSerializable
     }
 
     /**
-     * Converts this object into an array
+     * Converts this object into an array.
      * 
      * @param bool  $keysAsId
      * @param array $bannedEntities
@@ -74,7 +74,7 @@ abstract class AbstractRow implements JsonSerializable
     abstract public function toArray($keysAsId = false, array $bannedEntities = []);
 
     /**
-     * Magic method to return properties
+     * Magic method to return properties.
      * 
      * @param string $name
      *
@@ -83,7 +83,7 @@ abstract class AbstractRow implements JsonSerializable
     abstract public function __get($name);
 
     /**
-     * Magic method to edit a property
+     * Magic method to edit a property.
      * 
      * @param string $name
      * @param mixed  $value

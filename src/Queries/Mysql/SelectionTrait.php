@@ -3,7 +3,7 @@
 namespace SimpleCrud\Queries\Mysql;
 
 /**
- * Trait with common functions used in queries
+ * Trait with common functions used in queries.
  *
  * @property \SimpleCrud\Table $table
  */

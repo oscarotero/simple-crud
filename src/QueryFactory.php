@@ -2,8 +2,6 @@
 
 namespace SimpleCrud;
 
-use PDO;
-
 /**
  * Class to create instances of queries.
  */

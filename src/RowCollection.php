@@ -31,49 +31,20 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
      */
     public function __get($name)
     {
-        reset($this->rows);
-        $first = current($this->rows);
-
-        if (!$first) {
+        if (empty($this->rows)) {
             return [];
         }
 
-        //Returns related entities
-        $db = $this->table->getDatabase();
+        $table = $this->getTable();
 
-        if ($db->has($name)) {
-            $table = $db->get($name);
+        if (isset($table->fields[$name])) {
+            $result = [];
 
-            if ($first->has($name)) {
-                $collection = $table->createCollection();
-
-                foreach ($this->get($name) as $row) {
-                    if ($row instanceof self) {
-                        foreach ($row as $r) {
-                            $collection[] = $r;
-                        }
-                    } else {
-                        $collection = $row;
-                    }
-                }
-
-                return $collection;
+            foreach ($this->rows as $id => $row) {
+                $result[$id] = $row->__get($name);
             }
 
-            $collection = $this->__call($name, [])->all()->run();
-
-            if ($this->table->hasOne($table)) {
-                $this->joinOne($collection);
-            } else {
-                $this->joinMany($collection);
-            }
-
-            return $collection;
-        }
-
-        //Returns values
-        if ($first->has($name)) {
-            return $this->get($name);
+            return $result;
         }
     }
 
@@ -284,77 +255,28 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     }
 
     /**
-     * Returns a slice of the content.
-     *
-     * @param int           $offset
-     * @param int|null|true $length
-     *
-     * @return array
-     */
-    public function slice($offset = null, $length = null)
-    {
-        if ($length === true) {
-            return current(array_slice($this->rows, $offset, 1));
-        }
-
-        return array_slice($this->rows, $offset, $length);
-    }
-
-    /**
-     * Add new values to the collection.
-     *
-     * @param array|AbstractRow $rows The new rows
-     *
-     * @return $this
-     */
-    public function add($rows)
-    {
-        if (is_array($rows) || ($rows instanceof self)) {
-            foreach ($rows as $row) {
-                $this->offsetSet(null, $row);
-            }
-        } elseif (isset($rows)) {
-            $this->offsetSet(null, $rows);
-        }
-
-        return $this;
-    }
-
-    /**
      * Filter the rows by a value.
      *
-     * @param string $name   The value name
-     * @param mixed  $value  The value to filter
-     * @param bool   $strict Strict mode
+     * @param callable $filter
      *
      * @return RowCollection
      */
-    public function filter($name, $value, $strict = true)
+    public function filter(callable $filter)
     {
-        $rows = [];
-
-        foreach ($this->rows as $row) {
-            if (($row->$name === $value) || (!$strict && $row->$name == $value) || (is_array($value) && in_array($row->$name, $value, $strict))) {
-                $rows[] = $row;
-            }
-        }
-
-        return $this->table->createCollection($rows);
+        return $this->table->createCollection(array_filter($this->rows, $filter));
     }
 
     /**
      * Find a row by a value.
      *
-     * @param string $name   The value name
-     * @param mixed  $value  The value to filter
-     * @param bool   $strict Strict mode
+     * @param callable $filter
      *
      * @return Row|null The rows found
      */
-    public function find($name, $value, $strict = true)
+    public function find(callable $filter)
     {
         foreach ($this->rows as $row) {
-            if (($row->$name === $value) || (!$strict && $row->$name == $value) || (is_array($value) && in_array($row->$name, $value, $strict))) {
+            if ($filter($row) === true) {
                 return $row;
             }
         }

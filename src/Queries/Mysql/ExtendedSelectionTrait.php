@@ -5,7 +5,7 @@ namespace SimpleCrud\Queries\Mysql;
 use SimpleCrud\AbstractRow;
 
 /**
- * Extended trait
+ * Extended trait.
  *
  * @property \SimpleCrud\Table $table
  */
@@ -56,11 +56,11 @@ trait ExtendedSelectionTrait
         $table = $row->getTable();
 
         if ($this->table->hasOne($table)) {
-            return $this->by($table->foreignKey, $row->get('id'));
+            return $this->by($table->foreignKey, $row->id);
         }
 
         if ($this->table->hasMany($table)) {
-            return $this->byId($row->get($this->table->foreignKey));
+            return $this->byId($row->{$this->table->foreignKey});
         }
 
         $bridge = $this->table->getBridge($table);

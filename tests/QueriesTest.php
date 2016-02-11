@@ -4,12 +4,12 @@ use SimpleCrud\SimpleCrud;
 
 class QueriesTest extends PHPUnit_Framework_TestCase
 {
-    static private $db;
+    private static $db;
 
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
-        
+
         self::$db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT
@@ -41,7 +41,7 @@ EOT
         $query = self::$db->post->insert()
             ->data([
                 'title' => 'Title',
-                'body' => 'Body'
+                'body' => 'Body',
             ]);
 
         $this->assertEquals('INSERT INTO `post` (`title`, `body`) VALUES (:title, :body)', (string) $query);
@@ -56,7 +56,7 @@ EOT
         $query = self::$db->post->update()
             ->data([
                 'title' => 'Title',
-                'body' => 'Body'
+                'body' => 'Body',
             ])
             ->where('id = 3');
 

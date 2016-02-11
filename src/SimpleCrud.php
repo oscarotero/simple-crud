@@ -20,7 +20,7 @@ class SimpleCrud
     /**
      * Set the connection and the tableFactory.
      *
-     * @param PDO           $connection
+     * @param PDO $connection
      */
     public function __construct(PDO $connection)
     {
@@ -29,7 +29,7 @@ class SimpleCrud
     }
 
     /**
-     * Set the database scheme
+     * Set the database scheme.
      * 
      * @param array $scheme
      * 
@@ -43,7 +43,7 @@ class SimpleCrud
     }
 
     /**
-     * Returns the database scheme
+     * Returns the database scheme.
      * 
      * @return array
      */
@@ -110,7 +110,7 @@ class SimpleCrud
         if ($this->queryFactory === null) {
             $queryFactory = new QueryFactory();
             $queryFactory->addNamespace('SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\');
-        
+
             return $this->queryFactory = $queryFactory;
         }
 

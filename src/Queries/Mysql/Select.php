@@ -6,7 +6,6 @@ use SimpleCrud\SimpleCrudException;
 use SimpleCrud\Queries\Query;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
-use PDOStatement;
 use PDO;
 
 /**
@@ -25,7 +24,7 @@ class Select extends Query
     protected $mode;
 
     /**
-     * Change the mode to returns just the first row
+     * Change the mode to returns just the first row.
      * 
      * @return self
      */
@@ -37,7 +36,7 @@ class Select extends Query
     }
 
     /**
-     * Change the mode to returns all rows (even duplicated)
+     * Change the mode to returns all rows (even duplicated).
      * 
      * @return self
      */
@@ -60,9 +59,9 @@ class Select extends Query
         //Returns one
         if ($this->mode === self::MODE_ONE) {
             $row = $statement->fetch();
-            
+
             if ($row !== false) {
-                return $this->table->create($this->table->prepareDataFromDatabase($row));
+                return $this->table->createFromDatabase($row);
             }
 
             return;
@@ -75,10 +74,46 @@ class Select extends Query
         }
 
         while (($row = $statement->fetch())) {
-            $result[] = $this->table->create($this->table->prepareDataFromDatabase($row));
+            $result[] = $this->table->createFromDatabase($row);
         }
 
         return $result;
+
+/* left-join:
+                $joins = [];
+
+        foreach ($data as $key => &$value) {
+            if (isset($this->fields[$key])) {
+                $value = $this->fields[$key]->dataFromDatabase($value);
+                continue;
+            }
+
+            if (strpos($key, '.') !== false) {
+                list($name, $field) = explode('.', $key, 2);
+
+                if (!isset($joins[$name])) {
+                    $joins[$name] = [];
+                }
+
+                $joins[$name][$field] = $value;
+
+                unset($data[$key]);
+            }
+        }
+
+        if (!is_array($data = $this->dataFromDatabase($data))) {
+            throw new SimpleCrudException('Data not valid');
+        }
+
+        //handle left-joins
+        foreach ($joins as $key => $values) {
+            $table = $this->getDatabase()->$key;
+
+            $data[$key] = $table->create($table->prepareDataFromDatabase($values));
+        }
+
+        return $data;
+        */
     }
 
     /**
@@ -103,7 +138,7 @@ class Select extends Query
     /**
      * Adds a LEFT JOIN clause.
      *
-     * @param Table     $table
+     * @param Table      $table
      * @param string     $on
      * @param array|null $marks
      *

@@ -36,7 +36,7 @@ abstract class Query
     abstract public function __toString();
 
     /**
-     * Executes the query and returns true if it's ok
+     * Executes the query and returns true if it's ok.
      * 
      * @return mixed
      */

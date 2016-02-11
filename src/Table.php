@@ -50,7 +50,7 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Store a row in the cache
+     * Store a row in the cache.
      * 
      * @param int $id
      * @param Row $Row
@@ -61,7 +61,7 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Clear the current cache
+     * Clear the current cache.
      */
     public function clearCache()
     {
@@ -150,6 +150,7 @@ class Table implements ArrayAccess
             }
 
             $row->save();
+
             return;
         }
 
@@ -198,7 +199,7 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Returns the table scheme
+     * Returns the table scheme.
      *
      * @return array
      */
@@ -268,12 +269,12 @@ class Table implements ArrayAccess
      *
      * @return RowCollection
      */
-    public function createCollection(array $data = null)
+    public function createCollection(array $data = [])
     {
         $collection = clone $this->collection;
 
-        if ($data !== null) {
-            $collection->add($data);
+        foreach ($data as $row) {
+            $collection[] = $row;
         }
 
         return $collection;
@@ -307,41 +308,26 @@ class Table implements ArrayAccess
      *
      * @return array
      */
-    public function prepareDataFromDatabase(array $data)
+    public function createFromDatabase(array $data)
     {
-        $joins = [];
-
-        foreach ($data as $key => &$value) {
-            if (isset($this->fields[$key])) {
-                $value = $this->fields[$key]->dataFromDatabase($value);
-                continue;
-            }
-
-            if (strpos($key, '.') !== false) {
-                list($name, $field) = explode('.', $key, 2);
-
-                if (!isset($joins[$name])) {
-                    $joins[$name] = [];
-                }
-
-                $joins[$name][$field] = $value;
-
-                unset($data[$key]);
-            }
+        //Get from cache
+        if (isset($this->cache[$data['id']]) && is_object(isset($this->cache[$data['id']]))) {
+            return $this->cache[$data['id']];
         }
 
-        if (!is_array($data = $this->dataFromDatabase($data))) {
+        if (!is_array($row = $this->dataFromDatabase(array_intersect_key($data, $this->fields)))) {
             throw new SimpleCrudException('Data not valid');
         }
 
-        //handle left-joins
-        foreach ($joins as $key => $values) {
-            $table = $this->getDatabase()->$key;
-
-            $data[$key] = $table->create($table->prepareDataFromDatabase($values));
+        foreach ($this->fields as $name => $field) {
+            $row[$name] = $field->dataFromDatabase($row[$name]);
         }
 
-        return $data;
+        $row = $this->create($row);
+
+        $this->cache($row);
+
+        return $row;
     }
 
     /**
@@ -371,7 +357,7 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Returns if a row of this table can be related with many rows of other table
+     * Returns if a row of this table can be related with many rows of other table.
      *
      * @param Table $table
      *
@@ -383,7 +369,7 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Returns if a row of this table can be related with just one row of other table
+     * Returns if a row of this table can be related with just one row of other table.
      *
      * @param Table $table
      *

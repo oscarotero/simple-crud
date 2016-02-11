@@ -4,12 +4,12 @@ use SimpleCrud\SimpleCrud;
 
 class AutocreateTest extends PHPUnit_Framework_TestCase
 {
-    static private $db;
+    private static $db;
 
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
-        
+
         self::$db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT

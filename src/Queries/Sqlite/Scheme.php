@@ -28,8 +28,7 @@ class Scheme
 
         return $scheme;
 
-
-        return ;
+        return;
     }
 
     /**
@@ -47,7 +46,7 @@ class Scheme
 
         foreach ($result as $field) {
             $name = $field['name'];
-            
+
             $fields[$name] = [
                 'type' => strtolower($field['type']),
                 'null' => ($field['notnull'] !== '1'),

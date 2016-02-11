@@ -1,17 +1,16 @@
 <?php
 
 use SimpleCrud\SimpleCrud;
-use SimpleCrud\TableFactory;
 use SimpleCrud\Table;
 
 class RowTest extends PHPUnit_Framework_TestCase
 {
-    static private $db;
+    private static $db;
 
-    static public function setUpBeforeClass()
+    public static function setUpBeforeClass()
     {
         self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
-        
+
         self::$db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT
@@ -26,12 +25,12 @@ EOT
         });
     }
 
-    public function testCreate()
+    public function testRow()
     {
         $data = [
             'title' => 'Second post',
             'publishedAt' => new DateTime(),
-            'isActive' => true
+            'isActive' => true,
         ];
 
         //Test cache        
@@ -69,5 +68,40 @@ EOT
         $this->assertNotSame($saved2, $post);
 
         $this->assertEquals($saved2->toArray(), $post->toArray());
+    }
+
+    public function testRowCollection()
+    {
+        self::$db->post[] = ['title' => 'One'];
+        self::$db->post[] = ['title' => 'Two'];
+
+        $posts = self::$db->post->select()
+            ->by('title', ['One', 'Two'])
+            ->run();
+
+        $this->assertInstanceOf('SimpleCrud\\RowCollection', $posts);
+
+        $this->assertCount(2, $posts);
+
+        $this->assertEquals([3 => 'One', 4 => 'Two'], $posts->title);
+
+        $this->assertInstanceOf('SimpleCrud\\Row', $posts[3]);
+        $this->assertInstanceOf('SimpleCrud\\Row', $posts[4]);
+
+        $this->assertSame($posts[3], self::$db->post[3]);
+
+        $filtered = $posts->filter(function ($row) {
+            return $row->title === 'One';
+        });
+
+        $this->assertCount(1, $filtered);
+
+        $found = $posts->find(function ($row) {
+            return $row->title === 'One';
+        });
+
+        $this->assertInstanceOf('SimpleCrud\\Row', $found);
+
+        $this->assertSame($found, $filtered[3]);
     }
 }

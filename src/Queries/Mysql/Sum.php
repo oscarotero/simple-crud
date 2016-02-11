@@ -3,9 +3,7 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Queries\LimitTrait;
 use SimpleCrud\Table;
-use PDOStatement;
 use PDO;
 
 /**
