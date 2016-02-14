@@ -2,6 +2,7 @@
 
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
+use SimpleCrud\Scheme\Scheme;
 
 class RelationsTest extends PHPUnit_Framework_TestCase
 {
@@ -44,35 +45,47 @@ EOT
 <<<EOT
 CREATE TABLE "category_post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-    `category_id` INTEGER,
-    `post_id`     INTEGER
+    `category_id` INTEGER NOT NULL,
+    `post_id`     INTEGER NOT NULL
 );
 EOT
             );
         });
     }
 
-    public function testRelationDetection()
+    public function testRelatedQuery()
     {
         $db = self::$db;
 
-        $this->assertTrue($db->comment->hasOne($db->post));
-        $this->assertTrue($db->post->hasMany($db->comment));
-        $this->assertFalse($db->comment->hasMany($db->post));
-        $this->assertFalse($db->post->hasOne($db->comment));
+        $post = $db->post->create(['id' => 1]);
+        $comment = $db->comment->create(['id' => 1]);
 
-        $this->assertTrue($db->post->hasMany($db->category));
-        $this->assertTrue($db->category->hasMany($db->post));
-        $this->assertFalse($db->post->hasOne($db->category));
-        $this->assertFalse($db->category->hasOne($db->post));
+        $this->assertEquals(
+            'SELECT `category`.`id`, `category`.`name`, `category_post`.`post_id` FROM `category`, `category_post`, `post` WHERE (`category_post`.`category_id` = `category`.`id`) AND (`category_post`.`post_id` = `post`.`id`) AND (`post`.`id` IN (:category_post))',
+            (string) $post->category()
+        );
 
-        $this->assertTrue($db->category_post->hasOne($db->category));
-        $this->assertTrue($db->category_post->hasOne($db->post));
-        $this->assertFalse($db->category_post->hasMany($db->category));
-        $this->assertFalse($db->category_post->hasMany($db->post));
+        $this->assertEquals(
+            'SELECT `comment`.`id`, `comment`.`text`, `comment`.`post_id` FROM `comment` WHERE (`comment`.`post_id` = :post_id)',
+            (string) $post->comment()
+        );
 
-        $bridge = $db->post->getBridge($db->category);
-        $this->assertSame($db->category_post, $bridge);
+        $this->assertEquals(
+            'SELECT `post`.`id`, `post`.`title` FROM `post` WHERE (`post`.`id` = :id) LIMIT 1',
+            (string) $comment->post()
+        );
+
+        $this->assertEquals(
+            'SELECT `comment`.`id`, `comment`.`text`, `comment`.`post_id`, `post`.`id` as `post.id`, `post`.`title` as `post.title` FROM `comment` LEFT JOIN `post` ON (`post`.`id` = `comment`.`post_id`)',
+            (string) $db->comment->select()->leftJoin('post')
+        );
+
+        // id = NULL
+        $post = $db->post->create();
+        $this->assertEquals(
+            'SELECT `comment`.`id`, `comment`.`text`, `comment`.`post_id` FROM `comment` WHERE (`comment`.`post_id` IS NULL)',
+            (string) $post->comment()
+        );
     }
 
     public function testRelatedData()
@@ -107,5 +120,20 @@ EOT
 
         $post->clearCache();
         $this->assertCount(1, $post->comment);
+    }
+
+    public function testLeftJoin()
+    {
+        $db = self::$db;
+
+        $comments = $db->comment->select()
+            ->leftJoin('post')
+            ->run();
+
+        $this->assertCount(2, $comments);
+
+        $json = '[{"id":1,"text":"Hello world","post_id":1,"post":{"id":1,"title":"first","comment":null}},{"id":2,"text":"Hello world 2","post_id":null}]';
+
+        $this->assertEquals($json, (string) $comments);
     }
 }

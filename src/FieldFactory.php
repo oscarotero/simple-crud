@@ -103,7 +103,7 @@ class FieldFactory implements FieldFactoryInterface
      */
     public function get(Table $table, $name)
     {
-        $scheme = $table->getScheme();
+        $scheme = $table->getScheme()['fields'];
 
         if (!isset($scheme[$name])) {
             throw new SimpleCrudException("The field '{$name}' does not exist in the table {$table->name}");

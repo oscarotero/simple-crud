@@ -4,6 +4,7 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\SimpleCrudException;
 use SimpleCrud\Queries\Query;
+use SimpleCrud\Scheme\Scheme;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
 use PDO;
@@ -61,7 +62,7 @@ class Select extends Query
             $row = $statement->fetch();
 
             if ($row !== false) {
-                return $this->table->createFromDatabase($row);
+                return $this->createRow($row);
             }
 
             return;
@@ -74,46 +75,40 @@ class Select extends Query
         }
 
         while (($row = $statement->fetch())) {
-            $result[] = $this->table->createFromDatabase($row);
+            $result[] = $this->createRow($row);
         }
 
         return $result;
+    }
 
-/* left-join:
-                $joins = [];
+    /**
+     * Create a row and insert the joined rows if exist
+     *
+     * @param array $data
+     * 
+     * @return Row
+     */
+    protected function createRow(array $data)
+    {
+        $row = $this->table->createFromDatabase($data);
 
-        foreach ($data as $key => &$value) {
-            if (isset($this->fields[$key])) {
-                $value = $this->fields[$key]->dataFromDatabase($value);
-                continue;
+        if (empty($this->leftJoin)) {
+            return $row;
+        }
+
+        foreach ($this->leftJoin as $join) {
+            $table = $this->table->getDatabase()->{$join['table']};
+            $values = [];
+
+            foreach (array_keys($table->fields) as $name) {
+                $field = sprintf('%s.%s', $join['table'], $name);
+                $values[$name] = $data[$field];
             }
 
-            if (strpos($key, '.') !== false) {
-                list($name, $field) = explode('.', $key, 2);
-
-                if (!isset($joins[$name])) {
-                    $joins[$name] = [];
-                }
-
-                $joins[$name][$field] = $value;
-
-                unset($data[$key]);
-            }
+            $row->{$join['table']} = empty($values['id']) ? null : $table->createFromDatabase($values);
         }
 
-        if (!is_array($data = $this->dataFromDatabase($data))) {
-            throw new SimpleCrudException('Data not valid');
-        }
-
-        //handle left-joins
-        foreach ($joins as $key => $values) {
-            $table = $this->getDatabase()->$key;
-
-            $data[$key] = $table->create($table->prepareDataFromDatabase($values));
-        }
-
-        return $data;
-        */
+        return $row;
     }
 
     /**
@@ -138,16 +133,20 @@ class Select extends Query
     /**
      * Adds a LEFT JOIN clause.
      *
-     * @param Table      $table
+     * @param string     $table
      * @param string     $on
      * @param array|null $marks
      *
      * @return self
      */
-    public function leftJoin(Table $table, $on = null, $marks = null)
+    public function leftJoin($table, $on = null, $marks = null)
     {
-        if (!$this->table->hasOne($table)) {
-            throw new SimpleCrudException("Invalid LEFT JOIN between the tables '{$this->table->name}' and '{$table->name}'");
+        if (!isset($this->table->getScheme()['relations'][$table])) {
+            throw new SimpleCrudException(sprintf("The tables '%s' and '%s' are not related", $this->table->name, $table));
+        }
+
+        if ($this->table->getScheme()['relations'][$table][0] !== Scheme::HAS_ONE) {
+            throw new SimpleCrudException(sprintf("Invalid LEFT JOIN between the tables '%s' and '%s'", $this->table->name, $table));
         }
 
         $this->leftJoin[] = [
@@ -182,19 +181,24 @@ class Select extends Query
         $query .= ' '.static::buildFields($this->table->name, array_keys($this->table->fields));
 
         foreach ($this->leftJoin as $join) {
-            $query .= ', '.static::buildFields($join['table']->name, array_keys($join['table']->fields), true);
+            $query .= ', '.static::buildFields($join['table'], array_keys($this->table->getDatabase()->{$join['table']}->fields), true);
         }
 
         $query .= $this->fieldsToString();
-        $query .= ' FROM `'.$this->table->name.'`';
+        $query .= sprintf(' FROM `%s`', $this->table->name);
         $query .= $this->fromToString();
 
         foreach ($this->leftJoin as $join) {
-            $query .= ' LEFT JOIN `'.$join['table']->name.'`"';
+            $relation = $this->table->getScheme()['relations'][$join['table']];
 
-            if (!empty($join['on'])) {
-                $query .= ' ON ('.$join['on'].')';
-            }
+            $query .= sprintf(
+                ' LEFT JOIN `%s` ON (`%s`.`id` = `%s`.`%s`%s)',
+                $join['table'],
+                $join['table'],
+                $this->table->name,
+                $relation[1],
+                empty($join['on']) ? '' : sprintf(' AND (%s)', $join['on'])
+            );
         }
 
         $query .= $this->whereToString();

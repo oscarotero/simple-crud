@@ -3,6 +3,7 @@
 namespace SimpleCrud;
 
 use JsonSerializable;
+use SimpleCrud\Scheme\Scheme;
 
 /**
  * Base class used by Row and RowCollection.
@@ -12,6 +13,7 @@ use JsonSerializable;
 abstract class AbstractRow implements JsonSerializable
 {
     protected $table;
+    protected $cache = [];
 
     /**
      * Constructor.
@@ -21,6 +23,14 @@ abstract class AbstractRow implements JsonSerializable
     public function __construct(Table $table)
     {
         $this->table = $table;
+    }
+
+    /**
+     * Clear the current cache.
+     */
+    public function clearCache()
+    {
+        $this->cache = [];
     }
 
     /**
@@ -66,12 +76,11 @@ abstract class AbstractRow implements JsonSerializable
     /**
      * Converts this object into an array.
      * 
-     * @param bool  $keysAsId
      * @param array $bannedEntities
      *
      * @return array
      */
-    abstract public function toArray($keysAsId = false, array $bannedEntities = []);
+    abstract public function toArray(array $bannedEntities = []);
 
     /**
      * Magic method to return properties.
@@ -102,7 +111,7 @@ abstract class AbstractRow implements JsonSerializable
         $id = $this->id;
 
         if (!empty($id)) {
-            $this->table->delete()
+            $this->getTable()->delete()
                 ->byId($id)
                 ->run();
 
@@ -113,26 +122,26 @@ abstract class AbstractRow implements JsonSerializable
     }
 
     /**
-     * Magic method to execute custom methods defined in the table class.
+     * Magic method to execute queries.
      *
      * @param string $name
      */
     public function __call($name, $arguments)
     {
-        $db = $this->table->getDatabase();
-
-        if (isset($db->$name)) {
-            $table = $db->$name;
-
-            if ($this->table->hasOne($table)) {
-                return $table->select()->one()->relatedWith($this);
-            }
-
-            if ($this->table->hasMany($table)) {
-                return $table->select()->relatedWith($this);
-            }
+        if (!isset($this->getTable()->getScheme()['relations'][$name])) {
+            throw new \BadMethodCallException(sprintf('Call to undefined method %s', $name));
         }
 
-        throw new \BadMethodCallException(sprintf('Call to undefined method %s', $name));
+        $table = $this->getTable();
+        $relation = $table->getScheme()['relations'][$name];
+        $related = $table->getDatabase()->$name;
+
+        switch ($relation[0]) {
+            case Scheme::HAS_ONE:
+                return $related->select()->one()->relatedWith($this);
+
+            default:
+                return $related->select()->relatedWith($this);
+        }
     }
 }

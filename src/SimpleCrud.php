@@ -50,9 +50,15 @@ class SimpleCrud
     public function getScheme()
     {
         if ($this->scheme === null) {
-            $factory = 'SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\Scheme::get';
+            $class = 'SimpleCrud\\Scheme\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME));
 
-            $this->scheme = $factory($this);
+            if (!class_exists($class)) {
+                throw new SimpleCrudException(sprintf('Scheme class "%s" not found', $class));
+            }
+
+            $factory = new $class($this);
+
+            $this->setScheme($factory());
         }
 
         return $this->scheme;

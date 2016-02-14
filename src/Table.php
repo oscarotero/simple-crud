@@ -16,7 +16,6 @@ class Table implements ArrayAccess
 
     public $name;
     public $fields = [];
-    public $foreignKey;
 
     /**
      * Constructor.
@@ -28,14 +27,13 @@ class Table implements ArrayAccess
     {
         $this->db = $db;
         $this->name = $name;
-        $this->foreignKey = "{$this->name}_id";
 
         $this->setRow(new Row($this));
         $this->setCollection(new RowCollection($this));
 
         $fieldFactory = $db->getFieldFactory();
 
-        foreach (array_keys($this->getScheme()) as $name) {
+        foreach (array_keys($this->getScheme()['fields']) as $name) {
             $this->fields[$name] = $fieldFactory->get($this, $name);
         }
 
@@ -354,53 +352,5 @@ class Table implements ArrayAccess
         }
 
         return $data;
-    }
-
-    /**
-     * Returns if a row of this table can be related with many rows of other table.
-     *
-     * @param Table $table
-     *
-     * @return bool
-     */
-    public function hasMany(Table $table)
-    {
-        return $table->hasOne($this) || ($table->getBridge($this) !== null);
-    }
-
-    /**
-     * Returns if a row of this table can be related with just one row of other table.
-     *
-     * @param Table $table
-     *
-     * @return bool
-     */
-    public function hasOne(Table $table)
-    {
-        return isset($this->fields[$table->foreignKey]);
-    }
-
-    /**
-     * Returns the table that works as a bridge between this table and other.
-     *
-     * @param Table $table
-     *
-     * @return Table|null
-     */
-    public function getBridge(Table $table)
-    {
-        if ($this->name < $table->name) {
-            $name = "{$this->name}_{$table->name}";
-        } else {
-            $name = "{$table->name}_{$this->name}";
-        }
-
-        if (isset($this->db->$name)) {
-            $bridge = $this->db->$name;
-
-            if ($bridge->hasOne($this) && $bridge->hasOne($table)) {
-                return $bridge;
-            }
-        }
     }
 }

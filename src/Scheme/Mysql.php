@@ -1,6 +1,6 @@
 <?php
 
-namespace SimpleCrud\Queries\Mysql;
+namespace SimpleCrud\Scheme;
 
 use SimpleCrud\SimpleCrud;
 use PDO;
@@ -8,38 +8,22 @@ use PDO;
 /**
  * Class to retrieve info from a mysql database.
  */
-class Scheme
+class Mysql extends Scheme
 {
     /**
-     * Build and return the database scheme.
-     *
-     * @param SimpleCrud $db
-     *
-     * @return array
+     * {@inheritdoc}
      */
-    public static function get(SimpleCrud $db)
+    protected function getTables()
     {
-        $scheme = [];
-        $tables = $db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
-
-        foreach ($tables as $table) {
-            $scheme[$table] = self::getFields($db, $table);
-        }
-
-        return $scheme;
+        return $this->db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     /**
-     * Build and return the fields of a table.
-     *
-     * @param SimpleCrud $db
-     * @param string     $table
-     *
-     * @return array
+     * {@inheritdoc}
      */
-    protected static function getFields(SimpleCrud $db, $table)
+    protected function getTableFields($table)
     {
-        $result = $db->execute("DESCRIBE `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
+        $result = $this->db->execute("DESCRIBE `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
         $fields = [];
 
         foreach ($result as $field) {

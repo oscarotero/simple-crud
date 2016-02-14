@@ -2,13 +2,14 @@
 
 namespace SimpleCrud;
 
+use SimpleCrud\Scheme\Scheme;
+
 /**
  * Stores the data of an table row.
  */
 class Row extends AbstractRow
 {
     private $values = [];
-    private $relations = [];
 
     /**
      * {@inheritdoc}
@@ -17,19 +18,11 @@ class Row extends AbstractRow
     {
         parent::__construct($table);
 
-        $scheme = $table->getScheme();
+        $scheme = $table->getScheme()['fields'];
 
         foreach ($scheme as $name => $field) {
             $this->values[$name] = $field['default'];
         }
-    }
-
-    /**
-     * Clear the current cache.
-     */
-    public function clearCache()
-    {
-        $this->relations = [];
     }
 
     /**
@@ -44,16 +37,16 @@ class Row extends AbstractRow
             return $this->values[$name];
         }
 
-        if (array_key_exists($name, $this->relations)) {
-            return $this->relations[$name];
+        if (array_key_exists($name, $this->cache)) {
+            return $this->cache[$name];
         }
 
-        //Load related data
-        $db = $this->getDatabase();
-
-        if (isset($db->$name)) {
-            return $this->relations[$name] = $this->__call($name, [])->run() ?: new NullValue();
+        //If it's related
+        if (isset($this->getTable()->getScheme()['relations'][$name])) {
+            return $this->cache[$name] = $this->__call($name, [])->run() ?: new NullValue();
         }
+
+        throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
     }
 
     /**
@@ -68,58 +61,26 @@ class Row extends AbstractRow
             return $this->values[$name] = $value;
         }
 
-        $db = $this->getDatabase();
-
-        if (array_key_exists($name, $this->relations) || isset($db->$name)) {
-            if ($value === null) {
-                return $this->unrelate($db->$name);
-            }
-
-            return $this->relate($value);
+        if (!isset($this->getTable()->getScheme()['relations'][$name])) {
+            throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
         }
 
-        throw new SimpleCrudException(sprintf('Undefined value %s', $name));
-    }
-
-    /**
-     * Relate 'has-one' elements with this row.
-     *
-     * @param AbstractRow $row The row to relate
-     */
-    protected function relate(AbstractRow $row)
-    {
-        $table = $this->getTable();
-        $related = $row->getTable();
-
-        if (!$table->hasOne($related)) {
-            throw new SimpleCrudException('Not valid relation');
-        }
-
-        if (empty($row->id)) {
+        if ($value && empty($value->id)) {
             throw new SimpleCrudException('Rows without id value cannot be related');
         }
 
-        $this->__set($related->foreignKey, $row->id);
+        $relation = $this->getTable()->getScheme()['relations'][$name];
 
-        return $this->relations[$related->name] = $row;
-    }
+        switch ($relation[0]) {
+            case Scheme::HAS_ONE:
+                $this->__set($relation[1], $value ? $value->id : null);
+                break;
 
-    /**
-     * Unrelate all elements with this row.
-     *
-     * @param Table $related The related table
-     */
-    protected function unrelate(Table $related)
-    {
-        $table = $this->getTable();
-
-        if (!$table->hasOne($related)) {
-            throw new SimpleCrudException('Not valid unrelation');
+            default:
+                throw new SimpleCrudException('Not supported yet');
         }
 
-        $this->__set($related->foreignKey, null);
-
-        return $this->relations[$related->name] = null;
+        $this->cache[$name] = $value;
     }
 
     /**
@@ -139,7 +100,7 @@ class Row extends AbstractRow
     /**
      * {@inheritdoc}
      */
-    public function toArray($keysAsId = false, array $bannedEntities = [])
+    public function toArray(array $bannedEntities = [])
     {
         $table = $this->getTable();
 
@@ -150,8 +111,10 @@ class Row extends AbstractRow
         $bannedEntities[] = $table->name;
         $data = $this->values;
 
-        foreach ($this->relations as $name => $value) {
-            $data[$name] = $value->toArray($keysAsId, $parentEntities);
+        foreach ($this->cache as $name => $value) {
+            if ($value !== null) {
+                $data[$name] = $value->toArray($bannedEntities);
+            }
         }
 
         return $data;

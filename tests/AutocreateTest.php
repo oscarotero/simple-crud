@@ -53,7 +53,6 @@ EOT
 
         $this->assertCount(8, $post->fields);
         $this->assertEquals('post', $post->name);
-        $this->assertEquals('post_id', $post->foreignKey);
         $this->assertEquals(self::$db->getScheme()['post'], $post->getScheme());
     }
 
@@ -82,7 +81,7 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $field);
         $this->assertInstanceOf('SimpleCrud\\Fields\\'.$type, $field);
 
-        $this->assertEquals(self::$db->post->getScheme()[$name], $field->getScheme());
+        $this->assertEquals(self::$db->post->getScheme()['fields'][$name], $field->getScheme());
     }
 
     public function dataProviderQueries()

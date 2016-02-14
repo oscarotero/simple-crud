@@ -43,7 +43,7 @@ class Field
      */
     public function getScheme()
     {
-        return $this->table->getScheme()[$this->name];
+        return $this->table->getScheme()['fields'][$this->name];
     }
 
     /**

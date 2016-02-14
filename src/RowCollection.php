@@ -17,11 +17,68 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     /**
      * Magic method to set properties to all rows.
      *
-     * @see self::set()
+     * @param string $name
+     * @param mixed  $value
      */
     public function __set($name, $value)
     {
-        $this->set($name, $value);
+        $scheme = $this->getTable()->getScheme();
+
+        if (isset($scheme['fields'][$name])) {
+            foreach ($this->rows as $row) {
+                $row->__set($name, $value);
+            }
+
+            return;
+        }
+
+        /*
+
+        $db = $this->getDatabase();
+
+        if (!isset($db->$name)) {
+            throw new SimpleCrudException(sprintf('Undefined property "%s"'), $name);
+        }
+
+        $related = $db->$name;
+
+        if ($table->hasMany($related)) {
+            $foreignKey = $table->foreignKey;
+
+            foreach ($this->rows as $row) {
+                if (!isset($row->$thatName)) {
+                    $row->$thatName = $thatTable->createCollection();
+                }
+            }
+
+            foreach ($rows as $row) {
+                $id = $row->$foreignKey;
+
+                if (isset($this->rows[$id])) {
+                    $this->rows[$id]->$thatName->add($row);
+                    $row->$thisName = $this->rows[$id];
+                }
+            }
+
+        }
+
+
+
+
+
+
+
+
+
+            if ($this->entity->hasOne($entity)) {
+                $this->joinOne($collection);
+            } else {
+                $this->joinMany($collection);
+            }
+
+            return $collection;
+        }
+        */
     }
 
     /**
@@ -35,9 +92,13 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
             return [];
         }
 
+        if (array_key_exists($name, $this->cache)) {
+            return $this->cache[$name];
+        }
+
         $table = $this->getTable();
 
-        if (isset($table->fields[$name])) {
+        if (isset($table->getScheme()['fields'][$name])) {
             $result = [];
 
             foreach ($this->rows as $id => $row) {
@@ -46,6 +107,18 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
             return $result;
         }
+
+        if (!isset($table->getScheme()['relations'][$name])) {
+            throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
+        }
+
+        $relation = $table->getScheme()['relations'][$name];
+        $db = $table->getDatabase();
+
+        return $this->cache[$name] = $db->{$name}->select()
+            ->relatedWith($this)
+            ->all()
+            ->run();
     }
 
     /**
@@ -60,16 +133,6 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         $this->idAsKey = (boolean) $idAsKey;
 
         return $this;
-    }
-
-    /**
-     * Magic method to print the row values (and subvalues).
-     *
-     * @return string
-     */
-    public function __toString()
-    {
-        return "\n".$this->table->name.":\n".print_r($this->toArray(), true)."\n";
     }
 
     /**
@@ -169,7 +232,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     /**
      * {@inheritdoc}
      */
-    public function toArray($idAsKey = false, array $bannedEntities = array())
+    public function toArray(array $bannedEntities = array())
     {
         $table = $this->getTable();
 
@@ -179,76 +242,8 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
         $rows = [];
 
-        foreach ($this->rows as $id => $row) {
-            $rows[$id] = $row->toArray($bannedEntities);
-        }
-
-        return $idAsKey ? $rows : array_values($rows);
-    }
-
-    /**
-     * Set values to all children.
-     *
-     * @param string $name
-     * @param string $value
-     *
-     * @return self
-     */
-    public function set($name, $value)
-    {
         foreach ($this->rows as $row) {
-            $row->$name = $value;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Returns one or all values of the collections.
-     *
-     * @param string $name The value name. If it's not defined returns all values
-     * @param string $key  The parameter name used for the keys. If it's not defined, returns a numeric array
-     *
-     * @return array
-     */
-    public function get($name = null, $key = null)
-    {
-        $rows = [];
-
-        if ($name === null) {
-            if ($key === null) {
-                return array_values($this->rows);
-            }
-
-            foreach ($this->rows as $row) {
-                $k = $row->$key;
-
-                if (!empty($k)) {
-                    $rows[$k] = $row;
-                }
-            }
-
-            return $rows;
-        }
-
-        if ($key !== null) {
-            foreach ($this->rows as $row) {
-                $k = $row->$key;
-
-                if (!empty($k)) {
-                    $rows[$k] = $row->$name;
-                }
-            }
-
-            return $rows;
-        }
-
-        foreach ($this->rows as $row) {
-            $value = $row->$name;
-
-            if (!empty($value)) {
-                $rows[] = $value;
-            }
+            $rows[] = $row->toArray($bannedEntities);
         }
 
         return $rows;
