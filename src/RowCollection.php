@@ -24,9 +24,10 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     public function __get($name)
     {
         $table = $this->getTable();
+        $scheme = $table->getScheme();
 
         //It's a field
-        if (isset($table->getScheme()['fields'][$name])) {
+        if (isset($scheme['fields'][$name])) {
             $result = [];
 
             foreach ($this->rows as $id => $row) {
@@ -36,11 +37,11 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
             return $result;
         }
 
-        if (!isset($table->getScheme()['relations'][$name])) {
+        if (!isset($scheme['relations'][$name])) {
             throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
         }
 
-        $relation = $table->getScheme()['relations'][$name];
+        $relation = $scheme['relations'][$name];
 
         //It's already loaded relation
         if (in_array($name, $this->loadedRelations, true)) {

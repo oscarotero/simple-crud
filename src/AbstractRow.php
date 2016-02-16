@@ -119,7 +119,9 @@ abstract class AbstractRow implements JsonSerializable
      */
     public function __call($name, $arguments)
     {
-        if (!isset($this->getTable()->getScheme()['relations'][$name])) {
+        $scheme = $this->getTable()->getScheme();
+
+        if (!isset($scheme['relations'][$name])) {
             throw new \BadMethodCallException(sprintf('Call to undefined method %s', $name));
         }
 

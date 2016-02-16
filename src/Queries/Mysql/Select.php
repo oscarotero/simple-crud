@@ -141,11 +141,13 @@ class Select extends Query
      */
     public function leftJoin($table, $on = null, $marks = null)
     {
-        if (!isset($this->table->getScheme()['relations'][$table])) {
+        $scheme = $this->table->getScheme();
+
+        if (!isset($scheme['relations'][$table])) {
             throw new SimpleCrudException(sprintf("The tables '%s' and '%s' are not related", $this->table->name, $table));
         }
 
-        if ($this->table->getScheme()['relations'][$table][0] !== Scheme::HAS_ONE) {
+        if ($scheme['relations'][$table][0] !== Scheme::HAS_ONE) {
             throw new SimpleCrudException(sprintf("Invalid LEFT JOIN between the tables '%s' and '%s'", $this->table->name, $table));
         }
 

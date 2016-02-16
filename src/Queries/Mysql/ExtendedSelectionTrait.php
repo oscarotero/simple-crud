@@ -56,12 +56,13 @@ trait ExtendedSelectionTrait
     public function relatedWith(AbstractRow $row)
     {
         $table = $row->getTable();
+        $scheme = $this->table->getScheme();
 
-        if (!isset($this->table->getScheme()['relations'][$table->name])) {
+        if (!isset($scheme['relations'][$table->name])) {
             throw new SimpleCrudException(sprintf('The tables %s and %s are no related', $table->name, $this->table->name));
         }
 
-        $relation = $this->table->getScheme()['relations'][$table->name];
+        $relation = $scheme['relations'][$table->name];
 
         switch ($relation[0]) {
             case Scheme::HAS_ONE:

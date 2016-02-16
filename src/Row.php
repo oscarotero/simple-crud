@@ -96,12 +96,13 @@ class Row extends AbstractRow
 
         //It's a relation
         $table = $this->getTable();
+        $scheme = $table->getScheme();
 
-        if (!isset($table->getScheme()['relations'][$name])) {
+        if (!isset($scheme['relations'][$name])) {
             throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
         }
 
-        $relation = $table->getScheme()['relations'][$name][0];
+        $relation = $scheme['relations'][$name][0];
 
         //Check types
         if ($relation === Scheme::HAS_ONE) {
