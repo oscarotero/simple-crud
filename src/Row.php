@@ -68,7 +68,9 @@ class Row extends AbstractRow
         }
 
         //Load the relation
-        if (isset($this->getTable()->getScheme()['relations'][$name])) {
+        $scheme = $this->getTable()->getScheme();
+
+        if (isset($scheme['relations'][$name])) {
             return ($this->relations[$name] = call_user_func([$this, $name])->run()) ?: new NullValue();
         }
 
