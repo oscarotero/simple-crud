@@ -133,7 +133,9 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
      */
     public function __isset($name)
     {
-        return isset($this->getTable()->getScheme()['fields'][$name]) || isset($this->loadedRelations[$name]);
+        $scheme = $this->getTable()->getScheme();
+
+        return isset($scheme['fields'][$name]) || isset($this->loadedRelations[$name]);
     }
 
     /**
