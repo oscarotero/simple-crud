@@ -83,27 +83,4 @@ EOT
 
         $this->assertEquals(self::$db->post->getScheme()['fields'][$name], $field->getScheme());
     }
-
-    public function dataProviderQueries()
-    {
-        return [
-            ['count'],
-            ['delete'],
-            ['insert'],
-            ['select'],
-            ['sum'],
-            ['update'],
-        ];
-    }
-
-    /**
-     * @dataProvider dataProviderQueries
-     */
-    public function testQueries($name)
-    {
-        $query = self::$db->post->$name();
-
-        $this->assertInstanceOf('SimpleCrud\\Queries\\Sqlite\\'.ucfirst($name), $query);
-        $this->assertInstanceOf('SimpleCrud\\Queries\\Query', $query);
-    }
 }

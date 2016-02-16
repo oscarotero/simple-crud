@@ -26,7 +26,7 @@ abstract class Scheme
     }
 
     /**
-     * Return the database scheme
+     * Return the database scheme.
      * 
      * @return array
      */
@@ -37,7 +37,7 @@ abstract class Scheme
         foreach ($this->getTables() as $table) {
             $scheme[$table] = [
                 'fields' => $this->getTableFields($table),
-                'relations' => []
+                'relations' => [],
             ];
         }
 
@@ -72,14 +72,14 @@ abstract class Scheme
     }
 
     /**
-     * Return all tables
+     * Return all tables.
      *
      * @return array
      */
     abstract protected function getTables();
 
     /**
-     * Return the scheme of a table
+     * Return the scheme of a table.
      * 
      * @param string $table
      *

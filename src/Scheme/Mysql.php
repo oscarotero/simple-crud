@@ -2,7 +2,6 @@
 
 namespace SimpleCrud\Scheme;
 
-use SimpleCrud\SimpleCrud;
 use PDO;
 
 /**

@@ -23,6 +23,29 @@ EOT
         });
     }
 
+    public function dataProviderQueries()
+    {
+        return [
+            ['count'],
+            ['delete'],
+            ['insert'],
+            ['select'],
+            ['sum'],
+            ['update'],
+        ];
+    }
+
+    /**
+     * @dataProvider dataProviderQueries
+     */
+    public function testQueries($name)
+    {
+        $query = self::$db->post->$name();
+
+        $this->assertInstanceOf('SimpleCrud\\Queries\\Sqlite\\'.ucfirst($name), $query);
+        $this->assertInstanceOf('SimpleCrud\\Queries\\Query', $query);
+    }
+
     public function testSelect()
     {
         $query = self::$db->post->select()

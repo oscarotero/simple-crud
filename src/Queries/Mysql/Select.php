@@ -82,7 +82,7 @@ class Select extends Query
     }
 
     /**
-     * Create a row and insert the joined rows if exist
+     * Create a row and insert the joined rows if exist.
      *
      * @param array $data
      * 

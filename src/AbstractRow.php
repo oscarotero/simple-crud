@@ -13,7 +13,6 @@ use SimpleCrud\Scheme\Scheme;
 abstract class AbstractRow implements JsonSerializable
 {
     protected $table;
-    protected $cache = [];
 
     /**
      * Constructor.
@@ -23,14 +22,6 @@ abstract class AbstractRow implements JsonSerializable
     public function __construct(Table $table)
     {
         $this->table = $table;
-    }
-
-    /**
-     * Clear the current cache.
-     */
-    public function clearCache()
-    {
-        $this->cache = [];
     }
 
     /**

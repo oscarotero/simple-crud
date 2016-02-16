@@ -2,6 +2,7 @@
 
 namespace SimpleCrud;
 
+use SimpleCrud\Scheme\Scheme;
 use ArrayAccess;
 use Iterator;
 use Countable;
@@ -12,74 +13,8 @@ use Countable;
 class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Countable
 {
     private $rows = [];
+    private $loadedRelations = [];
     private $idAsKey = true;
-
-    /**
-     * Magic method to set properties to all rows.
-     *
-     * @param string $name
-     * @param mixed  $value
-     */
-    public function __set($name, $value)
-    {
-        $scheme = $this->getTable()->getScheme();
-
-        if (isset($scheme['fields'][$name])) {
-            foreach ($this->rows as $row) {
-                $row->__set($name, $value);
-            }
-
-            return;
-        }
-
-        /*
-
-        $db = $this->getDatabase();
-
-        if (!isset($db->$name)) {
-            throw new SimpleCrudException(sprintf('Undefined property "%s"'), $name);
-        }
-
-        $related = $db->$name;
-
-        if ($table->hasMany($related)) {
-            $foreignKey = $table->foreignKey;
-
-            foreach ($this->rows as $row) {
-                if (!isset($row->$thatName)) {
-                    $row->$thatName = $thatTable->createCollection();
-                }
-            }
-
-            foreach ($rows as $row) {
-                $id = $row->$foreignKey;
-
-                if (isset($this->rows[$id])) {
-                    $this->rows[$id]->$thatName->add($row);
-                    $row->$thisName = $this->rows[$id];
-                }
-            }
-
-        }
-
-
-
-
-
-
-
-
-
-            if ($this->entity->hasOne($entity)) {
-                $this->joinOne($collection);
-            } else {
-                $this->joinMany($collection);
-            }
-
-            return $collection;
-        }
-        */
-    }
 
     /**
      * Magic method to get properties from all rows.
@@ -88,21 +23,14 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
      */
     public function __get($name)
     {
-        if (empty($this->rows)) {
-            return [];
-        }
-
-        if (array_key_exists($name, $this->cache)) {
-            return $this->cache[$name];
-        }
-
         $table = $this->getTable();
 
+        //It's a field
         if (isset($table->getScheme()['fields'][$name])) {
             $result = [];
 
             foreach ($this->rows as $id => $row) {
-                $result[$id] = $row->__get($name);
+                $result[$id] = $row->$name;
             }
 
             return $result;
@@ -113,12 +41,98 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         $relation = $table->getScheme()['relations'][$name];
-        $db = $table->getDatabase();
 
-        return $this->cache[$name] = $db->{$name}->select()
+        //It's already loaded relation
+        if (in_array($name, $this->loadedRelations, true)) {
+            $result = $table->createCollection();
+
+            if ($relation[0] === Scheme::HAS_ONE) {
+                foreach ($this->rows as $row) {
+                    $result[] = $row->$name;
+                }
+
+                return $result;
+            }
+
+            foreach ($this->rows as $row) {
+                foreach ($row->$name as $r) {
+                    $result[] = $r;
+                }
+            }
+
+            return $result;
+        }
+
+        //Load the relation
+        $result = $this->getDatabase()->{$name}->select()
             ->relatedWith($this)
             ->all()
             ->run();
+
+        $this->__set($name, $result);
+
+        return $result;
+    }
+
+    /**
+     * Magic method to set properties to all rows.
+     *
+     * @param string $name
+     * @param mixed  $value
+     */
+    public function __set($name, $value)
+    {
+        $table = $this->getTable();
+        $scheme = $table->getScheme();
+
+        //It's a field
+        if (isset($scheme['fields'][$name])) {
+            foreach ($this->rows as $row) {
+                $row->$name = $value;
+            }
+
+            return;
+        }
+
+        //It's a relation
+        if (!isset($scheme['relations'][$name])) {
+            throw new SimpleCrudException(sprintf('Undefined property "%s"'), $name);
+        }
+
+        $relation = $scheme['relations'][$name];
+
+        //Check types
+        if ($value === null) {
+            $value = $table->createCollection();
+        } elseif (!($value instanceof self)) {
+            throw new SimpleCrudException(sprintf('Invalid value: %s must be a RowCollection instance or null', $name));
+        }
+
+        //Join the relations and rows
+        switch ($relation[0]) {
+            case Scheme::HAS_ONE:
+                self::join($row->getTable(), $row, $table, $this->rows, $relation[1]);
+                break;
+
+            case Scheme::HAS_MANY:
+            case Scheme::HAS_MANY_TO_MANY:
+                self::join($table, $this->rows, $row->getTable(), $row, $relation[1]);
+                break;
+        }
+
+        $this->loadedRelations[] = $name;
+    }
+
+    /**
+     * Magic method to check if a property is defined or not.
+     *
+     * @param string $name Property name
+     *
+     * @return bool
+     */
+    public function __isset($name)
+    {
+        return isset($this->getTable()->getScheme()['fields'][$name]) || isset($this->loadedRelations[$name]);
     }
 
     /**
@@ -278,51 +292,29 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     }
 
     /**
-     * Distribute a rowcollection througth all rows.
-     *
-     * @param RowCollection $rows
-     *
-     * @return $this
+     * Join two related tables.
+     * 
+     * @param Table               $table1
+     * @param RowCollection|array $rows1
+     * @param Table               $table2
+     * @param RowCollection|array $rows2
+     * @param string              $foreingKey
      */
-    public function joinMany(RowCollection $rows)
+    private static function join($table1, $rows1, $table2, $rows2, $foreignKey)
     {
-        $thisTable = $this->table;
-        $thatTable = $rows->getTable();
-        $thisName = $thisTable->name;
-        $thatName = $thatTable->name;
-
-        $foreignKey = $thisTable->foreignKey;
-
-        foreach ($this->rows as $row) {
-            if (!isset($row->$thatName)) {
-                $row->$thatName = $thatTable->createCollection();
-            }
+        foreach ($rows1 as $row) {
+            $row->{$table2->name} = $table2->createCollection();
         }
 
-        foreach ($rows as $row) {
+        foreach ($rows2 as $row) {
             $id = $row->$foreignKey;
 
-            if (isset($this->rows[$id])) {
-                $this->rows[$id]->$thatName->add($row);
-                $row->$thisName = $this->rows[$id];
+            if (isset($rows1[$id])) {
+                $rows1[$id]->{$table2->name}[] = $row;
+                $row->{$table1->name} = $rows1[$id];
+            } else {
+                $row->{$table1->name} = null;
             }
         }
-
-        return $this;
-    }
-
-    /**
-     * Distribute a rowcollection througth all rows.
-     * Its the opposite of $this->joinMany().
-     *
-     * @param RowCollection $rows
-     *
-     * @return $this
-     */
-    public function joinOne(RowCollection $rows)
-    {
-        $rows->joinMany($this);
-
-        return $this;
     }
 }

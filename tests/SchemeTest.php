@@ -2,7 +2,6 @@
 
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
-use SimpleCrud\Scheme\Scheme;
 
 class SchemeTest extends PHPUnit_Framework_TestCase
 {
@@ -104,7 +103,7 @@ EOT
                 ],
                 'relations' => [
                     'post' => [4, 'category_post', 'category_id', 'post_id'],
-                    'category_post' => [2, 'category_id']
+                    'category_post' => [2, 'category_id'],
                 ],
             ],
             'comment' => [
@@ -136,7 +135,7 @@ EOT
                 ],
                 'relations' => [
                     'post' => [1, 'post_id'],
-                ]
+                ],
             ],
             'category_post' => [
                 'fields' => [
@@ -169,7 +168,7 @@ EOT
                     'post' => [1, 'post_id'],
                     'category' => [1, 'category_id'],
                 ],
-            ]
+            ],
         ];
 
         $this->assertEquals($scheme, $db->getScheme());

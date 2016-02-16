@@ -10,6 +10,8 @@ use SimpleCrud\Scheme\Scheme;
 class Row extends AbstractRow
 {
     private $values = [];
+    private $relations = [];
+    private $changed = false;
 
     /**
      * {@inheritdoc}
@@ -18,11 +20,34 @@ class Row extends AbstractRow
     {
         parent::__construct($table);
 
-        $scheme = $table->getScheme()['fields'];
+        $defaults = [];
 
-        foreach ($scheme as $name => $field) {
-            $this->values[$name] = $field['default'];
+        foreach ($table->getScheme()['fields'] as $name => $field) {
+            $defaults[$name] = $field['default'];
         }
+
+        $this->init($defaults);
+    }
+
+    /**
+     * Clear the current cache.
+     */
+    public function clearCache()
+    {
+        $this->relations = [];
+    }
+
+    /**
+     * Initialize the row with the data from database.
+     * 
+     * @param array $values
+     * @param array $relations
+     */
+    public function init(array $values, array $relations = [])
+    {
+        $this->values = $values;
+        $this->relations = $relations;
+        $this->changed = false;
     }
 
     /**
@@ -32,18 +57,19 @@ class Row extends AbstractRow
      */
     public function __get($name)
     {
-        //Exists?
+        //It's a field
         if (array_key_exists($name, $this->values)) {
             return $this->values[$name];
         }
 
-        if (array_key_exists($name, $this->cache)) {
-            return $this->cache[$name];
+        //It's a relation
+        if (array_key_exists($name, $this->relations)) {
+            return $this->relations[$name] ?: new NullValue();
         }
 
-        //If it's related
+        //Load the relation
         if (isset($this->getTable()->getScheme()['relations'][$name])) {
-            return $this->cache[$name] = $this->__call($name, [])->run() ?: new NullValue();
+            return ($this->relations[$name] = call_user_func([$this, $name])->run()) ?: new NullValue();
         }
 
         throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
@@ -57,30 +83,34 @@ class Row extends AbstractRow
      */
     public function __set($name, $value)
     {
+        //It's a field
         if (array_key_exists($name, $this->values)) {
+            if ($this->values[$name] !== $value) {
+                $this->changed = true;
+            }
+
             return $this->values[$name] = $value;
         }
 
-        if (!isset($this->getTable()->getScheme()['relations'][$name])) {
+        //It's a relation
+        $table = $this->getTable();
+
+        if (!isset($table->getScheme()['relations'][$name])) {
             throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
         }
 
-        if ($value && empty($value->id)) {
-            throw new SimpleCrudException('Rows without id value cannot be related');
+        $relation = $table->getScheme()['relations'][$name][0];
+
+        //Check types
+        if ($relation === Scheme::HAS_ONE) {
+            if ($value !== null && !($value instanceof self)) {
+                throw new SimpleCrudException(sprintf('Invalid value: %s must be a Row instance or null', $name));
+            }
+        } elseif (!($value instanceof RowCollection)) {
+            throw new SimpleCrudException(sprintf('Invalid value: %s must be a RowCollection', $name));
         }
 
-        $relation = $this->getTable()->getScheme()['relations'][$name];
-
-        switch ($relation[0]) {
-            case Scheme::HAS_ONE:
-                $this->__set($relation[1], $value ? $value->id : null);
-                break;
-
-            default:
-                throw new SimpleCrudException('Not supported yet');
-        }
-
-        $this->cache[$name] = $value;
+        $this->relations[$name] = $value;
     }
 
     /**
@@ -92,9 +122,7 @@ class Row extends AbstractRow
      */
     public function __isset($name)
     {
-        $value = static::__get($name);
-
-        return isset($value) && !($value instanceof NullValue);
+        return isset($this->values[$name]) || isset($this->relations[$name]);
     }
 
     /**
@@ -111,7 +139,7 @@ class Row extends AbstractRow
         $bannedEntities[] = $table->name;
         $data = $this->values;
 
-        foreach ($this->cache as $name => $value) {
+        foreach ($this->relations as $name => $value) {
             if ($value !== null) {
                 $data[$name] = $value->toArray($bannedEntities);
             }
@@ -123,17 +151,43 @@ class Row extends AbstractRow
     /**
      * Saves this row in the database.
      *
-     * @param bool $duplications      Set true to detect duplicates index
-     * @param bool $externalRelations Set true to save the relations with other entities
+     * @param bool|array $relations Set true to save the relations with other entities
      *
      * @return $this
      */
-    public function save($duplications = false, $externalRelations = false)
+    public function save($relations = false)
     {
+        if ($relations === true) {
+            $relations = array_keys($this->relations);
+        }
+
+        if ($relations) {
+            $scheme = $this->getTable()->getScheme()['relations'];
+
+            foreach ($relations as $name) {
+                if (!array_key_exists($name, $this->relations)) {
+                    continue;
+                }
+
+                if (!isset($scheme[$name])) {
+                    throw new SimpleCrudException(sprintf('Invalid relation: %s', $name));
+                }
+
+                $relation = $scheme[$name];
+
+                if ($relation[0] === Scheme::HAS_ONE) {
+                    $this->{$relation[1]} = ($this->relations[$name] === null) ? null : $this->relations[$name]->save()->id;
+                }
+            }
+        }
+
+        if (!$this->changed) {
+            return $this;
+        }
+
         if (empty($this->id)) {
             $this->id = $this->table->insert()
                 ->data($this->values)
-                ->duplications($duplications)
                 ->run();
         } else {
             $this->table->update()
@@ -143,62 +197,52 @@ class Row extends AbstractRow
                 ->run();
         }
 
-        if ($externalRelations) {
-            $this->saveExternalRelations();
+        if ($relations) {
+            $scheme = $this->getTable()->getScheme()['relations'];
+
+            foreach ($relations as $name) {
+                if (!array_key_exists($name, $this->relations)) {
+                    continue;
+                }
+
+                if (!isset($scheme[$name])) {
+                    throw new SimpleCrudException(sprintf('Invalid relation: %s', $name));
+                }
+
+                $relation = $scheme[$name];
+
+                if ($relation[0] === Scheme::HAS_MANY) {
+                    foreach ($this->relations[$name] as $row) {
+                        $row->{$relation[1]} = $this->id;
+                        $row->save();
+                    }
+
+                    continue;
+                }
+
+                if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+                    $bridge = $this->getDatabase()->{$relation[1]};
+
+                    $bridge
+                        ->delete()
+                        ->by($relation[2], $this->id)
+                        ->run();
+
+                    foreach ($this->relations[$name] as $row) {
+                        $bridge
+                            ->insert()
+                            ->data([
+                                $relation[2] => $this->id,
+                                $relation[3] => $row->id,
+                            ])
+                            ->run();
+                    }
+                }
+            }
         }
 
         $this->table->cache($this);
 
         return $this;
-    }
-
-    /**
-     * Saves the extenal relations of this row with other row directly in the database.
-     */
-    protected function saveExternalRelations()
-    {
-        $table = $this->getTable();
-        $db = $this->getDatabase();
-
-        foreach ($this->relations as $name => $row) {
-            $related = $db->$name;
-
-            if ($table->hasOne($related)) {
-                continue;
-            }
-
-            $ids = (array) $row->id;
-
-            $bridge = $table->getBridge($related);
-
-            if ($bridge) {
-                $bridge
-                    ->delete()
-                    ->by($table->foreignKey, $this->id)
-                    ->run();
-
-                foreach ($ids as $id) {
-                    $bridge
-                        ->insert()
-                        ->data([
-                            $table->foreignKey => $this->id,
-                            $related->foreignKey => $id,
-                        ])
-                        ->run();
-                }
-
-                continue;
-            }
-
-            $related
-                ->update()
-                ->data([
-                    $table->foreignKey => $this->id,
-                ])
-                ->by('id', $ids)
-                ->run();
-
-            continue;
-        }
     }
 }

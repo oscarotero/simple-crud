@@ -2,7 +2,6 @@
 
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
-use SimpleCrud\Scheme\Scheme;
 
 class RelationsTest extends PHPUnit_Framework_TestCase
 {
@@ -75,6 +74,7 @@ EOT
             (string) $comment->post()
         );
 
+        // left join
         $this->assertEquals(
             'SELECT `comment`.`id`, `comment`.`text`, `comment`.`post_id`, `post`.`id` as `post.id`, `post`.`title` as `post.title` FROM `comment` LEFT JOIN `post` ON (`post`.`id` = `comment`.`post_id`)',
             (string) $db->comment->select()->leftJoin('post')
@@ -88,7 +88,7 @@ EOT
         );
     }
 
-    public function testRelatedData()
+    public function testDirectRelatedData()
     {
         $db = self::$db;
 
@@ -101,14 +101,13 @@ EOT
 
         $comment = $db->comment->create(['text' => 'Hello world']);
         $comment->post = $post;
-        $comment->save();
+        $comment->save(true);
 
-        $this->assertSame($post->id, $comment->post_id);
         $this->assertSame($post, $comment->post);
 
         $comment2 = $db->comment->create(['text' => 'Hello world 2']);
         $comment2->post = $post;
-        $comment2->save();
+        $comment2->save(true);
 
         $comments = $post->comment;
 
@@ -116,10 +115,32 @@ EOT
         $this->assertCount(2, $post->comment);
 
         $comment2->post = null;
-        $comment2->save();
+        $comment2->save(true);
 
         $post->clearCache();
         $this->assertCount(1, $post->comment);
+    }
+
+    public function testManyToManyData()
+    {
+        $db = self::$db;
+
+        $category1 = $db->category->create(['name' => 'Category 1'])->save();
+        $category2 = $db->category->create(['name' => 'Category 2'])->save();
+
+        $post = $db->post->create(['title' => 'second']);
+
+        $categories = $post->category;
+
+        $categories[] = $category1;
+        $categories[] = $category2;
+
+        $this->assertCount(2, $post->category);
+        $post->save(true);
+
+        $selected = $db->category->select()->run();
+
+        $this->assertEquals((string) $selected, (string) $post->category);
     }
 
     public function testLeftJoin()
