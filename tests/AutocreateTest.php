@@ -19,7 +19,6 @@ CREATE TABLE "post" (
     `category_id` INTEGER,
     `publishedAt` TEXT,
     `isActive`    INTEGER,
-    `inHome`      INTEGER,
     `hasContent`  INTEGER,
     `type`        TEXT
 );
@@ -51,7 +50,7 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\Table', $post);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
 
-        $this->assertCount(8, $post->fields);
+        $this->assertCount(7, $post->fields);
         $this->assertEquals('post', $post->name);
         $this->assertEquals(self::$db->getScheme()['post'], $post->getScheme());
     }
@@ -64,7 +63,6 @@ EOT
             ['category_id', 'Integer'],
             ['publishedAt', 'Datetime'],
             ['isActive', 'Boolean'],
-            ['inHome', 'Boolean'],
             ['hasContent', 'Boolean'],
             ['type', 'Field'],
         ];
