@@ -20,8 +20,8 @@ class FieldFactory implements FieldFactoryInterface
         //relation fields (post_id)
         '/_id$/' => 'Integer',
 
-        //flags (isActive, inHome, hasContent)
-        '/^(is|in|has)[A-Z]/' => 'Boolean',
+        //flags (isActive, inHome)
+        '/^(is|has)[A-Z]/' => 'Boolean',
 
         //time related (createdAt, publishedAt)
         '/[a-z]At$/' => 'Datetime',

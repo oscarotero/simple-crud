@@ -78,7 +78,7 @@ trait ExtendedSelectionTrait
                 $this->fields[] = sprintf('`%s`.`%s`', $relation[1], $relation[3]);
                 $this->where(sprintf('`%s`.`%s` = `%s`.`id`', $relation[1], $relation[2], $this->table->name));
                 $this->where(sprintf('`%s`.`%s` = `%s`.`id`', $relation[1], $relation[3], $table->name));
-                $this->where(sprintf('`%s`.`id` IN (:%s)', $table->name, $relation[1]), [':'.$relation[1] => $row->id]);
+                $this->where(sprintf('`%s`.`id` IN (:%s)', $table->name, $relation[3]), [':'.$relation[3] => $row->id]);
 
                 return $this;
 

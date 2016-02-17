@@ -27,6 +27,8 @@ EOT
 
     public function testRow()
     {
+        $db = self::$db;
+
         $data = [
             'title' => 'Second post',
             'publishedAt' => new DateTime(),
@@ -34,14 +36,14 @@ EOT
         ];
 
         //Test cache        
-        $this->assertFalse(isset(self::$db->post[1]));
+        $this->assertFalse(isset($db->post[1]));
 
-        self::$db->post[1] = ['title' => 'First post'];
+        $db->post[] = ['title' => 'First post'];
 
-        $this->assertTrue(isset(self::$db->post[1]));
+        $this->assertTrue(isset($db->post[1]));
 
         //Test row
-        $post = self::$db->post->create($data);
+        $post = $db->post->create($data);
 
         $this->assertInstanceOf('SimpleCrud\\Row', $post);
 
@@ -50,20 +52,20 @@ EOT
         $this->assertSame($data['publishedAt'], $post->publishedAt);
         $this->assertSame($data['isActive'], $post->isActive);
 
-        $this->assertFalse(isset(self::$db->post[2]));
+        $this->assertFalse(isset($db->post[2]));
 
         $post->save();
 
         $this->assertSame(2, $post->id);
-        $this->assertTrue(isset(self::$db->post[2]));
+        $this->assertTrue(isset($db->post[2]));
 
-        $saved = self::$db->post[2];
+        $saved = $db->post[2];
 
         $this->assertSame($saved, $post);
 
-        self::$db->post->clearCache();
+        $db->post->clearCache();
 
-        $saved2 = self::$db->post[2];
+        $saved2 = $db->post[2];
 
         $this->assertNotSame($saved2, $post);
 
@@ -72,10 +74,12 @@ EOT
 
     public function testRowCollection()
     {
-        self::$db->post[] = ['title' => 'One'];
-        self::$db->post[] = ['title' => 'Two'];
+        $db = self::$db;
 
-        $posts = self::$db->post->select()
+        $db->post[] = ['title' => 'One'];
+        $db->post[] = ['title' => 'Two'];
+
+        $posts = $db->post->select()
             ->by('title', ['One', 'Two'])
             ->run();
 
@@ -88,7 +92,7 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\Row', $posts[3]);
         $this->assertInstanceOf('SimpleCrud\\Row', $posts[4]);
 
-        $this->assertSame($posts[3], self::$db->post[3]);
+        $this->assertSame($posts[3], $db->post[3]);
 
         $filtered = $posts->filter(function ($row) {
             return $row->title === 'One';

@@ -16,13 +16,14 @@ class Select extends Query
 {
     const MODE_ONE = 1;
     const MODE_ALL = 2;
+    const MODE_ARRAY = 3;
 
     use ExtendedSelectionTrait;
 
     protected $leftJoin = [];
     protected $orderBy = [];
     protected $statement;
-    protected $mode;
+    protected $mode = 2;
 
     /**
      * Change the mode to returns just the first row.
@@ -37,13 +38,15 @@ class Select extends Query
     }
 
     /**
-     * Change the mode to returns all rows (even duplicated).
+     * Change the mode to returns all rows.
+     * 
+     * @param bool $asArray
      * 
      * @return self
      */
-    public function all()
+    public function all($asArray = false)
     {
-        $this->mode = self::MODE_ALL;
+        $this->mode = $asArray ? self::MODE_ARRAY : self::MODE_ALL;
 
         return $this;
     }
@@ -57,22 +60,11 @@ class Select extends Query
     {
         $statement = $this->__invoke();
 
-        //Returns one
         if ($this->mode === self::MODE_ONE) {
-            $row = $statement->fetch();
-
-            if ($row !== false) {
-                return $this->createRow($row);
-            }
-
-            return;
+            return ($row = $statement->fetch()) === false ? null : $this->createRow($row);
         }
 
-        $result = $this->table->createCollection();
-
-        if ($this->mode === self::MODE_ALL) {
-            $result->idAsKey(false);
-        }
+        $result = $this->mode === self::MODE_ALL ? $this->table->createCollection() : [];
 
         while (($row = $statement->fetch())) {
             $result[] = $this->createRow($row);

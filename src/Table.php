@@ -94,14 +94,10 @@ class Table implements ArrayAccess
             return !empty($this->cache[$offset]);
         }
 
-        $exists = $this->count()
+        return $this->count()
             ->byId($offset)
             ->limit(1)
             ->run() === 1;
-
-        $this->cache[$offset] = $exists ? true : null;
-
-        return $exists;
     }
 
     /**
@@ -130,6 +126,7 @@ class Table implements ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
+        //Insert on missing offset
         if ($offset === null) {
             $value['id'] = null;
 
@@ -140,7 +137,8 @@ class Table implements ArrayAccess
             return;
         }
 
-        if (isset($this->cache[$offset]) && is_object($this->cache[$offset])) {
+        //Update if the element is cached
+        if (isset($this->cache[$offset])) {
             $row = $this->cache[$offset];
 
             foreach ($value as $name => $val) {
@@ -152,23 +150,14 @@ class Table implements ArrayAccess
             return;
         }
 
+        //Update if the element it's not cached
         if ($this->offsetExists($offset)) {
             $this->update()
                 ->data($value)
                 ->byId($offset)
                 ->limit(1)
                 ->run();
-
-            return;
         }
-
-        $value['id'] = $offset;
-
-        $this->insert()
-            ->data($value)
-            ->run();
-
-        $this->cache[$offset] = true;
     }
 
     /**
@@ -178,7 +167,7 @@ class Table implements ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        $this->cache[$offset] = null;
+        unset($this->cache[$offset]);
 
         $this->delete()
             ->byId($offset)

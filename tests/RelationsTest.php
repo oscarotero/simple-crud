@@ -60,7 +60,7 @@ EOT
         $comment = $db->comment->create(['id' => 1]);
 
         $this->assertEquals(
-            'SELECT `category`.`id`, `category`.`name`, `category_post`.`post_id` FROM `category`, `category_post`, `post` WHERE (`category_post`.`category_id` = `category`.`id`) AND (`category_post`.`post_id` = `post`.`id`) AND (`post`.`id` IN (:category_post))',
+            'SELECT `category`.`id`, `category`.`name`, `category_post`.`post_id` FROM `category`, `category_post`, `post` WHERE (`category_post`.`category_id` = `category`.`id`) AND (`category_post`.`post_id` = `post`.`id`) AND (`post`.`id` IN (:post_id))',
             (string) $post->category()
         );
 

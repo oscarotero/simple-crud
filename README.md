@@ -1,6 +1,6 @@
 # SimpleCrud
 
-> ## Working in the new v6.x version with a lot of breaking changes!!
+> ## Working in the new v6.x version with a lot of amazing breaking changes!!
 
 [![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
@@ -37,7 +37,6 @@ CREATE TABLE "post" (
     `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title` TEXT,
     `category_id` INTEGER,
-    `pubdate`   TEXT,
     `type`  TEXT,
 
     FOREIGN KEY(`category_id`) REFERENCES category(id)
@@ -74,7 +73,7 @@ $db = new SimpleCrud($pdo);
 $post = $db->post;
 ```
 
-SimpleCrud detects automatically all relationships between the tables using the naming conventions described above. For example the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category.
+SimpleCrud load the database scheme and detects automatically all relationships between the tables using the naming conventions described above. For example the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category.
 
 
 ### Using the library
@@ -97,7 +96,7 @@ if (isset($db->posts[3])) {
 //Delete a post
 unset($db->posts[3]);
 
-//Create or update posts
+//Update a post
 $db->posts[3] = [
     'title' => 'Hello world'
 ];
@@ -108,15 +107,41 @@ $db->posts[] = [
 ];
 ```
 
-#### Database queries:
+#### Rows
 
-Use magic methods to create database queries. For example `select()`, `update()`, `count()`, `delete()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, and the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
+A `Row` object represents a database row and it is used to read and modify the data:
 
 ```php
-//create the query
+//get a row
+$post = $db->post[34];
+
+//Get/set the post title
+echo $post->title;
+
+$post->title = 'New title';
+
+//Update the row into database
+$post->save();
+
+//Remove the row in the database
+$post->delete();
+
+//Create a new row
+$newPost = $db->post->create(['title' => 'The title']);
+
+//Insert the post in the database
+$newPost->save();
+```
+
+#### Queries
+
+A `Query` object represents a database query. Use magic methods to create new query instances. For example `select()`, `update()`, `count()`, `delete()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, and the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
+
+```php
+//Create an UPDATE query
 $updateQuery = $db->post->update();
 
-//apply some modifiers
+//Add data, conditions, limit, etc
 $updateQuery
     ->data(['title' => 'New title'])
     ->where('id = :id', [':id' => 23])
@@ -129,11 +154,11 @@ echo $updateQuery; //UPDATE `posts` ...
 $updateQuery();
 ```
 
-If you don't need the PDOStatement (the most cases) you can use the method `run()`:
+The method `run()` executes the query but instead returns the `PDOStatement`, it returns the processed result of the query. For example, in `count()` you get an integer with the number of rows found, and in `insert()` returns the id of the new row:
 
 ```php
 //insert a new post
-$db->post->insert()
+$id = $db->post->insert()
     ->data([
         'title' => 'My first post',
         'text' => 'This is the text of the post'
@@ -144,17 +169,15 @@ $db->post->insert()
 $db->post->delete()
     ->byId(23) //shortcut of where('id = :id', [':id' => 23])
     ->run();
+
+//Count all posts
+$total = $db->post->count()->run();
+
+//Sum the ids of all posts
+$total = $db->post->sum()->field('id')->run();
 ```
 
-The method `run()` returns also the data from queries like `count()` or `sum()`:
-
-```php
-$count = $db->post->count();
-$statement = $count();  //execute the query and returns the statement
-$total = $count->run(); //execute the query and returns an integer with the result
-```
-
-Use `select()` to get the data from the database. `run()` returns an instance of `RowCollection` with the result:
+`run()` with `select()` returns an instance of `RowCollection` with the result:
 
 ```php
 $posts = $db->post->select()
@@ -166,9 +189,16 @@ $posts = $db->post->select()
 foreach ($posts as $post) {
     echo $post->title;
 }
+
+//Get an array with the values of a column:
+$allTitles = $posts->title;
+
+foreach ($allTitles as $title) {
+    echo $title;
+}
 ```
 
-To select only one row, use the modifier `one()`, it returns an instance of `Row`:
+If you only need the first row, use the modifier `one()`:
 
 ```php
 $post = $db->post->select()
@@ -179,7 +209,7 @@ $post = $db->post->select()
 echo $post->title;
 ```
 
-The modifier `relatedWith()` add automatically the `WHERE` clauses to select related data easily:
+`select()` has some interesting modifiers like `relatedWith()` to add automatically the `WHERE` clauses needed to select data relates with a row or rowCollection:
 
 ```php
 //Get the post id = 23
@@ -192,93 +222,9 @@ $category = $db->category->select()
     ->run();
 ```
 
-#### Working with rows
-
-The `Row` class is used to read and modify the data of a row:
-
-```php
-//get a row
-$post = $db->post[34];
-
-//Get/set the post title
-echo $post->title;
-
-$post->title = 'New title';
-
-//Update the data into database
-$post->save();
-
-//Remove the row in the database
-$post->delete();
-
-//Create a new row (but it's not inserted in the database yet)
-$newPost = $db->post->create(['title' => 'The title']);
-
-//Edit the values using an array
-$newPost->set([
-    'title' => 'New title',
-    'description' => 'Another description'
-]);
-
-$newPost->save(); //Insert the post in the database.
-```
-
-#### Working with collections
-
-The `RowCollection` class is like an array of `Row` using the id as the key.
-
-```php
-$allPosts = $db->post->select()->run();
-
-foreach ($allPosts as $post) {
-    echo $post->title;
-}
-
-//Get an array with the values of a column:
-$allPostsTitles = $allPosts->title;
-
-foreach ($allPostsTitles as $title) {
-    echo $title;
-}
-```
-
-#### Fields classes
-
-The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to the database for its usage. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
-
-* Boolean: To manage boolean values
-* Date: To manage date values
-* Datetime: To manage datetime values
-* Decimal: Converts values to float numbers or NULL
-* Field: It's the default field and doesn't transform the value
-* File: Used to upload a file and save the file path
-* Integer: Converts values to integers or NULL
-* Json: To store json structures.
-* Serializable: To store arrays or any other serializable data structure as strings.
-* Set: Manages multiple values. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
-
-The Field classes are asigned automatically according with the field type in the database. There are also "special names" that have specific types asigned:
-
-* Integer format will be asigned to any field named `id` or ending by `_id`.
-* Datetime format will be asigned to any field named `pubdate` or ending by `At` (for example: `createdAt`, `updatedAt` etc).
-* Boolean format will be asigned to any field named `active` or starting by `is`, `in` or `has` (for example: `isActived`, `inHome`, `hasContent`, etc)
-
-Example:
-
-```php
-$post = $db->post->create([
-    'title' => 'My post',
-    'text' => 'My post text',
-    'createdAt' => new Datetime('now'),
-    'isActive' => true
-]);
-
-$post->save();
-```
-
 ### Lazy loads
 
-Both `Row` and `RowCollection` can load automatically other related data. Just use a property with the same name than a related table. For example:
+Both `Row` and `RowCollection` can load automatically other related data. Just use a property named like a related table. For example:
 
 ```php
 //Get the category id=34
@@ -309,16 +255,18 @@ You may want to modify the query before get the result. Use a method instead a p
 ```php
 $category = $db->category[34];
 
+//Get the posts of this category but only if the pubdate is in the future
 $posts = $category->post()
     ->where('pubdate > :date', date('Y-m-d'))
     ->run();
 ```
 
-### Solving the n+1 problem
+#### Solving the n+1 problem
 
 The [n+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) can be solved in the following way:
 
 ```php
+//Get some posts
 $posts = $db->post->select()->run();
 
 //preload all categories
@@ -328,6 +276,96 @@ $posts->category;
 foreach ($posts as $post) {
     echo $post->category;
 }
+```
+
+### Assign related data
+
+Relate data is as easy than get related data:
+
+```php
+//Get a post
+$posts = $db->post[23];
+
+//Get some comments
+$comments = $db->comments->select()->run();
+
+//Assign the comments to the post
+$post->comment = $comments;
+```
+
+Using a RowCollection instead a Row, the data will be distributed automatically by all rows:
+
+```php
+//Get all posts
+$posts = $db->post->select()->run();
+
+//Get all comments
+$comments = $db->comments->select()->run();
+
+//Distribute each comment with its post
+$posts->comment = $comments;
+
+//Now you can iterate
+foreach ($posts as $post) {
+    foreach ($post->comment as $comment) {
+        echo $comment->text;
+    }
+}
+```
+
+#### Save relations
+
+When data is asigned (for example, some comments within a post), to save the data in the database, you must do this:
+
+```php
+//Get a comment
+$comment = $db->comment[5];
+
+//Assign a post
+$comment->post = $db->post[34];
+
+//Save the comment but the relation is NOT saved
+$comment->save();
+
+//Save the comment and the relations (comment.post_id = 34)
+$comment->save(true);
+
+//Save the comment and the relation with the post, but not other possible relations:
+$comment->save(['post']);
+```
+
+#### Fields classes
+
+The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to the database for its usage. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
+
+* Boolean: To manage boolean values
+* Date: To manage date values
+* Datetime: To manage datetime values
+* Decimal: Converts values to float numbers or NULL
+* Field: It's the default field and doesn't transform the value
+* File: Used to upload a file and save the file path
+* Integer: Converts values to integers or NULL
+* Json: To store json structures.
+* Serializable: To store arrays or any other serializable data structure as strings.
+* Set: Manages multiple values. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
+
+The Field classes are asigned automatically according with the field type in the database. There are also "special names" that have specific types asigned:
+
+* Integer format will be asigned to any field named `id` or ending by `_id`.
+* Datetime format will be asigned to any field named `pubdate` or ending by `At` (for example: `createdAt`, `updatedAt` etc).
+* Boolean format will be asigned to any field named `active` or starting by `is` or `has` (for example: `isActived`, `hasContent`, etc)
+
+Example:
+
+```php
+$post = $db->post->create([
+    'title' => 'My post',
+    'text' => 'My post text',
+    'createdAt' => new Datetime('now'),
+    'isActive' => true
+]);
+
+$post->save();
 ```
 
 ## Customization
@@ -340,10 +378,7 @@ This class creates the instances of all tables. If it's not provided, by default
 
 * `addNamespace` Useful if you want to create custom table classes. For example, if the namespace is `App\MyModels` and you load the table `post`, the TableFactory will check whether the class `App\MyModels\Post` exists and use it instead the default.
 * `setAutocreate` Set false to NOT create instances of tables using the default class.
-* `getFieldFactory` Returns the FieldFactory.
-* `setFieldFactory` To set a custom factory to create Field instances.
-* `getQueryFactory` Returns the QueryFactory.
-* `setQueryFactory` To set a custom factory to create Query instances.
+
 
 ```php
 //Create the simplecrud instance
@@ -370,11 +405,8 @@ Example:
 //Create the simplecrud instance
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the table factory
-$tableFactory = $db->getTableFactory();
-
-//Get the queryFactory used by the tableFactory
-$queryFactory = $tableFactory->getQueryFactory();
+//Get the query factory
+$queryFactory = $db->getQueryFactory();
 
 //Add a namespace with my custom query classes, with more options, etc
 $queryFactory->addNamespace('App\\Models\\Queries\\');
@@ -389,7 +421,8 @@ $db->posts->customSelect()->run(); //Returns and execute an instance of App\Mode
 This factory creates intances of the fields used by the tables to convert the values. By default uses `SimpleCrud\FieldFactory` but you can create your own factory extending the `SimpleCrud\FieldFactoryInstance`. The default FieldFactory has the following options:
 
 * `addNamespace` Add more namespaces where find more field classes.
-* `addSmartName` Add more smart names to asign automatically types to specific field names.
+* `mapNames` To asign predefined types to some names names.
+* `mapRegex` To asign predefined types to some names names using a regular expression.
 
 Example:
 
@@ -397,20 +430,25 @@ Example:
 //Create the simplecrud instance
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the table factory
-$tableFactory = $db->getTableFactory();
-
-//Get the fieldFactory used by the tableFactory
-$fieldFactory = $tableFactory->getFieldFactory();
+//Get the fieldFactory
+$fieldFactory = $db->getFieldFactory();
 
 //Add a namespace with my custom field classes
 $fieldFactory->addNamespace('App\\Models\\Fields\\');
 
 //By default, all fields called "year" will be integer
-$fieldFactory->addSmartName('year', 'Integer');
+$fieldFactory->mapNames([
+    'year' => 'Integer'
+]);
+
+//And assign the boolean type to all fields begining with "in" (for example "inHome")
+$fieldFactory->mapRegex([
+    '/^in[A-Z]/' => 'Boolean'
+]);
 
 //Use it:
 $db->post->fields['year']; //returns an instance of App\Models\Fields\Integer
+$db->post->fields['inHome']; //returns an instance of App\Models\Fields\Boolean
 ```
 
 ## Creating your own tables
@@ -424,12 +462,11 @@ use SimpleCrud\Table;
 
 class Posts extends Table
 {
-    public function getLatests()
+    public function selectLatest()
     {
         return $this->select()
             ->orderBy('createdAt DESC')
-            ->limit(10)
-            ->run();
+            ->limit(10);
     }
 }
 ```
@@ -441,7 +478,7 @@ $db = new SimpleCrud\SimpleCrud($pdo);
 $db->getTableFactory()->addNamespace('MyModels\\');
 
 
-$latests = $db->post->getLatest();
+$latests = $db->post->selectLatest()->run();
 ```
 
 ### Data validation
@@ -489,30 +526,15 @@ class Posts extends Table
 {
     public function init()
     {
-        //Add some methods to RowCollections
-        $this->collection->registerMethod('sumIds', function ($collection) {
-            return array_sum($collection->id);
-        });
+        //Use a custom RowCollection class:
+        $this->collection = new MyCustomRowCollection($this);
 
-        //Add some properties to Rows
-        $this->row->registerProperty('titleLowerCase', function ($row) {
-            return strtolower($row->title);
-        });
+        //Use a custom Row class:
+        $this->row = new MyCustomRow($this);
+
+        //Configure some field
+        $this->fields['jsonData']->setConfig(['assoc' => false]);
     }
-}
-```
-
-Now, on use the table:
-
-```php
-$posts = $db->post->select()->run();
-
-//Execute the registered method in the collection
-echo $posts->sumIds();
-
-//Execute the registered property in the row
-foreach ($posts as $post) {
-    echo $post->titleLowerCase;
 }
 ```
 
@@ -532,12 +554,12 @@ use SimpleCrud\FieldInterface;
  */
 class Ip extends SimpleCrud\Fields\Field
 {
-    public function dataToDatabase ($data)
+    public function dataToDatabase($data)
     {
         return ip2long($data);
     }
 
-    public function dataFromDatabase ($data)
+    public function dataFromDatabase($data)
     {
         return long2ip($data);
     }
@@ -549,14 +571,16 @@ Now, to use it:
 ```php
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the field factory from the table factory
-$fieldFactory = $db->getTableFactory()->getFieldFactory();
+//Get the field factory
+$fieldFactory = $db->getFieldFactory();
 
 //Add the namespace of my custom fields
 $fieldFactory->addNamespace('MyModels\\Fields\\');
 
 //All fields named "ip" use the class "Ip"
-$fieldFactory->addSmartName('ip', 'Ip');
+$fieldFactory->mapNames([
+    'ip' => 'Ip'
+]);
 
 //Use in the ip fields
 $db->session->insert()
@@ -566,14 +590,14 @@ $db->session->insert()
 
 ### Create your own custom queries
 
-To extend the Select query with custom methods:
+Let's see an example of how to extend the Select query with custom methods:
 
 ```php
 namespace MyModels\Queries;
 
-use SimpleCrud\Queries\Mysql\SelectAll as BaseSelect;
+use SimpleCrud\Queries\Mysql\Select as BaseSelect;
 
-class SelectAll extends BaseSelect
+class Select extends BaseSelect
 {
     public function actived()
     {
@@ -592,8 +616,8 @@ Now to use it:
 ```php
 $db = new SimpleCrud\SimpleCrud($pdo);
 
-//Get the query factory from the table factory
-$fieldFactory = $db->getTableFactory()->getQueryFactory();
+//Get the query factory
+$queryFactory = $db->getQueryFactory();
 
 //Add the namespace of my custom queries
 $queryFactory->addNamespace('MyModels\\Queries\\');
@@ -606,21 +630,17 @@ $posts = $db->post->select()
 ```
 
 
-### Shared attributes
+### Attributes
 
-You may to share some values across all tables, rows and collections. For example a language configuration, the base path where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
+You may want to store some values, for example a language configuration, the base path where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
 
 ```php
 //Save an attribute, for example, the language code:
 $db->setAttribute('language', 'en');
 
-//This value is accessible from the table class and row/rowCollection:
-echo $db->post->getAttribute('language'); //en
+//Get the attribute:
+echo $db->getAttribute('language'); // en
 
-//And rows
-$post = $db->post[2];
-$post->getAttribute('language'); //en
+//You can access to PDO attributes, using constants:
+echo $db->getAttribute(PDO::ATTR_DRIVER_NAME); //sqlite
 ```
-
-Note: The attributes are read-only for tables, rows and rowCollections, only the `SimpleCrud\SimpleCrud` instance has the method `setAttribute`.
-

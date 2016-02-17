@@ -14,7 +14,6 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 {
     private $rows = [];
     private $loadedRelations = [];
-    private $idAsKey = true;
 
     /**
      * Magic method to get properties from all rows.
@@ -42,11 +41,11 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         $relation = $scheme['relations'][$name];
+        $related = $this->getDatabase()->$name;
+        $result = $related->createCollection();
 
         //It's already loaded relation
         if (in_array($name, $this->loadedRelations, true)) {
-            $result = $table->createCollection();
-
             if ($relation[0] === Scheme::HAS_ONE) {
                 foreach ($this->rows as $row) {
                     $result[] = $row->$name;
@@ -65,12 +64,18 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         //Load the relation
-        $result = $this->getDatabase()->{$name}->select()
+        $rows = $related->select()
             ->relatedWith($this)
-            ->all()
+            ->all(true)
             ->run();
 
-        $this->__set($name, $result);
+        //Join the relations and rows
+        self::join($table, $this->rows, $related, $rows, $relation);
+        $this->loadedRelations[] = $name;
+
+        foreach ($rows as $row) {
+            $result[] = $row;
+        }
 
         return $result;
     }
@@ -110,17 +115,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         //Join the relations and rows
-        switch ($relation[0]) {
-            case Scheme::HAS_ONE:
-                self::join($row->getTable(), $row, $table, $this->rows, $relation[1]);
-                break;
-
-            case Scheme::HAS_MANY:
-            case Scheme::HAS_MANY_TO_MANY:
-                self::join($table, $this->rows, $row->getTable(), $row, $relation[1]);
-                break;
-        }
-
+        self::join($table, $this->rows, $row->getTable(), $row, $relation[1]);
         $this->loadedRelations[] = $name;
     }
 
@@ -139,32 +134,12 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     }
 
     /**
-     * Set whether or not use the id as key.
-     *
-     * @param bool $idAsKey
-     *
-     * @return self
-     */
-    public function idAsKey($idAsKey)
-    {
-        $this->idAsKey = (boolean) $idAsKey;
-
-        return $this;
-    }
-
-    /**
      * @see ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
         if (!($value instanceof Row)) {
             throw new SimpleCrudException('Only instances of SimpleCrud\\Row must be added to collections');
-        }
-
-        if ($this->idAsKey === false) {
-            $this->rows[] = $value;
-
-            return;
         }
 
         if (empty($value->id)) {
@@ -301,16 +276,20 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
      * @param RowCollection|array $rows1
      * @param Table               $table2
      * @param RowCollection|array $rows2
-     * @param string              $foreingKey
+     * @param array               $relation
      */
-    private static function join($table1, $rows1, $table2, $rows2, $foreignKey)
+    private static function join(Table $table1, $rows1, Table $table2, $rows2, array $relation)
     {
+        if ($relation[0] === Scheme::HAS_ONE) {
+            list($table2, $rows2, $table1, $rows1) = [$table1, $rows1, $table2, $rows2];
+        }
+
         foreach ($rows1 as $row) {
             $row->{$table2->name} = $table2->createCollection();
         }
 
         foreach ($rows2 as $row) {
-            $id = $row->$foreignKey;
+            $id = $row->{$relation[1]};
 
             if (isset($rows1[$id])) {
                 $rows1[$id]->{$table2->name}[] = $row;
