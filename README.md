@@ -135,10 +135,10 @@ $newPost->save();
 
 #### Queries
 
-A `Query` object represents a database query. Use magic methods to create new query instances. For example `select()`, `update()`, `count()`, `delete()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, and the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
+A `Query` object represents a database query. They are associated with tables, so use magic methods to create the new query instances. For example `$db->post->select()`, `$db->comment->update()`, `$db->category->count(), etc... Each query has modifiers like `orderBy()`, `limit()`, etc, the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
 
 ```php
-//Create an UPDATE query
+//Create an UPDATE query with the table post
 $updateQuery = $db->post->update();
 
 //Add data, conditions, limit, etc
@@ -158,7 +158,8 @@ The method `run()` executes the query but instead returns the `PDOStatement`, it
 
 ```php
 //insert a new post
-$id = $db->post->insert()
+$id = $db->post
+    ->insert()
     ->data([
         'title' => 'My first post',
         'text' => 'This is the text of the post'
@@ -166,21 +167,28 @@ $id = $db->post->insert()
     ->run();
 
 //Delete a post
-$db->post->delete()
+$db->post
+    ->delete()
     ->byId(23) //shortcut of where('id = :id', [':id' => 23])
     ->run();
 
 //Count all posts
-$total = $db->post->count()->run();
+$total = $db->post
+    ->count()
+    ->run();
 
 //Sum the ids of all posts
-$total = $db->post->sum()->field('id')->run();
+$total = $db->post
+    ->sum()
+    ->field('id')
+    ->run();
 ```
 
-`run()` with `select()` returns an instance of `RowCollection` with the result:
+`->run()` with `select()` returns an instance of `RowCollection` with the result:
 
 ```php
-$posts = $db->post->select()
+$posts = $db->post
+    ->select()
     ->where('id > :id', [':id' => 10])
     ->orderBy('id ASC')
     ->limit(100)
@@ -201,22 +209,24 @@ foreach ($allTitles as $title) {
 If you only need the first row, use the modifier `one()`:
 
 ```php
-$post = $db->post->select()
-    ->by('id', 23)
+$post = $db->post
+    ->select()
     ->one()
+    ->by('id', 23)
     ->run();
 
 echo $post->title;
 ```
 
-`select()` has some interesting modifiers like `relatedWith()` to add automatically the `WHERE` clauses needed to select data relates with a row or rowCollection:
+`select()` has some interesting modifiers like `relatedWith()` to add automatically the `WHERE` clauses needed to select data related with a row or rowCollection:
 
 ```php
 //Get the post id = 23
 $post = $db->post[23];
 
 //Select the category related with this posts
-$category = $db->category->select()
+$category = $db->category
+    ->select()
     ->relatedWith($post)
     ->one()
     ->run();
@@ -234,7 +244,8 @@ $category = $db->category[34];
 $posts = $category->post;
 
 //This is equivalent to:
-$posts = $db->post->select()
+$posts = $db->post
+    ->select()
     ->relatedWith($category)
     ->run();
 ```
@@ -250,7 +261,7 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
-You may want to modify the query before get the result. Use a method instead a property to return a select query:
+You may want to modify the query before run. Use a method instead a property to return the Select query instead the result:
 
 ```php
 $category = $db->category[34];
@@ -267,7 +278,9 @@ The [n+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-select
 
 ```php
 //Get some posts
-$posts = $db->post->select()->run();
+$posts = $db->post
+    ->select()
+    ->run();
 
 //preload all categories
 $posts->category;
@@ -280,14 +293,16 @@ foreach ($posts as $post) {
 
 ### Assign related data
 
-Relate data is as easy than get related data:
+Assign related data is easy:
 
 ```php
 //Get a post
 $posts = $db->post[23];
 
 //Get some comments
-$comments = $db->comments->select()->run();
+$comments = $db->comments
+    ->select()
+    ->run();
 
 //Assign the comments to the post
 $post->comment = $comments;
@@ -297,10 +312,14 @@ Using a RowCollection instead a Row, the data will be distributed automatically 
 
 ```php
 //Get all posts
-$posts = $db->post->select()->run();
+$posts = $db->post
+    ->select()
+    ->run();
 
 //Get all comments
-$comments = $db->comments->select()->run();
+$comments = $db->comments
+    ->select()
+    ->run();
 
 //Distribute each comment with its post
 $posts->comment = $comments;
@@ -315,7 +334,7 @@ foreach ($posts as $post) {
 
 #### Save relations
 
-When data is asigned (for example, some comments within a post), to save the data in the database, you must do this:
+Once the data is asigned (for example, some comments within a post), to save the data in the database, you must do this:
 
 ```php
 //Get a comment
@@ -334,7 +353,7 @@ $comment->save(true);
 $comment->save(['post']);
 ```
 
-#### Fields classes
+### Fields classes
 
 The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to the database for its usage. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
 

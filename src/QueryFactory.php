@@ -18,7 +18,7 @@ class QueryFactory implements QueryFactoryInterface
      */
     public function addNamespace($namespace)
     {
-        $this->namespaces[] = $namespace;
+        array_unshift($this->namespaces, $namespace);
 
         return $this;
     }

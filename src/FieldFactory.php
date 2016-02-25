@@ -63,7 +63,7 @@ class FieldFactory implements FieldFactoryInterface
      */
     public function mapNames(array $map)
     {
-        $this->mapNames = $map + $this->mapNames;
+        $this->nameMap = $map + $this->nameMap;
 
         return $this;
     }
