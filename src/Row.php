@@ -74,6 +74,10 @@ class Row extends AbstractRow
             return ($this->relations[$name] = call_user_func([$this, $name])->run()) ?: new NullValue();
         }
 
+        if (method_exists($this, $name)) {
+            return $this->$name();
+        }
+
         throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
     }
 
