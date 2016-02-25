@@ -64,10 +64,24 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         //Load the relation
-        $rows = $related->select()
-            ->relatedWith($this)
-            ->all(true)
-            ->run();
+        $select = $related->select()->relatedWith($this);
+
+        //Many to many
+        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+            $statement = $select();
+
+            foreach ($this->rows as $row) {
+                $row->{$related->name} = $related->createCollection();
+            }
+
+            while (($data = $statement->fetch())) {
+                $this->rows[$data[$relation[2]]]->{$related->name}[] = $result[] = $select->createRow($data);
+            }
+
+            return $result;
+        }
+
+        $rows = $select->all(true)->run();
 
         //Join the relations and rows
         self::join($table, $this->rows, $related, $rows, $relation);

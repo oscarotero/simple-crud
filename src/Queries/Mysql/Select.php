@@ -80,7 +80,7 @@ class Select extends Query
      * 
      * @return Row
      */
-    protected function createRow(array $data)
+    public function createRow(array $data)
     {
         $row = $this->table->createFromDatabase($data);
 
