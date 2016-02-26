@@ -141,6 +141,7 @@ EOT
         $selected = $db->category->select()->run();
 
         $this->assertEquals((string) $selected, (string) $post->category);
+        $this->assertEquals((string) $selected, (string) $db->post->select()->run()->category);
     }
 
     public function testLeftJoin()
@@ -153,7 +154,7 @@ EOT
 
         $this->assertCount(2, $comments);
 
-        $json = '[{"id":1,"text":"Hello world","post_id":1,"post":{"id":1,"title":"first","comment":null}},{"id":2,"text":"Hello world 2","post_id":null}]';
+        $json = '[{"id":1,"text":"Hello world","post_id":1,"post":{"id":1,"title":"first","comment":null,"category":[]}},{"id":2,"text":"Hello world 2","post_id":null}]';
 
         $this->assertEquals($json, (string) $comments);
     }

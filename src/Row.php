@@ -74,6 +74,7 @@ class Row extends AbstractRow
             return ($this->relations[$name] = call_user_func([$this, $name])->run()) ?: new NullValue();
         }
 
+        //Exists as a function
         if (method_exists($this, $name)) {
             return $this->$name();
         }
@@ -188,20 +189,20 @@ class Row extends AbstractRow
             }
         }
 
-        if (!$this->changed) {
-            return $this;
-        }
+        if ($this->changed) {
+            if (empty($this->id)) {
+                $this->id = $this->table->insert()
+                    ->data($this->values)
+                    ->run();
+            } else {
+                $this->table->update()
+                    ->data($this->values)
+                    ->byId($this->id)
+                    ->limit(1)
+                    ->run();
+            }
 
-        if (empty($this->id)) {
-            $this->id = $this->table->insert()
-                ->data($this->values)
-                ->run();
-        } else {
-            $this->table->update()
-                ->data($this->values)
-                ->byId($this->id)
-                ->limit(1)
-                ->run();
+            $this->table->cache($this);
         }
 
         if ($relations) {
@@ -247,8 +248,6 @@ class Row extends AbstractRow
                 }
             }
         }
-
-        $this->table->cache($this);
 
         return $this;
     }

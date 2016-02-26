@@ -16,7 +16,6 @@ class Select extends Query
 {
     const MODE_ONE = 1;
     const MODE_ALL = 2;
-    const MODE_ARRAY = 3;
 
     use ExtendedSelectionTrait;
 
@@ -40,13 +39,11 @@ class Select extends Query
     /**
      * Change the mode to returns all rows.
      * 
-     * @param bool $asArray
-     * 
      * @return self
      */
-    public function all($asArray = false)
+    public function all()
     {
-        $this->mode = $asArray ? self::MODE_ARRAY : self::MODE_ALL;
+        $this->mode = self::MODE_ALL;
 
         return $this;
     }
@@ -64,7 +61,7 @@ class Select extends Query
             return ($row = $statement->fetch()) === false ? null : $this->createRow($row);
         }
 
-        $result = $this->mode === self::MODE_ALL ? $this->table->createCollection() : [];
+        $result = $this->table->createCollection();
 
         while (($row = $statement->fetch())) {
             $result[] = $this->createRow($row);
