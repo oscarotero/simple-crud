@@ -41,6 +41,19 @@ class Table implements ArrayAccess
     }
 
     /**
+     * Debug info.
+     * 
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [
+            'name' => $this->name,
+            'fields' => $this->fields,
+        ];
+    }
+
+    /**
      * Callback used to init the table.
      */
     protected function init()

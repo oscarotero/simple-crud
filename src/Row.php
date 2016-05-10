@@ -20,13 +20,22 @@ class Row extends AbstractRow
     {
         parent::__construct($table);
 
-        $defaults = [];
-
         foreach ($table->getScheme()['fields'] as $name => $field) {
-            $defaults[$name] = $field['default'];
+            $this->values[$name] = null;
         }
+    }
 
-        $this->init($defaults);
+    /**
+     * Debug info.
+     * 
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [
+            'table' => $this->getTable()->name,
+            'values' => $this->values,
+        ];
     }
 
     /**
@@ -35,19 +44,6 @@ class Row extends AbstractRow
     public function clearCache()
     {
         $this->relations = [];
-    }
-
-    /**
-     * Initialize the row with the data from database.
-     * 
-     * @param array $values
-     * @param array $relations
-     */
-    public function init(array $values, array $relations = [])
-    {
-        $this->values = $values;
-        $this->relations = $relations;
-        $this->changed = false;
     }
 
     /**

@@ -16,6 +16,19 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     private $loadedRelations = [];
 
     /**
+     * Debug info.
+     * 
+     * @return array
+     */
+    public function __debugInfo()
+    {
+        return [
+            'table' => $this->getTable()->name,
+            'rows' => $this->rows,
+        ];
+    }
+
+    /**
      * Magic method to get properties from all rows.
      *
      * @see self::get()
