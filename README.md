@@ -1,7 +1,5 @@
 # SimpleCrud
 
-> ## Working in the new v6.x version with a lot of amazing breaking changes!!
-
 [![Build Status](https://travis-ci.org/oscarotero/simple-crud.png?branch=master)](https://travis-ci.org/oscarotero/simple-crud)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/oscarotero/simple-crud/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/oscarotero/simple-crud/?branch=master)
 
@@ -135,7 +133,7 @@ $newPost->save();
 
 #### Queries
 
-A `Query` object represents a database query. They are associated with tables, so use magic methods to create the new query instances. For example `$db->post->select()`, `$db->comment->update()`, `$db->category->count(), etc... Each query has modifiers like `orderBy()`, `limit()`, etc, the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
+A `Query` object represents a database query. They are associated with tables, so use magic methods to create the new query instances. For example `$db->post->select()`, `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
 
 ```php
 //Create an UPDATE query with the table post
@@ -154,7 +152,7 @@ echo $updateQuery; //UPDATE `posts` ...
 $updateQuery();
 ```
 
-The method `run()` executes the query but instead returns the `PDOStatement`, it returns the processed result of the query. For example, in `count()` you get an integer with the number of rows found, and in `insert()` returns the id of the new row:
+The method `run()` executes the query but instead returns the `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
 
 ```php
 //insert a new post
@@ -184,7 +182,7 @@ $total = $db->post
     ->run();
 ```
 
-`->run()` with `select()` returns an instance of `RowCollection` with the result:
+With `select()` returns an instance of `RowCollection` with the result:
 
 ```php
 $posts = $db->post
@@ -261,7 +259,7 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
-You may want to modify the query before run. Use a method instead a property to return the Select query instead the result:
+If you want to modify the query before run, use a method instead a property to return a Select instance instead a Row/RowCollection with the result:
 
 ```php
 $category = $db->category[34];
