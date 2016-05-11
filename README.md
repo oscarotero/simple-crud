@@ -289,52 +289,9 @@ foreach ($posts as $post) {
 }
 ```
 
-### Assign related data
-
-Assign related data is easy. 
-
-```php
-//Get a post
-$posts = $db->post[23];
-
-//Get some comments
-$comments = $db->comments
-    ->select()
-    ->run();
-
-//Assign the comments to the post
-$post->comment = $comments;
-```
-
-Using a RowCollection instead a Row, the data will be distributed automatically by all rows:
-
-```php
-//Get all posts
-$posts = $db->post
-    ->select()
-    ->run();
-
-//Get all comments
-$comments = $db->comments
-    ->select()
-    ->run();
-
-//Distribute each comment with its post
-$posts->comment = $comments;
-
-//Now you can iterate
-foreach ($posts as $post) {
-    foreach ($post->comment as $comment) {
-        echo $comment->text;
-    }
-}
-```
-
-Note that **this does not save the relation in the database,** just is stored to use in the html templates.
-
 ### Relate and unrelate data
 
-To save related rows in the database, you must do this:
+To save related rows in the database, you need to do this:
 
 ```php
 //Get a comment
@@ -343,14 +300,11 @@ $comment = $db->comment[5];
 //Get a post
 $post = $db->post[34];
 
-//Relate them
+//Relate
 $post->relate($comment);
 
-//The inverse way does the same, so you don't have to care about this:
-$comment->relate($post);
-
-//Unrelate the comment
-$comment->unrelate($db->post[34]);
+//Unrelate
+$post->unrelate($comment);
 
 //Unrelate all comments of the post
 $post->unrelateAll($db->comment);
