@@ -204,5 +204,8 @@ EOT
         $this->assertCount(0, $category2->category_post);
         $this->assertCount(0, $category2->post);
         $this->assertCount(0, $post->category);
+
+        $post->unrelateAll($db->comment);
+        $this->assertCount(0, $post->comment);
     }
 }

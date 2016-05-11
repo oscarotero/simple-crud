@@ -340,7 +340,6 @@ class Row extends AbstractRow
     public function unrelateAll(Table $relationTable)
     {
         $table = $this->getTable();
-        $relationTable = $row->getTable();
         $relations = $table->getScheme()['relations'];
 
         if (!isset($relations[$relationTable->name])) {
@@ -366,12 +365,11 @@ class Row extends AbstractRow
         if ($relation[0] === Scheme::HAS_MANY) {
             $relationTable->update()
                 ->data([
-                    $relation[1] = null,
+                    $relation[1] => null,
                 ])
                 ->by($relation[1], $this->id)
                 ->run();
 
-            $row->unrelateAll($this);
             $this->relations[$relationTable->name] = $relationTable->createCollection();
 
             return $this;
