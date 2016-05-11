@@ -291,7 +291,7 @@ foreach ($posts as $post) {
 
 ### Assign related data
 
-Assign related data is easy:
+Assign related data is easy. 
 
 ```php
 //Get a post
@@ -330,25 +330,30 @@ foreach ($posts as $post) {
 }
 ```
 
-#### Save relations
+Note that **this does not save the relation in the database,** just is stored to use in the html templates.
 
-Once the data is asigned (for example, some comments within a post), to save the data in the database, you must do this:
+### Relate and unrelate data
+
+To save related rows in the database, you must do this:
 
 ```php
 //Get a comment
 $comment = $db->comment[5];
 
-//Assign a post
-$comment->post = $db->post[34];
+//Get a post
+$post = $db->post[34];
 
-//Save the comment but the relation is NOT saved
-$comment->save();
+//Relate them
+$post->relate($comment);
 
-//Save the comment and the relations (comment.post_id = 34)
-$comment->save(true);
+//The inverse way does the same, so you don't have to care about this:
+$comment->relate($post);
 
-//Save the comment and the relation with the post, but not other possible relations:
-$comment->save(['post']);
+//Unrelate the comment
+$comment->unrelate($db->post[34]);
+
+//Unrelate all comments of the post
+$post->unrelateAll($db->comment);
 ```
 
 ### Fields classes

@@ -39,11 +39,23 @@ class Row extends AbstractRow
     }
 
     /**
-     * Clear the current cache.
+     * Return the current cache.
+     * 
+     * @return array
      */
-    public function clearCache()
+    public function getCache()
     {
-        $this->relations = [];
+        return $this->relations;
+    }
+
+    /**
+     * Set a new cache.
+     * 
+     * @param array $relations
+     */
+    public function setCache(array $relations)
+    {
+        return $this->relations = $relations;
     }
 
     /**
@@ -164,36 +176,10 @@ class Row extends AbstractRow
     /**
      * Saves this row in the database.
      *
-     * @param bool|array $relations Set true to save the relations with other entities
-     *
      * @return $this
      */
-    public function save($relations = false)
+    public function save()
     {
-        if ($relations === true) {
-            $relations = array_keys($this->relations);
-        }
-
-        if ($relations) {
-            $scheme = $this->getTable()->getScheme()['relations'];
-
-            foreach ($relations as $name) {
-                if (!array_key_exists($name, $this->relations)) {
-                    continue;
-                }
-
-                if (!isset($scheme[$name])) {
-                    throw new SimpleCrudException(sprintf('Invalid relation: %s', $name));
-                }
-
-                $relation = $scheme[$name];
-
-                if ($relation[0] === Scheme::HAS_ONE) {
-                    $this->{$relation[1]} = ($this->relations[$name] === null) ? null : $this->relations[$name]->save()->id;
-                }
-            }
-        }
-
         if ($this->changed) {
             if (empty($this->id)) {
                 $this->id = $this->table->insert()
@@ -210,61 +196,17 @@ class Row extends AbstractRow
             $this->table->cache($this);
         }
 
-        if ($relations) {
-            $scheme = $this->getTable()->getScheme()['relations'];
-
-            foreach ($relations as $name) {
-                if (!array_key_exists($name, $this->relations)) {
-                    continue;
-                }
-
-                if (!isset($scheme[$name])) {
-                    throw new SimpleCrudException(sprintf('Invalid relation: %s', $name));
-                }
-
-                $relation = $scheme[$name];
-
-                if ($relation[0] === Scheme::HAS_MANY) {
-                    foreach ($this->relations[$name] as $row) {
-                        $row->{$relation[1]} = $this->id;
-                        $row->save();
-                    }
-
-                    continue;
-                }
-
-                if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
-                    $bridge = $this->getDatabase()->{$relation[1]};
-
-                    $bridge
-                        ->delete()
-                        ->by($relation[2], $this->id)
-                        ->run();
-
-                    foreach ($this->relations[$name] as $row) {
-                        $bridge
-                            ->insert()
-                            ->data([
-                                $relation[2] => $this->id,
-                                $relation[3] => $row->id,
-                            ])
-                            ->run();
-                    }
-                }
-            }
-        }
-
         return $this;
     }
 
     /**
-     * Join this row with other row
+     * Relate this row with other row and save the relation
      *
-     * @param Row $row
+     * @param Row  $row
      *
      * @return $this
      */
-    public function join(Row $row)
+    public function relate(Row $row)
     {
         $table = $this->getTable();
         $relationTable = $row->getTable();
@@ -277,8 +219,8 @@ class Row extends AbstractRow
         $relation = $relations[$relationTable->name];
 
         if ($relation[0] === Scheme::HAS_ONE) {
-            $this->{$relation[1]} = $row->id;
-            return $this->save();
+            $row->relate($this);
+            return $this;
         }
 
         if ($relation[0] === Scheme::HAS_MANY) {
@@ -288,11 +230,28 @@ class Row extends AbstractRow
 
             $row->{$relation[1]} = $this->id;
             $row->save();
+
+            if (isset($this->relations[$relationTable->name])) {
+                $this->relations[$relationTable->name][] = $row;
+            }
+
+            $cache = $row->getCache();
+            $cache[$table->name] = $this;
+            $row->setCache($cache);
+
             return $this;
         }
 
         if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
             $bridge = $this->getDatabase()->{$relation[1]};
+
+            if ($row->id === null) {
+                $row->save();
+            }
+
+            if ($this->id === null) {
+                $this->save();
+            }
 
             $bridge
                 ->insert()
@@ -302,6 +261,129 @@ class Row extends AbstractRow
                     $relation[3] => $row->id,
                 ])
                 ->run();
+
+            if (isset($this->relations[$relationTable->name])) {
+                $this->relations[$relationTable->name][] = $row;
+            }
+        }
+    }
+
+    /**
+     * Unrelate this row with other row and save it
+     *
+     * @param Row $row
+     *
+     * @return $this
+     */
+    public function unrelate(Row $row)
+    {
+        $table = $this->getTable();
+        $relationTable = $row->getTable();
+        $relations = $table->getScheme()['relations'];
+
+        if (!isset($relations[$relationTable->name])) {
+            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->name, $relationTable->name));
+        }
+
+        $relation = $relations[$relationTable->name];
+
+        if ($relation[0] === Scheme::HAS_ONE) {
+            if ($this->{$relation[1]} === $row->id) {
+                $this->{$relation[1]} = null;
+            }
+
+            $this->relations[$relationTable->name] = new NullValue();
+
+            $cache = $row->getCache();
+
+            if (isset($cache[$table->name])) {
+                unset($cache[$table->name][$this->id]);
+                $row->setCache($cache);
+            }
+
+            return $this->save();
+        }
+
+        if ($relation[0] === Scheme::HAS_MANY) {
+            $row->unrelate($this);
+            return $this;
+        }
+
+        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+            $bridge = $this->getDatabase()->{$relation[1]};
+
+            $bridge
+                ->delete()
+                ->by($relation[2], $this->id)
+                ->by($relation[3], $row->id)
+                ->run();
+
+            unset($this->relations[$relation[1]]);
+            unset($this->relations[$relationTable->name][$row->id]);
+
+            $cache = $row->getCache();
+            unset($cache[$relation[1]]);
+            unset($cache[$table->name][$this->id]);
+            $row->setCache($cache);
+        }
+    }
+
+    /**
+     * Unrelate this row with all rows of a specific table
+     *
+     * @param Table $relationTable
+     *
+     * @return $this
+     */
+    public function unrelateAll(Table $relationTable)
+    {
+        $table = $this->getTable();
+        $relationTable = $row->getTable();
+        $relations = $table->getScheme()['relations'];
+
+        if (!isset($relations[$relationTable->name])) {
+            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->name, $relationTable->name));
+        }
+
+        $relation = $relations[$relationTable->name];
+
+        if ($relation[0] === Scheme::HAS_ONE) {
+            $this->{$relation[1]} = null;
+            $this->relations[$relationTable->name] = new NullValue();
+
+            $cache = $row->getCache();
+
+            if (isset($cache[$table->name])) {
+                unset($cache[$table->name][$this->id]);
+                $row->setCache($cache);
+            }
+
+            return $this->save();
+        }
+
+        if ($relation[0] === Scheme::HAS_MANY) {
+            $relationTable->update()
+                ->data([
+                    $relation[1] = null
+                ])
+                ->by($relation[1], $this->id)
+                ->run();
+
+            $row->unrelateAll($this);
+            $this->relations[$relationTable->name] = $relationTable->createCollection();
+            return $this;
+        }
+
+        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+            $bridge = $this->getDatabase()->{$relation[1]};
+
+            $bridge
+                ->delete()
+                ->by($relation[2], $this->id)
+                ->run();
+
+            unset($this->relations[$relation[1]]);
+            unset($this->relations[$relationTable->name][$row->id]);
         }
     }
 }

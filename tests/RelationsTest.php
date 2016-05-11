@@ -100,24 +100,19 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\RowCollection', $post->comment);
 
         $comment = $db->comment->create(['text' => 'Hello world']);
-        $comment->post = $post;
-        $comment->save(true);
+        $comment->relate($post);
 
         $this->assertSame($post, $comment->post);
 
         $comment2 = $db->comment->create(['text' => 'Hello world 2']);
-        $comment2->post = $post;
-        $comment2->save(true);
+        $comment2->relate($post);
 
         $comments = $post->comment;
 
-        $post->clearCache();
         $this->assertCount(2, $post->comment);
 
-        $comment2->post = null;
-        $comment2->save(true);
+        $comment2->unrelate($post);
 
-        $post->clearCache();
         $this->assertCount(1, $post->comment);
 
         //Left join
@@ -135,6 +130,7 @@ EOT
                 'post' => [
                     'id' => 1,
                     'title' => 'first',
+                    'category' => [],
                     'comment' => null,
                 ]
             ],[
@@ -156,17 +152,57 @@ EOT
 
         $post = $db->post->create(['title' => 'second']);
 
-        $categories = $post->category;
-
-        $categories[] = $category1;
-        $categories[] = $category2;
+        $post->relate($category1);
+        $post->relate($category2);
 
         $this->assertCount(2, $post->category);
-        $post->save(true);
 
         $selected = $db->category->select()->run();
 
         $this->assertEquals((string) $selected, (string) $post->category);
         $this->assertEquals((string) $selected, (string) $db->post->select()->run()->category);
+    }
+
+    public function testRelateUnrelate()
+    {
+        $db = $this->db;
+
+        $post = $db->post->create(['title' => 'Post 1']);
+
+        $comment1 = $db->comment->create(['text' => 'Comment 1']);
+        $post->relate($comment1);
+        $this->assertSame($post->id, $comment1->post_id);
+        $this->assertCount(1, $post->comment);
+        $this->assertSame($post, $comment1->post);
+        
+        $comment2 = $db->comment->create(['text' => 'Comment 2']);
+        $post->relate($comment2);
+        $this->assertSame($post->id, $comment2->post_id);
+        $this->assertCount(2, $post->comment);
+        $this->assertSame($post, $comment2->post);
+
+        $category1 = $db->category->create(['name' => 'Category 1']);
+        $post->relate($category1);
+        $this->assertCount(1, $post->category_post);
+        $this->assertCount(1, $category1->category_post);
+        $this->assertCount(1, $category1->post);
+        $this->assertCount(1, $post->category);
+
+        $post->unrelate($comment1);
+        $this->assertCount(1, $post->comment);
+        $this->assertInstanceOf('SimpleCrud\\NullValue', $comment1->post);
+
+        $post->unrelate($category1);
+        $this->assertCount(0, $post->category_post);
+        $this->assertCount(0, $category1->category_post);
+        $this->assertCount(0, $category1->post);
+        $this->assertCount(0, $post->category);
+
+        $category2 = $db->category->create(['name' => 'Category 2']);
+        $post->unrelate($category2);
+        $this->assertCount(0, $post->category_post);
+        $this->assertCount(0, $category2->category_post);
+        $this->assertCount(0, $category2->post);
+        $this->assertCount(0, $post->category);
     }
 }
