@@ -5,13 +5,13 @@ use SimpleCrud\Table;
 
 class RelationsTest extends PHPUnit_Framework_TestCase
 {
-    private static $db;
+    private $db;
 
-    public static function setUpBeforeClass()
+    public function setUp()
     {
-        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
 
-        self::$db->executeTransaction(function ($db) {
+        $this->db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT
 CREATE TABLE "post" (
@@ -54,7 +54,7 @@ EOT
 
     public function testRelatedQuery()
     {
-        $db = self::$db;
+        $db = $this->db;
 
         $post = $db->post->create(['id' => 1]);
         $comment = $db->comment->create(['id' => 1]);
@@ -90,7 +90,7 @@ EOT
 
     public function testDirectRelatedData()
     {
-        $db = self::$db;
+        $db = $this->db;
 
         $post = $db->post->create([
             'title' => 'first',
@@ -119,11 +119,37 @@ EOT
 
         $post->clearCache();
         $this->assertCount(1, $post->comment);
+
+        //Left join
+        $comments = $db->comment->select()
+            ->leftJoin('post')
+            ->run();
+
+        $this->assertCount(2, $comments);
+
+        $json = json_encode([
+            [
+                'id' => 1,
+                'text' => 'Hello world',
+                'post_id' => 1,
+                'post' => [
+                    'id' => 1,
+                    'title' => 'first',
+                    'comment' => null,
+                ]
+            ],[
+                'id' => 2,
+                'text' => 'Hello world 2',
+                'post_id' => null,
+            ]
+        ]);
+
+        $this->assertEquals($json, (string) $comments);
     }
 
     public function testManyToManyData()
     {
-        $db = self::$db;
+        $db = $this->db;
 
         $category1 = $db->category->create(['name' => 'Category 1'])->save();
         $category2 = $db->category->create(['name' => 'Category 2'])->save();
@@ -142,20 +168,5 @@ EOT
 
         $this->assertEquals((string) $selected, (string) $post->category);
         $this->assertEquals((string) $selected, (string) $db->post->select()->run()->category);
-    }
-
-    public function testLeftJoin()
-    {
-        $db = self::$db;
-
-        $comments = $db->comment->select()
-            ->leftJoin('post')
-            ->run();
-
-        $this->assertCount(2, $comments);
-
-        $json = '[{"id":1,"text":"Hello world","post_id":1,"post":{"id":1,"title":"first","comment":null,"category":[]}},{"id":2,"text":"Hello world 2","post_id":null}]';
-
-        $this->assertEquals($json, (string) $comments);
     }
 }

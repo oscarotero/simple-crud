@@ -4,13 +4,13 @@ use SimpleCrud\SimpleCrud;
 
 class AutocreateTest extends PHPUnit_Framework_TestCase
 {
-    private static $db;
+    private $db;
 
-    public static function setUpBeforeClass()
+    public function setUp()
     {
-        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
 
-        self::$db->executeTransaction(function ($db) {
+        $this->db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT
 CREATE TABLE "post" (
@@ -29,30 +29,30 @@ EOT
 
     public function testDatabase()
     {
-        $this->assertInstanceOf('SimpleCrud\\TableFactory', self::$db->getTableFactory());
-        $this->assertInstanceOf('SimpleCrud\\FieldFactory', self::$db->getFieldFactory());
-        $this->assertInstanceOf('SimpleCrud\\QueryFactory', self::$db->getQueryFactory());
-        $this->assertInternalType('array', self::$db->getScheme());
+        $this->assertInstanceOf('SimpleCrud\\TableFactory', $this->db->getTableFactory());
+        $this->assertInstanceOf('SimpleCrud\\FieldFactory', $this->db->getFieldFactory());
+        $this->assertInstanceOf('SimpleCrud\\QueryFactory', $this->db->getQueryFactory());
+        $this->assertInternalType('array', $this->db->getScheme());
 
-        self::$db->setAttribute('bar', 'foo');
+        $this->db->setAttribute('bar', 'foo');
 
-        $this->assertEquals('sqlite', self::$db->getAttribute(PDO::ATTR_DRIVER_NAME));
-        $this->assertEquals('foo', self::$db->getAttribute('bar'));
+        $this->assertEquals('sqlite', $this->db->getAttribute(PDO::ATTR_DRIVER_NAME));
+        $this->assertEquals('foo', $this->db->getAttribute('bar'));
     }
 
     public function testTable()
     {
-        $this->assertTrue(isset(self::$db->post));
-        $this->assertFalse(isset(self::$db->invalid));
+        $this->assertTrue(isset($this->db->post));
+        $this->assertFalse(isset($this->db->invalid));
 
-        $post = self::$db->post;
+        $post = $this->db->post;
 
         $this->assertInstanceOf('SimpleCrud\\Table', $post);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
 
         $this->assertCount(7, $post->fields);
         $this->assertEquals('post', $post->name);
-        $this->assertEquals(self::$db->getScheme()['post'], $post->getScheme());
+        $this->assertEquals($this->db->getScheme()['post'], $post->getScheme());
     }
 
     public function dataProviderFields()
@@ -73,12 +73,12 @@ EOT
      */
     public function testFields($name, $type)
     {
-        $post = self::$db->post;
+        $post = $this->db->post;
         $field = $post->fields[$name];
 
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $field);
         $this->assertInstanceOf('SimpleCrud\\Fields\\'.$type, $field);
 
-        $this->assertEquals(self::$db->post->getScheme()['fields'][$name], $field->getScheme());
+        $this->assertEquals($this->db->post->getScheme()['fields'][$name], $field->getScheme());
     }
 }

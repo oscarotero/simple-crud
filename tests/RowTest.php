@@ -5,13 +5,13 @@ use SimpleCrud\Table;
 
 class RowTest extends PHPUnit_Framework_TestCase
 {
-    private static $db;
+    private $db;
 
-    public static function setUpBeforeClass()
+    public function setUp()
     {
-        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
 
-        self::$db->executeTransaction(function ($db) {
+        $this->db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT
 CREATE TABLE "post" (
@@ -27,7 +27,7 @@ EOT
 
     public function testRow()
     {
-        $db = self::$db;
+        $db = $this->db;
 
         $data = [
             'title' => 'Second post',
@@ -74,7 +74,7 @@ EOT
 
     public function testRowCollection()
     {
-        $db = self::$db;
+        $db = $this->db;
 
         $db->post[] = ['title' => 'One'];
         $db->post[] = ['title' => 'Two'];
@@ -87,12 +87,12 @@ EOT
 
         $this->assertCount(2, $posts);
 
-        $this->assertEquals([3 => 'One', 4 => 'Two'], $posts->title);
+        $this->assertEquals([1 => 'One', 2 => 'Two'], $posts->title);
 
-        $this->assertInstanceOf('SimpleCrud\\Row', $posts[3]);
-        $this->assertInstanceOf('SimpleCrud\\Row', $posts[4]);
+        $this->assertInstanceOf('SimpleCrud\\Row', $posts[1]);
+        $this->assertInstanceOf('SimpleCrud\\Row', $posts[2]);
 
-        $this->assertSame($posts[3], $db->post[3]);
+        $this->assertSame($posts[1], $db->post[1]);
 
         $filtered = $posts->filter(function ($row) {
             return $row->title === 'One';
@@ -106,6 +106,6 @@ EOT
 
         $this->assertInstanceOf('SimpleCrud\\Row', $found);
 
-        $this->assertSame($found, $filtered[3]);
+        $this->assertSame($found, $filtered[1]);
     }
 }

@@ -5,13 +5,13 @@ use SimpleCrud\Table;
 
 class SchemeTest extends PHPUnit_Framework_TestCase
 {
-    private static $db;
+    private $db;
 
-    public static function setUpBeforeClass()
+    public function setUp()
     {
-        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
 
-        self::$db->executeTransaction(function ($db) {
+        $this->db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT
 CREATE TABLE "post" (
@@ -54,7 +54,7 @@ EOT
 
     public function testScheme()
     {
-        $db = self::$db;
+        $db = $this->db;
 
         $scheme = [
             'post' => [

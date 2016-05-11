@@ -4,13 +4,13 @@ use SimpleCrud\SimpleCrud;
 
 class QueriesTest extends PHPUnit_Framework_TestCase
 {
-    private static $db;
+    private $db;
 
-    public static function setUpBeforeClass()
+    public function setUp()
     {
-        self::$db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
 
-        self::$db->executeTransaction(function ($db) {
+        $this->db->executeTransaction(function ($db) {
             $db->execute(
 <<<EOT
 CREATE TABLE "post" (
@@ -40,7 +40,7 @@ EOT
      */
     public function testQueries($name)
     {
-        $query = self::$db->post->$name();
+        $query = $this->db->post->$name();
 
         $this->assertInstanceOf('SimpleCrud\\Queries\\Sqlite\\'.ucfirst($name), $query);
         $this->assertInstanceOf('SimpleCrud\\Queries\\Query', $query);
@@ -48,7 +48,7 @@ EOT
 
     public function testSelect()
     {
-        $query = self::$db->post->select()
+        $query = $this->db->post->select()
             ->one()
             ->where('title NOT NULL')
             ->where('id = 1 OR id = 2')
@@ -61,7 +61,7 @@ EOT
 
     public function testInsert()
     {
-        $query = self::$db->post->insert()
+        $query = $this->db->post->insert()
             ->data([
                 'title' => 'Title',
                 'body' => 'Body',
@@ -76,7 +76,7 @@ EOT
 
     public function testUpdate()
     {
-        $query = self::$db->post->update()
+        $query = $this->db->post->update()
             ->data([
                 'title' => 'Title',
                 'body' => 'Body',
@@ -88,7 +88,7 @@ EOT
 
     public function testDelete()
     {
-        $query = self::$db->post->delete()
+        $query = $this->db->post->delete()
             ->where('id = 3');
 
         $this->assertEquals('DELETE FROM `post` WHERE (id = 3)', (string) $query);
@@ -96,7 +96,7 @@ EOT
 
     public function testCount()
     {
-        $query = self::$db->post->count()
+        $query = $this->db->post->count()
             ->where('id = 3');
 
         $this->assertEquals('SELECT COUNT(*) FROM `post` WHERE (id = 3)', (string) $query);
@@ -104,7 +104,7 @@ EOT
 
     public function testSum()
     {
-        $query = self::$db->post->sum()
+        $query = $this->db->post->sum()
             ->field('id')
             ->where('id > 3');
 
