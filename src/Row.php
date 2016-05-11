@@ -352,13 +352,6 @@ class Row extends AbstractRow
             $this->{$relation[1]} = null;
             $this->relations[$relationTable->name] = new NullValue();
 
-            $cache = $row->getCache();
-
-            if (isset($cache[$table->name])) {
-                unset($cache[$table->name][$this->id]);
-                $row->setCache($cache);
-            }
-
             return $this->save();
         }
 
@@ -383,8 +376,8 @@ class Row extends AbstractRow
                 ->by($relation[2], $this->id)
                 ->run();
 
-            unset($this->relations[$relation[1]]);
-            unset($this->relations[$relationTable->name][$row->id]);
+            $this->relations[$bridge->name] = $bridge->createCollection();
+            $this->relations[$relationTable->name] = $relationTable->createCollection();
         }
     }
 }

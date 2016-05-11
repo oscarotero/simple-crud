@@ -63,8 +63,7 @@ class Table implements ArrayAccess
     /**
      * Store a row in the cache.
      * 
-     * @param int $id
-     * @param Row $Row
+     * @param Row $row
      */
     public function cache(Row $row)
     {

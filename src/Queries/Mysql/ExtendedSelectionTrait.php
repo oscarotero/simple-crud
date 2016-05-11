@@ -69,7 +69,7 @@ trait ExtendedSelectionTrait
                 return $this->by($relation[1], $row->id);
 
             case Scheme::HAS_MANY:
-                return $this->byId($relation[1], $row->{$relation[1]});
+                return $this->byId($row->{$relation[1]});
 
             case Scheme::HAS_MANY_TO_MANY:
                 $this->from($relation[1]);

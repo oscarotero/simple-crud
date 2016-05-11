@@ -56,8 +56,8 @@ EOT
     {
         $db = $this->db;
 
-        $post = $db->post->create(['id' => 1]);
-        $comment = $db->comment->create(['id' => 1]);
+        $post = $db->post->create(['id' => 1])->save();
+        $comment = $db->comment->create(['id' => 1])->save();
 
         $this->assertEquals(
             'SELECT `category`.`id`, `category`.`name`, `category_post`.`post_id` FROM `category`, `category_post`, `post` WHERE (`category_post`.`category_id` = `category`.`id`) AND (`category_post`.`post_id` = `post`.`id`) AND (`post`.`id` IN (:post_id))',
@@ -68,6 +68,13 @@ EOT
             'SELECT `comment`.`id`, `comment`.`text`, `comment`.`post_id` FROM `comment` WHERE (`comment`.`post_id` = :post_id)',
             (string) $post->comment()
         );
+
+        $this->assertEquals(
+            'SELECT `post`.`id`, `post`.`title` FROM `post` WHERE (`post`.`id` IS NULL) LIMIT 1',
+            (string) $comment->post()
+        );
+
+        $comment->relate($post);
 
         $this->assertEquals(
             'SELECT `post`.`id`, `post`.`title` FROM `post` WHERE (`post`.`id` = :id) LIMIT 1',

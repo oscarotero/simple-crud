@@ -142,7 +142,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         //Join the relations and rows
-        self::join($table, $this->rows, $row->getTable(), $row, $relation[1]);
+        self::join($table, $this->rows, $value->getTable(), $value, $relation[1]);
         $this->loadedRelations[] = $name;
     }
 

@@ -89,7 +89,7 @@ class FieldFactory implements FieldFactoryInterface
      *
      * @return self
      */
-    public function mapTypes(array $types)
+    public function mapTypes(array $map)
     {
         $this->mapTypes = $map + $this->mapTypes;
 
