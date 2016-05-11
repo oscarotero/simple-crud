@@ -152,6 +152,15 @@ class Row extends AbstractRow
         return $data;
     }
 
+    public function edit(array $values)
+    {
+        foreach ($values as $name => $value) {
+            $this->__set($name, $value);
+        }
+
+        return $this;
+    }
+
     /**
      * Saves this row in the database.
      *
@@ -246,5 +255,53 @@ class Row extends AbstractRow
         }
 
         return $this;
+    }
+
+    /**
+     * Join this row with other row
+     *
+     * @param Row $row
+     *
+     * @return $this
+     */
+    public function join(Row $row)
+    {
+        $table = $this->getTable();
+        $relationTable = $row->getTable();
+        $relations = $table->getScheme()['relations'];
+
+        if (!isset($relations[$relationTable->name])) {
+            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->name, $relationTable->name));
+        }
+
+        $relation = $relations[$relationTable->name];
+
+        if ($relation[0] === Scheme::HAS_ONE) {
+            $this->{$relation[1]} = $row->id;
+            return $this->save();
+        }
+
+        if ($relation[0] === Scheme::HAS_MANY) {
+            if ($this->id === null) {
+                $this->save();
+            }
+
+            $row->{$relation[1]} = $this->id;
+            $row->save();
+            return $this;
+        }
+
+        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+            $bridge = $this->getDatabase()->{$relation[1]};
+
+            $bridge
+                ->insert()
+                ->duplications()
+                ->data([
+                    $relation[2] => $this->id,
+                    $relation[3] => $row->id,
+                ])
+                ->run();
+        }
     }
 }
