@@ -200,9 +200,9 @@ class Row extends AbstractRow
     }
 
     /**
-     * Relate this row with other row and save the relation
+     * Relate this row with other row and save the relation.
      *
-     * @param Row  $row
+     * @param Row $row
      *
      * @return $this
      */
@@ -220,6 +220,7 @@ class Row extends AbstractRow
 
         if ($relation[0] === Scheme::HAS_ONE) {
             $row->relate($this);
+
             return $this;
         }
 
@@ -269,7 +270,7 @@ class Row extends AbstractRow
     }
 
     /**
-     * Unrelate this row with other row and save it
+     * Unrelate this row with other row and save it.
      *
      * @param Row $row
      *
@@ -306,6 +307,7 @@ class Row extends AbstractRow
 
         if ($relation[0] === Scheme::HAS_MANY) {
             $row->unrelate($this);
+
             return $this;
         }
 
@@ -329,7 +331,7 @@ class Row extends AbstractRow
     }
 
     /**
-     * Unrelate this row with all rows of a specific table
+     * Unrelate this row with all rows of a specific table.
      *
      * @param Table $relationTable
      *
@@ -364,13 +366,14 @@ class Row extends AbstractRow
         if ($relation[0] === Scheme::HAS_MANY) {
             $relationTable->update()
                 ->data([
-                    $relation[1] = null
+                    $relation[1] = null,
                 ])
                 ->by($relation[1], $this->id)
                 ->run();
 
             $row->unrelateAll($this);
             $this->relations[$relationTable->name] = $relationTable->createCollection();
+
             return $this;
         }
 

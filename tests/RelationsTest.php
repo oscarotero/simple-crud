@@ -132,12 +132,12 @@ EOT
                     'title' => 'first',
                     'category' => [],
                     'comment' => null,
-                ]
-            ],[
+                ],
+            ], [
                 'id' => 2,
                 'text' => 'Hello world 2',
                 'post_id' => null,
-            ]
+            ],
         ]);
 
         $this->assertEquals($json, (string) $comments);
@@ -174,7 +174,7 @@ EOT
         $this->assertSame($post->id, $comment1->post_id);
         $this->assertCount(1, $post->comment);
         $this->assertSame($post, $comment1->post);
-        
+
         $comment2 = $db->comment->create(['text' => 'Comment 2']);
         $post->relate($comment2);
         $this->assertSame($post->id, $comment2->post_id);
