@@ -7,6 +7,8 @@ use PDO;
 
 class SimpleCrud
 {
+    const ATTR_LOCALE = 'simplecrud.language';
+
     protected $connection;
     protected $scheme;
     protected $tables = [];

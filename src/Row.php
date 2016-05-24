@@ -75,6 +75,17 @@ class Row extends AbstractRow
             return $this->relations[$name] ?: new NullValue();
         }
 
+        //It's a localizable field
+        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+
+        if (!is_null($language)) {
+            $localeName = "{$name}_{$language}";
+
+            if (array_key_exists($localeName, $this->values)) {
+                return $this->values[$localeName];
+            }
+        }
+
         //Load the relation
         $scheme = $this->getTable()->getScheme();
 
@@ -105,6 +116,21 @@ class Row extends AbstractRow
             }
 
             return $this->values[$name] = $value;
+        }
+
+        //It's a localizable field
+        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+
+        if (!is_null($language)) {
+            $localeName = "{$name}_{$language}";
+
+            if (array_key_exists($localeName, $this->values)) {
+                if ($this->values[$localeName] !== $value) {
+                    $this->changed = true;
+                }
+
+                return $this->values[$localeName] = $value;
+            }
         }
 
         //It's a relation

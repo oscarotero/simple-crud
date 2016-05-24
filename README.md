@@ -620,3 +620,27 @@ echo $db->getAttribute('language'); // en
 //You can access to PDO attributes, using constants:
 echo $db->getAttribute(PDO::ATTR_DRIVER_NAME); //sqlite
 ```
+
+### Localizable fields
+
+If you need to save values in multiple languages, just have to create a field for each language using the language as suffix. For example, to save the title in "en" and "gl", just create the fields `title_en` and `title_gl`.
+
+Then, you have to configure the current language using the `SimpleCrud::ATTR_LOCALE` attribute:
+
+```php
+//Set the current language as "en"
+$db->setAttribute(SimpleCrud::ATTR_LOCALE, 'en');
+
+//Select a post
+$post = $db->post[23];
+
+//Get the title in the current language
+echo $post->title; //Returns the value of title_en
+
+//You can access to any languages using the full name:
+echo $post->title_en;
+echo $post->title_gl;
+
+//And assign a diferent value to the current language
+$post->title = 'New title in english';
+```
