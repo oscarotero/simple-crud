@@ -110,4 +110,15 @@ EOT
 
         $this->assertEquals('SELECT SUM(`id`) FROM `post` WHERE (id > 3)', (string) $query);
     }
+
+    public function testDefaultQueryModifier()
+    {
+        $this->db->post->addQueryModifier('select', function ($query) {
+            $query->where('title NOT NULL');
+        });
+
+        $query = $this->db->post->select()->one();
+
+        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body` FROM `post` WHERE (title NOT NULL) LIMIT 1', (string) $query);
+    }
 }

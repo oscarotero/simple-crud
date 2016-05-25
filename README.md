@@ -605,7 +605,6 @@ $posts = $db->post->select()
     ->run();
 ```
 
-
 ### Attributes
 
 You may want to store some values, for example a language configuration, the base path where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
@@ -644,3 +643,17 @@ echo $post->title_gl;
 //And assign a diferent value to the current language
 $post->title = 'New title in english';
 ```
+
+### Default queries modifiers
+
+Sometimes you need the same query modifiers again and again. For example, in our blog we want to select always the posts with the condition `isActived = 1`. To avoid the repetition you may want to define this modifier as default, so it's applied always:
+
+```php
+$db->post->addQueryModifier('select', function ($query) {
+    $query->where('isActived = 1');
+});
+
+$post = $db->post[34]; //Returns the post 34 only if it's actived.
+```
+
+You can define default modifiers for all queries: not only select, but also update, delete, etc.
