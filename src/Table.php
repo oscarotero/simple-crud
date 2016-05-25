@@ -16,6 +16,7 @@ class Table implements ArrayAccess
 
     public $name;
     public $fields = [];
+    public $queriesModifiers = [];
 
     /**
      * Constructor.
@@ -79,6 +80,21 @@ class Table implements ArrayAccess
     }
 
     /**
+     * Register a new query modifier
+     * 
+     * @param string   $name
+     * @param callable $modifier
+     */
+    public function addQueryModifier($name, callable $modifier)
+    {
+        if (!isset($this->queriesModifiers[$name])) {
+            $this->queriesModifiers[$name] = [];
+        }
+
+        $this->queriesModifiers[$name][] = $modifier;
+    }
+
+    /**
      * Magic method to create queries related with this table.
      *
      * @param string $name
@@ -90,7 +106,15 @@ class Table implements ArrayAccess
      */
     public function __call($name, $arguments)
     {
-        return $this->getDatabase()->getQueryFactory()->get($this, $name);
+        $query = $this->getDatabase()->getQueryFactory()->get($this, $name);
+
+        if (isset($this->queriesModifiers[$name])) {
+            foreach ($this->queriesModifiers[$name] as $modifier) {
+                $modifier($query);
+            }
+        }
+
+        return $query;
     }
 
     /**
