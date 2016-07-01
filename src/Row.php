@@ -164,6 +164,12 @@ class Row extends AbstractRow
      */
     public function __isset($name)
     {
+        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+
+        if (!is_null($language) && isset($this->values["{$name}_{$language}"])) {
+            return true;
+        }
+
         return isset($this->values[$name]) || isset($this->relations[$name]);
     }
 

@@ -41,5 +41,9 @@ EOT
 
         $post->title_es = 'Español';
         $this->assertNotSame($post->title_gl, $post->title_es);
+
+        $this->assertTrue(isset($post->title_es));
+        $this->assertTrue(isset($post->title));
+        $this->assertFalse(isset($post->title_en));
     }
 }
