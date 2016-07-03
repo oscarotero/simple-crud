@@ -15,6 +15,15 @@ This library relies in some conventions to avoid configuration.
 * Foreign keys MUST be `[tableName]_id`. For example, `post` table uses `post_id` as foreign key.
 * Associative tables MUST use an underscore joining the two tables in alphabetic order. For example, the relationship between `post` and `tag` is `post_tag` but `post` and `category` is `category_post`.
 
+## Installation
+
+This package is installable and autoloadable via Composer as [simple-crud/simple-crud](https://packagist.org/packages/simple-crud/simple-crud).
+
+```
+$ composer require simple-crud/simple-crud
+```
+
+
 ## Components
 
 SimpleCrud has the following classes:
@@ -30,7 +39,7 @@ SimpleCrud has the following classes:
 
 Let's say we have the following database scheme:
 
-```sqlite
+```sql
 CREATE TABLE "post" (
     `id`    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title` TEXT,
@@ -65,6 +74,8 @@ To start, create an instance of `SimpleCrud\SimpleCrud` passing the `PDO` connec
 ```php
 use SimpleCrud\SimpleCrud;
 
+$pdo = new PDO($dsn, $username, $password);
+
 $db = new SimpleCrud($pdo);
 
 //To get any table, use magic properties, they will be instantiated on demand:
@@ -72,7 +83,6 @@ $post = $db->post;
 ```
 
 SimpleCrud load the database scheme and detects automatically all relationships between the tables using the naming conventions described above. For example the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category.
-
 
 ### Using the library
 
@@ -133,7 +143,7 @@ $newPost->save();
 
 #### Queries
 
-A `Query` object represents a database query. They are associated with tables, so use magic methods to create the new query instances. For example `$db->post->select()`, `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`, etc, the magic methods `__toString()` (to return the query as string) and `__invoke()` to execute the query and return a `PDOStatement` instance with the result:
+A `Query` object represents a database query. Use magic methods to create query instances. For example `$db->post->select()` returns a new instance of a `Select` query. Other examples: `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
 
 ```php
 //Create an UPDATE query with the table post
@@ -148,8 +158,8 @@ $updateQuery
 //get the query as string
 echo $updateQuery; //UPDATE `posts` ...
 
-//execute the query
-$updateQuery();
+//execute the query and returns a PDOStatement with the result
+$statement = $updateQuery();
 ```
 
 The method `run()` executes the query but instead returns the `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
@@ -229,6 +239,18 @@ $category = $db->category
     ->one()
     ->run();
 ```
+
+#### List of available queries with its modifiers:
+
+Name | Options
+---- | -------
+`select` | `->one()`, `->all()`, `->leftJoin($table, $on, $marks)`, `->from($table)`, `->field($field)`, `->relatedWith($row)`,  `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`, `->orderBy($row, $direction)`
+`count` | `->from($table)`, `->field($field)`, `->relatedWith($row)`,  `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
+`delete` | `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
+`insert` | `->data($data)`, `->duplications($handle)`
+`sum` | `->from($table)`, `->field($field)`, `->relatedWith($row)`,  `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
+`update` | `->data($data)`, `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
+
 
 ### Lazy loads
 
@@ -516,7 +538,7 @@ class Posts extends Table
 
 ### Create your own custom fields
 
-You can create your own fields types or overwrite the existing ones. You have to register the namespaces with your custom fields in the FieldFactory.
+You can create your own fields types or overwrite the existing ones registering the namespaces with your custom fields in the FieldFactory.
 
 Let's see an example:
 
@@ -622,7 +644,7 @@ echo $db->getAttribute(PDO::ATTR_DRIVER_NAME); //sqlite
 
 ### Localizable fields
 
-If you need to save values in multiple languages, just have to create a field for each language using the language as suffix. For example, to save the title in "en" and "gl", just create the fields `title_en` and `title_gl`.
+If you need to save values in multiple languages, just have to create a field for each language using the language as suffix. For example, to save the title in english (en) and galician (gl), just create the fields `title_en` and `title_gl`.
 
 Then, you have to configure the current language using the `SimpleCrud::ATTR_LOCALE` attribute:
 
@@ -646,7 +668,7 @@ $post->title = 'New title in english';
 
 ### Default queries modifiers
 
-Sometimes you need the same query modifiers again and again. For example, in our blog we want to select always the posts with the condition `isActived = 1`. To avoid the repetition you may want to define this modifier as default, so it's applied always:
+Let's say we want to select always the posts with the condition `isActived = 1`. To avoid the need to add this "where" modifier again and again, you may want to define this as default, so it's applied always:
 
 ```php
 $db->post->addQueryModifier('select', function ($query) {
