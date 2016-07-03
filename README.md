@@ -244,12 +244,12 @@ $category = $db->category
 
 Name | Options
 ---- | -------
-`select` | `->one()`, `->all()`, `->leftJoin($table, $on, $marks)`, `->from($table)`, `->field($field)`, `->relatedWith($row)`,  `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`, `->orderBy($row, $direction)`
-`count` | `->from($table)`, `->field($field)`, `->relatedWith($row)`,  `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
-`delete` | `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
-`insert` | `->data($data)`, `->duplications($handle)`
-`sum` | `->from($table)`, `->field($field)`, `->relatedWith($row)`,  `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
-`update` | `->data($data)`, `->marks($marks)`, `->where($where, $marks)`, `->orWhere($where, $marks)`, `->by($field, $value)`, `->byId($id)`, `->limit($limit)`, `->offset($offset)`
+`select` | `one()`, `all()`, `leftJoin($table, $on, $marks)`, `from($table)`, `field($field)`, `relatedWith($row)`,  `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`, `orderBy($row, $direction)`
+`count` | `from($table)`, `field($field)`, `relatedWith($row)`,  `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`
+`delete` | `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`
+`insert` | `data($data)`, `duplications($handle)`
+`sum` | `from($table)`, `field($field)`, `relatedWith($row)`,  `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`
+`update` | `data($data)`, `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`
 
 
 ### Lazy loads
