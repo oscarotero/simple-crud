@@ -28,12 +28,12 @@ $ composer require simple-crud/simple-crud
 
 SimpleCrud has the following classes:
 
-* **SimpleCrud:** Manage the database connection, execute the queries and create all tables. 
-* **Table:** Manages a database table
-* **Field:** Used to modify the values from/to the database according with its format
+* **SimpleCrud:** Manage the database connection.
 * **Query:** Creates the database queries. Currently there are adapters for mysql and sqlite
+* **Table:** Manages a database table
 * **Row:** Stores/modifies a row
 * **RowCollection:** Is a collection of rows
+* **Field:** Used to modify the values from/to the database according to its format
 
 ## Usage example
 
@@ -84,9 +84,9 @@ $post = $db->post;
 
 SimpleCrud load the database scheme and detects automatically all relationships between the tables using the naming conventions described above. For example the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category.
 
-### Using the library
+## Using the library
 
-#### Basic CRUD:
+### Basic CRUD:
 
 You can work directly with the tables to insert/update/delete/select data:
 
@@ -115,7 +115,7 @@ $db->posts[] = [
 ];
 ```
 
-#### Rows
+### Rows
 
 A `Row` object represents a database row and it is used to read and modify the data:
 
@@ -137,11 +137,11 @@ $post->delete();
 //Create a new row
 $newPost = $db->post->create(['title' => 'The title']);
 
-//Insert the post in the database
+//Insert the row in the database
 $newPost->save();
 ```
 
-#### Queries
+### Queries
 
 A `Query` object represents a database query. Use magic methods to create query instances. For example `$db->post->select()` returns a new instance of a `Select` query. Other examples: `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
 
@@ -192,7 +192,7 @@ $total = $db->post
     ->run();
 ```
 
-With `select()` returns an instance of `RowCollection` with the result:
+`select()` returns an instance of `RowCollection` with the result:
 
 ```php
 $posts = $db->post
@@ -204,13 +204,6 @@ $posts = $db->post
 
 foreach ($posts as $post) {
     echo $post->title;
-}
-
-//Get an array with the values of a column:
-$allTitles = $posts->title;
-
-foreach ($allTitles as $title) {
-    echo $title;
 }
 ```
 
@@ -226,7 +219,7 @@ $post = $db->post
 echo $post->title;
 ```
 
-`select()` has some interesting modifiers like `relatedWith()` to add automatically the `WHERE` clauses needed to select data related with a row or rowCollection:
+`select()` has some interesting modifiers like `relatedWith()` to add automatically the `WHERE` clauses needed to select data related with other row or rowCollection:
 
 ```php
 //Get the post id = 23
@@ -240,7 +233,7 @@ $category = $db->category
     ->run();
 ```
 
-#### List of available queries with its modifiers:
+### List of available queries with its modifiers:
 
 Name | Options
 ---- | -------
@@ -281,7 +274,7 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
-If you want to modify the query before run, use a method instead a property to return a Select instance instead a Row/RowCollection with the result:
+You may want a filtered result of the related rows instead getting all of them. To do this, just use a method with the same name of the related table and to return the instance of `Select` that you can modify:
 
 ```php
 $category = $db->category[34];
@@ -292,7 +285,7 @@ $posts = $category->post()
     ->run();
 ```
 
-#### Solving the n+1 problem
+### Solving the n+1 problem
 
 The [n+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue) can be solved in the following way:
 
@@ -332,7 +325,22 @@ $post->unrelate($comment);
 $post->unrelateAll($db->comment);
 ```
 
-### Fields classes
+### Default queries modifiers
+
+Let's say we want to select always the posts with the condition `isActived = 1`. To avoid the need to add this "where" modifier again and again, you may want to define it as default, so it's applied always:
+
+```php
+$db->post->addQueryModifier('select', function ($query) {
+    $query->where('isActived = 1');
+});
+
+$post = $db->post[34]; //Returns the post 34 only if it's actived.
+```
+
+You can define default modifiers for all queries: not only select, but also update, delete, etc.
+
+
+### Fields
 
 The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to the database for its usage. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
 
@@ -366,9 +374,48 @@ $post = $db->post->create([
 $post->save();
 ```
 
+### Attributes
+
+You may want to store some database attributes, for example a language configuration, the base path where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
+
+```php
+//Save an attribute, for example, the uploads path:
+$db->setAttribute('uploads', __DIR__.'/uploads');
+
+//Get the attribute:
+echo $db->getAttribute('uploads');
+
+//You can access also to PDO attributes, using constants:
+echo $db->getAttribute(PDO::ATTR_DRIVER_NAME); //sqlite
+```
+
+### Localizable fields
+
+If you need to save values in multiple languages, just have to create a field for each language using the language as suffix. For example, to save the title in english (en) and galician (gl), just create the fields `title_en` and `title_gl`.
+
+Then, you have to configure the current language using the `SimpleCrud::ATTR_LOCALE` attribute:
+
+```php
+//Set the current language as "en"
+$db->setAttribute(SimpleCrud::ATTR_LOCALE, 'en');
+
+//Select a post
+$post = $db->post[23];
+
+//Get the title in the current language
+echo $post->title; //Returns the value of title_en
+
+//You can access to any languages using the full name:
+echo $post->title_en;
+echo $post->title_gl;
+
+//And assign a diferent value to the current language
+$post->title = 'New title in english';
+```
+
 ## Customization
 
-SimpleCrud uses factory classes to create instances of tables, queries and fields. You can configure or create your own factories to customize how these instances are created. 
+SimpleCrud uses factory classes to create instances of tables, queries and fields. You can configure or create your own factories to customize how these instances are created.
 
 ### TableFactory
 
@@ -626,56 +673,3 @@ $posts = $db->post->select()
     ->olderThan(new Datetime('now'))
     ->run();
 ```
-
-### Attributes
-
-You may want to store some values, for example a language configuration, the base path where the assets are stored, etc. To do that, there are the `getAttribute` and `setAttribute` methods:
-
-```php
-//Save an attribute, for example, the language code:
-$db->setAttribute('language', 'en');
-
-//Get the attribute:
-echo $db->getAttribute('language'); // en
-
-//You can access to PDO attributes, using constants:
-echo $db->getAttribute(PDO::ATTR_DRIVER_NAME); //sqlite
-```
-
-### Localizable fields
-
-If you need to save values in multiple languages, just have to create a field for each language using the language as suffix. For example, to save the title in english (en) and galician (gl), just create the fields `title_en` and `title_gl`.
-
-Then, you have to configure the current language using the `SimpleCrud::ATTR_LOCALE` attribute:
-
-```php
-//Set the current language as "en"
-$db->setAttribute(SimpleCrud::ATTR_LOCALE, 'en');
-
-//Select a post
-$post = $db->post[23];
-
-//Get the title in the current language
-echo $post->title; //Returns the value of title_en
-
-//You can access to any languages using the full name:
-echo $post->title_en;
-echo $post->title_gl;
-
-//And assign a diferent value to the current language
-$post->title = 'New title in english';
-```
-
-### Default queries modifiers
-
-Let's say we want to select always the posts with the condition `isActived = 1`. To avoid the need to add this "where" modifier again and again, you may want to define this as default, so it's applied always:
-
-```php
-$db->post->addQueryModifier('select', function ($query) {
-    $query->where('isActived = 1');
-});
-
-$post = $db->post[34]; //Returns the post 34 only if it's actived.
-```
-
-You can define default modifiers for all queries: not only select, but also update, delete, etc.
