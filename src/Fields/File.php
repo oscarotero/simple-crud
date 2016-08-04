@@ -78,7 +78,6 @@ class File extends Field
             return uniqid();
         }
 
-        $name = preg_replace('/[^\w\.]/', '-', strtolower($name));
-        return preg_replace('/[\-]{2,}/', '-', $name);
+        return preg_replace(['/[^\w\.]/', '/[\-]{2,}/'], '-', strtolower($name));
     }
 }
