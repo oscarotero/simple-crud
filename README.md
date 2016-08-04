@@ -281,7 +281,7 @@ $category = $db->category[34];
 
 //Get the posts of this category but only if the pubdate is in the future
 $posts = $category->post()
-    ->where('pubdate > :date', date('Y-m-d'))
+    ->where('pubdate > :date', [':date' => date('Y-m-d')])
     ->run();
 ```
 

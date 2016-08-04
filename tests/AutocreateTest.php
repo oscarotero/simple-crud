@@ -20,6 +20,7 @@ CREATE TABLE "post" (
     `publishedAt` TEXT,
     `isActive`    INTEGER,
     `hasContent`  INTEGER,
+    `imageFile`   TEXT,
     `type`        TEXT
 );
 EOT
@@ -50,7 +51,7 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\Table', $post);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
 
-        $this->assertCount(7, $post->fields);
+        $this->assertCount(8, $post->fields);
         $this->assertEquals('post', $post->name);
         $this->assertEquals($this->db->getScheme()['post'], $post->getScheme());
     }
@@ -64,6 +65,7 @@ EOT
             ['publishedAt', 'Datetime'],
             ['isActive', 'Boolean'],
             ['hasContent', 'Boolean'],
+            ['imageFile', 'File'],
             ['type', 'Field'],
         ];
     }

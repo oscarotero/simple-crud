@@ -8,6 +8,7 @@ use PDO;
 class SimpleCrud
 {
     const ATTR_LOCALE = 'simplecrud.language';
+    const ATTR_UPLOADS = 'simplecrud.uploads';
 
     protected $connection;
     protected $scheme;
