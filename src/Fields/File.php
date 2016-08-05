@@ -5,13 +5,14 @@ namespace SimpleCrud\Fields;
 use Psr\Http\Message\UploadedFileInterface;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\SimpleCrudException;
-use RuntimeException;
 
 /**
  * To save files.
  */
 class File extends Field
 {
+    protected $directory;
+
     /**
      * {@inheritdoc}
      */
@@ -30,7 +31,7 @@ class File extends Field
     public function dataFromDatabase($data)
     {
         if (!empty($data)) {
-            return sprintf('/%s/%s/%s', $this->table->name, $this->name, $data);
+            return $this->getDirectory().$data;
         }
 
         return $data;
@@ -52,7 +53,7 @@ class File extends Field
         }
 
         $filename = $this->getFilename($file);
-        $targetPath = sprintf('%s/%s/%s/', $root, $this->table->name, $this->name);
+        $targetPath = $root.$this->getDirectory();
 
         if (!is_dir($targetPath)) {
             mkdir($targetPath, 0777, true);
@@ -79,5 +80,19 @@ class File extends Field
         }
 
         return preg_replace(['/[^\w\.]/', '/[\-]{2,}/'], '-', strtolower($name));
+    }
+
+    /**
+     * Get the relative directory where the file will be saved.
+     * 
+     * @return string
+     */
+    protected function getDirectory()
+    {
+        if ($this->directory === null) {
+            return $this->directory = "/{$this->table->name}/{$this->name}/";
+        }
+
+        return $this->directory;
     }
 }

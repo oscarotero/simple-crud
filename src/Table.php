@@ -80,7 +80,7 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Register a new query modifier
+     * Register a new query modifier.
      * 
      * @param string   $name
      * @param callable $modifier
