@@ -14,15 +14,22 @@ class Insert extends Query
     protected $duplications;
 
     /**
-     * Set the data to update.
+     * Set the data to insert.
      *
-     * @param array $data
+     * @param array      $data
+     * @param array|null $prepared
      *
      * @return self
      */
-    public function data(array $data)
+    public function data(array $data, array &$prepared = null)
     {
         $this->data = $this->table->prepareDataToDatabase($data, true);
+
+        if (is_array($prepared)) {
+            foreach ($this->data as $field => $value) {
+                $prepared[$field] = $this->table->fields[$field]->dataFromDatabase($value);
+            }
+        }
 
         return $this;
     }

@@ -41,8 +41,6 @@ EOT
 
         $file->save();
 
-        $db->file->clearCache();
-
         $this->assertEquals('New file', $db->file[1]->name);
         $this->assertEquals('/file/file/my-file.txt', $db->file[1]->file);
 

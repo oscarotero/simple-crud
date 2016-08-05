@@ -215,11 +215,11 @@ class Row extends AbstractRow
         if ($this->changed) {
             if (empty($this->id)) {
                 $this->id = $this->table->insert()
-                    ->data($this->values)
+                    ->data($this->values, $this->values)
                     ->run();
             } else {
                 $this->table->update()
-                    ->data($this->values)
+                    ->data($this->values, $this->values)
                     ->byId($this->id)
                     ->limit(1)
                     ->run();
