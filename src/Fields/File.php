@@ -5,6 +5,7 @@ namespace SimpleCrud\Fields;
 use Psr\Http\Message\UploadedFileInterface;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\SimpleCrudException;
+use SplFileInfo;
 
 /**
  * To save files.
@@ -31,7 +32,7 @@ class File extends Field
     public function dataFromDatabase($data)
     {
         if (!empty($data)) {
-            return $this->getDirectory().$data;
+            return new SplFileInfo($this->getDirectory().$data);
         }
 
         return $data;
@@ -46,14 +47,8 @@ class File extends Field
      */
     private function upload(UploadedFileInterface $file)
     {
-        $root = $this->table->getDatabase()->getAttribute(SimpleCrud::ATTR_UPLOADS);
-
-        if (empty($root)) {
-            throw new SimpleCrudException('No ATTR_UPLOADS attribute found to upload files');
-        }
-
         $filename = $this->getFilename($file);
-        $targetPath = $root.$this->getDirectory();
+        $targetPath = $this->getDirectory();
 
         if (!is_dir($targetPath)) {
             mkdir($targetPath, 0777, true);
@@ -83,14 +78,20 @@ class File extends Field
     }
 
     /**
-     * Get the relative directory where the file will be saved.
+     * Get the directory where the file will be saved.
      * 
      * @return string
      */
     protected function getDirectory()
     {
         if ($this->directory === null) {
-            return $this->directory = "/{$this->table->name}/{$this->name}/";
+            $root = $this->table->getDatabase()->getAttribute(SimpleCrud::ATTR_UPLOADS);
+
+            if (empty($root)) {
+                throw new SimpleCrudException('No ATTR_UPLOADS attribute found to upload files');
+            }
+
+            return $this->directory = "{$root}/{$this->table->name}/{$this->name}/";
         }
 
         return $this->directory;

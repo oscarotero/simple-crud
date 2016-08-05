@@ -40,12 +40,12 @@ EOT
         ]);
 
         $file->save();
+        $fileinfo = $file->file;
 
-        $this->assertEquals('New file', $db->file[1]->name);
-        $this->assertEquals('/file/file/my-file.txt', $db->file[1]->file);
-
-        $this->assertTrue(is_file(__DIR__.'/tmp/file/file/my-file.txt'));
-        $this->assertEquals($content, file_get_contents(__DIR__.'/tmp/file/file/my-file.txt'));
+        $this->assertInstanceOf('SplFileInfo', $fileinfo);
+        $this->assertTrue($fileinfo->isFile());
+        $this->assertEquals(__DIR__.'/tmp/file/file/my-file.txt', $fileinfo->getPathname());
+        $this->assertEquals($content, $fileinfo->openFile()->fread($fileinfo->getSize()));
 
         unlink(__DIR__.'/tmp/file/file/my-file.txt');
         rmdir(__DIR__.'/tmp/file/file');

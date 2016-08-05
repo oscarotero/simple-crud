@@ -345,14 +345,14 @@ You can define default modifiers for all queries: not only select, but also upda
 The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to the database for its usage. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:
 
 * Boolean: To manage boolean values
-* Date: To manage date values
-* Datetime: To manage datetime values
+* Date: To manage date values. Converts the database values to a `Datetime`
+* Datetime: To manage datetime values. Converts the database values to a `Datetime`
 * Decimal: Converts values to float numbers or NULL
 * Field: It's the default field and doesn't transform the value
-* File: Used to upload a file and save the file path
+* File: Used to upload files into a directory and save the file name in the database. Detects instances of `Psr\Http\Message\UploadedFileInterface` (PSR-7) and returns a `SplFileInfo` instance with the file.
 * Integer: Converts values to integers or NULL
 * Json: To store json structures.
-* Serializable: To store arrays or any other serializable data structure as strings.
+* Serializable: To store arrays or any other serializable data structure.
 * Set: Manages multiple values. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
 
 The Field classes are asigned automatically according with the field type in the database. There are also "special names" that have specific types asigned:
@@ -360,6 +360,7 @@ The Field classes are asigned automatically according with the field type in the
 * Integer format will be asigned to any field named `id` or ending by `_id`.
 * Datetime format will be asigned to any field named `pubdate` or ending by `At` (for example: `createdAt`, `updatedAt` etc).
 * Boolean format will be asigned to any field named `active` or starting by `is` or `has` (for example: `isActived`, `hasContent`, etc)
+* File format will be asigned to any field named `file` or ending by `File` (for example: `imageFile`, `avatarFile`, etc)
 
 Example:
 
