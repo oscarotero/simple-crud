@@ -45,7 +45,7 @@ EOT
         $this->assertInstanceOf('SplFileInfo', $fileinfo);
         $this->assertTrue($fileinfo->isFile());
         $this->assertEquals(__DIR__.'/tmp/file/file/my-file.txt', $fileinfo->getPathname());
-        $this->assertEquals($content, $fileinfo->openFile()->fread($fileinfo->getSize()));
+        $this->assertEquals($content, $fileinfo->openFile()->fgets());
 
         unlink(__DIR__.'/tmp/file/file/my-file.txt');
         rmdir(__DIR__.'/tmp/file/file');
