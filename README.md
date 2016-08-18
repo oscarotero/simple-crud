@@ -84,13 +84,23 @@ $post = $db->post;
 
 SimpleCrud load the database scheme and detects automatically all relationships between the tables using the naming conventions described above. For example the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category.
 
+**Note:** In production environment, you may want to cache the scheme in order to improve the performance. You can do it in this way:
+
+```php
+if (!$cache->has('db_scheme')) {
+    $cache->save($db->getScheme());
+} else {
+    $db->setScheme($cache->get('db_scheme'));
+}
+```
+
 ## Using the library
 
 ### Basic CRUD:
 
 You can work directly with the tables to insert/update/delete/select data:
 
-Use arrayAccess interface to access to the data using the `id`:
+Use `ArrayAccess` interface to access to the data using the `id`:
 
 ```php
 //Get the post id = 3;
@@ -123,7 +133,7 @@ A `Row` object represents a database row and it is used to read and modify the d
 //get a row
 $post = $db->post[34];
 
-//Get/set the post title
+//Get/modify fields values
 echo $post->title;
 
 $post->title = 'New title';
@@ -263,7 +273,7 @@ $posts = $db->post
     ->run();
 ```
 
-This allows make awesome (and dangerous :D) things like this:
+This allows make things like this:
 
 ```php
 $titles = $db->post[34]->tag->post->title;
@@ -274,14 +284,18 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
-You may want a filtered result of the related rows instead getting all of them. To do this, just use a method with the same name of the related table and to return the instance of `Select` that you can modify:
+You may want a filtered result of the related rows instead getting all of them. To do this, just use a method with the same name of the related table and you get the of the `Select` query that you can modify:
 
 ```php
 $category = $db->category[34];
 
-//Get the posts of this category but only if the pubdate is in the future
+//Magic property: Returns all posts of this category:
+$posts = $category->post;
+
+//Magic method: Returns the query before run it
 $posts = $category->post()
     ->where('pubdate > :date', [':date' => date('Y-m-d')])
+    ->limit(10)
     ->run();
 ```
 

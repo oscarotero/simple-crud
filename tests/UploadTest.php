@@ -36,7 +36,7 @@ EOT
 
         $file = $db->file->create([
             'name' => 'New file',
-            'file' => new UploadedFile($stream, strlen($content), UPLOAD_ERR_OK, 'My file.txt'),
+            'file' => new UploadedFile($stream, strlen($content), UPLOAD_ERR_OK, ' My  fíle.txt'),
         ]);
 
         $file->save();
@@ -46,6 +46,7 @@ EOT
         $this->assertTrue($fileinfo->isFile());
         $this->assertEquals(__DIR__.'/tmp/file/file/my-file.txt', $fileinfo->getPathname());
         $this->assertEquals($content, $fileinfo->openFile()->fgets());
+        $this->assertEquals('my-file.txt', $this->db->execute('SELECT file from file')->fetchColumn(0));
 
         unlink(__DIR__.'/tmp/file/file/my-file.txt');
         rmdir(__DIR__.'/tmp/file/file');
