@@ -101,7 +101,7 @@ class FieldFactory implements FieldFactoryInterface
     }
 
     /**
-     * @see TableFactoryInterface
+     * @see FieldFactoryInterface
      *
      * {@inheritdoc}
      */
@@ -113,8 +113,19 @@ class FieldFactory implements FieldFactoryInterface
             throw new SimpleCrudException("The field '{$name}' does not exist in the table {$table->name}");
         }
 
+
         $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;
 
+        return $this->getInstance($table, $className, $name);
+    }
+
+    /**
+     * @see FieldFactoryInterface
+     *
+     * {@inheritdoc}
+     */
+    public function getInstance(Table $table, $className, $name)
+    {
         foreach ($this->namespaces as $namespace) {
             $class = $namespace.$className;
 
@@ -123,7 +134,7 @@ class FieldFactory implements FieldFactoryInterface
             }
         }
 
-        throw new SimpleCrudException("No field class found for '{$name}'");
+        throw new SimpleCrudException("No field class found for '{$className}'");
     }
 
     /**
