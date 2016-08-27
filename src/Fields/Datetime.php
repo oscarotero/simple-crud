@@ -14,6 +14,10 @@ class Datetime extends Field
      */
     public function dataToDatabase($data)
     {
+        if (empty($data)) {
+            return null;
+        }
+
         if (is_string($data)) {
             return date($this->format, strtotime($data));
         }
