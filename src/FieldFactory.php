@@ -116,16 +116,6 @@ class FieldFactory implements FieldFactoryInterface
 
         $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;
 
-        return $this->getInstance($table, $className, $name);
-    }
-
-    /**
-     * @see FieldFactoryInterface
-     *
-     * {@inheritdoc}
-     */
-    public function getInstance(Table $table, $className, $name)
-    {
         foreach ($this->namespaces as $namespace) {
             $class = $namespace.$className;
 
