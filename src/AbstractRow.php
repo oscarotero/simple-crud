@@ -129,12 +129,10 @@ abstract class AbstractRow implements JsonSerializable
         $relation = $table->getScheme()['relations'][$name];
         $related = $table->getDatabase()->$name;
 
-        switch ($relation[0]) {
-            case Scheme::HAS_ONE:
-                return $related->select()->one()->relatedWith($this);
-
-            default:
-                return $related->select()->relatedWith($this);
+        if ($relation[0] === Scheme::HAS_ONE) {
+            return $related->select()->one()->relatedWith($this);
         }
+
+        return $related->select()->relatedWith($this);
     }
 }

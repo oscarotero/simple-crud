@@ -25,7 +25,8 @@ EOT
 <<<EOT
 CREATE TABLE "category" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-    `name`        TEXT
+    `name`        TEXT,
+    `category_id` INTEGER
 );
 EOT
             );
@@ -60,7 +61,7 @@ EOT
         $comment = $db->comment->create(['id' => 1])->save();
 
         $this->assertEquals(
-            'SELECT `category`.`id`, `category`.`name`, `category_post`.`post_id` FROM `category`, `category_post`, `post` WHERE (`category_post`.`category_id` = `category`.`id`) AND (`category_post`.`post_id` = `post`.`id`) AND (`post`.`id` IN (:post_id))',
+            'SELECT `category`.`id`, `category`.`name`, `category`.`category_id`, `category_post`.`post_id` FROM `category`, `category_post`, `post` WHERE (`category_post`.`category_id` = `category`.`id`) AND (`category_post`.`post_id` = `post`.`id`) AND (`post`.`id` IN (:post_id))',
             (string) $post->category()
         );
 
@@ -148,6 +149,33 @@ EOT
         ]);
 
         $this->assertEquals($json, (string) $comments);
+    }
+
+    public function testRelatedWithItself()
+    {
+        $db = $this->db;
+
+        $a = $db->category->create(['name' => 'A'])->save();
+        $b = $db->category->create(['name' => 'B'])->save();
+        $a1 = $db->category->create(['name' => 'A1'])->save();
+        $a2 = $db->category->create(['name' => 'A2'])->save();
+        $a11 = $db->category->create(['name' => 'A11'])->save();
+        $a21 = $db->category->create(['name' => 'A21'])->save();
+
+        $a->relate($a1);
+        $a->relate($a2);
+        $a1->relate($a11);
+        $a2->relate($a21);
+
+        $this->assertEquals([3 => 'A1', 4 => 'A2'], $a->category->name);
+        $this->assertEquals([5 => 'A11'], $a1->category->name);
+        $this->assertEquals([6 => 'A21'], $a2->category->name);
+
+        $a1->unrelate($a11);
+        $this->assertEmpty($a1->category->name);
+
+        $a->unrelate($a2);
+        $this->assertEquals([3 => 'A1'], $a->category->name);
     }
 
     public function testManyToManyData()

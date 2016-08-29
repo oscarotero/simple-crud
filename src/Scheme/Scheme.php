@@ -47,7 +47,12 @@ abstract class Scheme
             foreach ($scheme as $relTable => &$relInfo) {
                 if (isset($relInfo['fields'][$foreingKey])) {
                     $info['relations'][$relTable] = [self::HAS_MANY, $foreingKey];
-                    $relInfo['relations'][$table] = [self::HAS_ONE, $foreingKey];
+
+                    if ($table === $relTable) {
+                        $relInfo['relations'][$table] = [self::HAS_MANY, $foreingKey];
+                    } else {
+                        $relInfo['relations'][$table] = [self::HAS_ONE, $foreingKey];
+                    }
                     continue;
                 }
 

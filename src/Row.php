@@ -268,9 +268,11 @@ class Row extends AbstractRow
                 $this->relations[$relationTable->name][] = $row;
             }
 
-            $cache = $row->getCache();
-            $cache[$table->name] = $this;
-            $row->setCache($cache);
+            if ($table->name !== $relationTable->name) {
+                $cache = $row->getCache();
+                $cache[$table->name] = $this;
+                $row->setCache($cache);
+            }
 
             return $this;
         }
@@ -321,24 +323,26 @@ class Row extends AbstractRow
         $relation = $relations[$relationTable->name];
 
         if ($relation[0] === Scheme::HAS_ONE) {
-            if ($this->{$relation[1]} === $row->id) {
-                $this->{$relation[1]} = null;
-            }
+            $row->unrelate($this);
 
-            $this->relations[$relationTable->name] = new NullValue();
-
-            $cache = $row->getCache();
-
-            if (isset($cache[$table->name])) {
-                unset($cache[$table->name][$this->id]);
-                $row->setCache($cache);
-            }
-
-            return $this->save();
+            return $this;
         }
 
         if ($relation[0] === Scheme::HAS_MANY) {
-            $row->unrelate($this);
+            if ($row->{$relation[1]} === $this->id) {
+                $row->{$relation[1]} = null;
+                $row->save();
+            }
+
+            if (isset($this->relations[$relationTable->name])) {
+                unset($this->relations[$relationTable->name][$row->id]);
+            }
+
+            if ($table->name !== $relationTable->name) {
+                $cache = $row->getCache();
+                $cache[$table->name] = new NullValue();
+                $row->setCache($cache);
+            }
 
             return $this;
         }
