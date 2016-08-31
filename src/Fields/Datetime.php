@@ -15,7 +15,7 @@ class Datetime extends Field
     public function dataToDatabase($data)
     {
         if (empty($data)) {
-            return null;
+            return;
         }
 
         if (is_string($data)) {

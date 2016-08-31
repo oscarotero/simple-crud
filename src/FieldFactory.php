@@ -113,7 +113,6 @@ class FieldFactory implements FieldFactoryInterface
             throw new SimpleCrudException("The field '{$name}' does not exist in the table {$table->name}");
         }
 
-
         $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;
 
         foreach ($this->namespaces as $namespace) {
