@@ -623,7 +623,7 @@ class Posts extends Table
 
 ### Customize Row and RowCollection
 
-The Table class has the method `init` that you can use to initialize things. It's called at the end of the `__construct`. This allows to configure the table after the instantiation, for example to use custom `Row` or `RowCollection` classes or extend them with other methods and properties:
+The Table class has the method `init` that you can use to initialize things. It's called at the end of the `__construct`. This allows to configure the table after the instantiation, for example to use custom `Row` or `RowCollection` classes, extend them with custom methods or configure the table fields:
 
 ```php
 namespace MyModels;
@@ -635,12 +635,14 @@ class Posts extends Table
     public function init()
     {
         //Use a custom RowCollection class:
-        $this->collection = new MyCustomRowCollection($this);
+        $this->setRowCollection(new MyCustomRowCollection($this));
 
-        //Use a custom Row class:
-        $this->row = new MyCustomRow($this);
+        //or configure custom methods:
+        $this->setRowMethod('getTitleText', function () {
+            return strip_tags($this->title);
+        });
 
-        //Configure some field
+        //or configure some field
         $this->fields['jsonData']->setConfig(['assoc' => false]);
     }
 }
