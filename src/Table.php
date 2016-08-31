@@ -254,6 +254,16 @@ class Table implements ArrayAccess
     }
 
     /**
+     * Retruns the Row class used by this table.
+     *
+     * @return Row
+     */
+    public function getRow()
+    {
+        return $this->row;
+    }
+
+    /**
      * Defines the RowCollection class used by this table.
      *
      * @param RowCollection $collection
@@ -261,6 +271,16 @@ class Table implements ArrayAccess
     public function setCollection(RowCollection $collection)
     {
         $this->collection = $collection;
+    }
+
+    /**
+     * Returns the RowCollection class used by this table.
+     *
+     * @return RowCollection
+     */
+    public function getCollection()
+    {
+        return $this->collection;
     }
 
     /**

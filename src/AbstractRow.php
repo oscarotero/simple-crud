@@ -4,6 +4,7 @@ namespace SimpleCrud;
 
 use JsonSerializable;
 use SimpleCrud\Scheme\Scheme;
+use Closure;
 
 /**
  * Base class used by Row and RowCollection.
@@ -13,6 +14,8 @@ use SimpleCrud\Scheme\Scheme;
 abstract class AbstractRow implements JsonSerializable
 {
     protected $table;
+    private $methods = [];
+    private $bindMethods = [];
 
     /**
      * Constructor.
@@ -113,12 +116,36 @@ abstract class AbstractRow implements JsonSerializable
     }
 
     /**
-     * Magic method to execute queries.
+     * Register a custom method.
+     *
+     * @param string  $name
+     * @param Closure $method
+     *
+     * @return self
+     */
+    public function addMethod($name, Closure $method)
+    {
+        $this->methods[$name] = $method;
+        unset($this->bindMethods[$name]);
+
+        return $this;
+    }
+
+    /**
+     * Magic method to execute queries or custom methods.
      *
      * @param string $name
      */
     public function __call($name, $arguments)
     {
+        if (isset($this->methods[$name])) {
+            if (!isset($this->bindMethods[$name])) {
+                $this->bindMethods[$name] = $this->methods[$name]->bindTo($this);
+            }
+
+            return call_user_func_array($this->bindMethods[$name], $arguments);
+        }
+
         $scheme = $this->getTable()->getScheme();
 
         if (!isset($scheme['relations'][$name])) {
