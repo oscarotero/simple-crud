@@ -28,7 +28,7 @@ EOT
     {
         $db = $this->db;
 
-        $db->post->getRow()->addMethod('upperCaseTitle', function () {
+        $db->post->setRowMethod('upperCaseTitle', function () {
             return strtoupper($this->title);
         });
 
@@ -44,9 +44,7 @@ EOT
 
         $this->assertEquals('FIRST POST', $post->upperCaseTitle());
 
-        $this->assertNotSame($db->post->getRow(), $post);
-
-        $post->addMethod('upperCaseTitle', function () {
+        $post->setMethod('upperCaseTitle', function () {
             return 'overrided!';
         });
 

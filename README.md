@@ -339,6 +339,21 @@ $post->unrelate($comment);
 $post->unrelateAll($db->comment);
 ```
 
+### Custom methods
+
+Sometimes, it's usefult to have more methods in the rows, for example to get the value in a specific format, or to make some calculations. So, you can register new methods with `setRowMethod()` and `setRowCollectionMethod()`:
+
+```php
+//Register a method to the post rows
+$db->post->setRowMethod('getUppercaseTitle', function () {
+    return strtoupper($this->title);
+});
+
+echo $db->post[1]->getUppercaseTitle(); //FIRST POST TITLE
+```
+
+Note that the custom methods must be instances of `Closure` and the `$this` variable is the current row.
+
 ### Default queries modifiers
 
 Let's say we want to select always the posts with the condition `isActived = 1`. To avoid the need to add this "where" modifier again and again, you may want to define it as default, so it's applied always:
@@ -395,10 +410,10 @@ You may want to store some database attributes, for example a language configura
 
 ```php
 //Save an attribute, for example, the uploads path:
-$db->setAttribute('uploads', __DIR__.'/uploads');
+$db->setAttribute('foo', 'bar');
 
 //Get the attribute:
-echo $db->getAttribute('uploads');
+echo $db->getAttribute('foo'); //bar
 
 //You can access also to PDO attributes, using constants:
 echo $db->getAttribute(PDO::ATTR_DRIVER_NAME); //sqlite
@@ -426,6 +441,39 @@ echo $post->title_gl;
 
 //And assign a diferent value to the current language
 $post->title = 'New title in english';
+```
+
+### Uploading files
+
+As said before, the field `File` can handle uploaded files. So, if the value is an instance of a `Psr\Http\Message\UploadedFileInterface` [see here PSR-7 standard](http://www.php-fig.org/psr/psr-7/) the file will be moved to a folder and the filename is saved in the database.
+
+* First, you must define the uploads path used by the database, using the attribute `SimpleCrud::ATTR_UPLOADS`
+* The file is saved in a subdirectory named as `[table]/[field]`. For example, the images of the field `avatar` of the table `user` will be saved in the folder `uploads/user/avatar`.
+* The filename is slugified and converted to lowercase. For example, the file `My Picture.JPG` is renamed to `my-picture.jpg`.
+* To ease the work with the file, a [SplFileInfo](http://php.net/manual/en/class.splfileinfo.php) instance is returned.
+
+Example:
+
+```php
+//Set the uploads path
+$db->setAttribute(SimpleCrud::ATTR_UPLOADS, __DIR__.'/uploads');
+
+//Get the data from the serverRequest
+$data = $request->getParsedBody();
+$files = $request->getUploadedFiles();
+
+//Create the new user
+$user = $db->user->create([
+    'name' => $data['name'],
+    'email' => $data['email'],
+    'avatar' => $files['avatar'],
+]);
+
+//Save the data
+$user->save();
+
+//Use the avatar file
+echo $user->avatar->getPathName();
 ```
 
 ## Customization

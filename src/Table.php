@@ -3,6 +3,7 @@
 namespace SimpleCrud;
 
 use ArrayAccess;
+use Closure;
 
 /**
  * Manages a database table.
@@ -11,7 +12,7 @@ class Table implements ArrayAccess
 {
     private $db;
     private $row;
-    private $collection;
+    private $rowCollection;
     private $cache = [];
 
     public $name;
@@ -30,7 +31,7 @@ class Table implements ArrayAccess
         $this->name = $name;
 
         $this->setRow(new Row($this));
-        $this->setCollection(new RowCollection($this));
+        $this->setRowCollection(new RowCollection($this));
 
         $fieldFactory = $db->getFieldFactory();
 
@@ -254,33 +255,43 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Retruns the Row class used by this table.
+     * Register a custom method to the row.
      *
-     * @return Row
+     * @param string  $name
+     * @param Closure $method
+     *
+     * @return self
      */
-    public function getRow()
+    public function setRowMethod($name, Closure $method)
     {
-        return $this->row;
+        $this->row->setMethod($name, $method);
+
+        return $this;
     }
 
     /**
      * Defines the RowCollection class used by this table.
      *
-     * @param RowCollection $collection
+     * @param RowCollection $rowCollection
      */
-    public function setCollection(RowCollection $collection)
+    public function setRowCollection(RowCollection $rowCollection)
     {
-        $this->collection = $collection;
+        $this->rowCollection = $rowCollection;
     }
 
     /**
-     * Returns the RowCollection class used by this table.
+     * Register a custom method to the rowCollections.
      *
-     * @return RowCollection
+     * @param string  $name
+     * @param Closure $method
+     *
+     * @return self
      */
-    public function getCollection()
+    public function setRowCollectionMethod($name, Closure $method)
     {
-        return $this->collection;
+        $this->rowCollection->setMethod($name, $method);
+
+        return $this;
     }
 
     /**
@@ -314,13 +325,13 @@ class Table implements ArrayAccess
      */
     public function createCollection(array $data = [])
     {
-        $collection = clone $this->collection;
+        $rowCollection = clone $this->rowCollection;
 
         foreach ($data as $row) {
-            $collection[] = $row;
+            $rowCollection[] = $row;
         }
 
-        return $collection;
+        return $rowCollection;
     }
 
     /**

@@ -123,7 +123,7 @@ abstract class AbstractRow implements JsonSerializable
      *
      * @return self
      */
-    public function addMethod($name, Closure $method)
+    public function setMethod($name, Closure $method)
     {
         $this->methods[$name] = $method;
         unset($this->bindMethods[$name]);
