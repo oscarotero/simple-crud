@@ -476,6 +476,21 @@ $user->save();
 echo $user->avatar->getPathName();
 ```
 
+## Debugging
+
+The `SimpleCrud` instance provides the `onExecute` method allowing to register a callback that is runned by each query executed. This allows to inspect and debug what simple-crud does in the database:
+
+```php
+$db->onExecute(function ($pdo, $statement, $marks) {
+    $message = [
+        'query' => $statement->queryString,
+        'data' => $marks
+    ];
+
+    Logger::log($message);
+});
+```
+
 ## Customization
 
 SimpleCrud uses factory classes to create instances of tables, queries and fields. You can configure or create your own factories to customize how these instances are created.

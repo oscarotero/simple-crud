@@ -15,6 +15,7 @@ class SimpleCrud
     protected $tables = [];
     protected $inTransaction = false;
     protected $attributes = [];
+    protected $onExecute;
 
     protected $tableFactory;
     protected $queryFactory;
@@ -65,6 +66,16 @@ class SimpleCrud
         }
 
         return $this->scheme;
+    }
+
+    /**
+     * Define a callback executed for each query executed
+     *
+     * @param callable|null $callback
+     */
+    public function onExecute(callable $callback = null)
+    {
+        $this->onExecute = $callback;
     }
 
     /**
@@ -217,6 +228,10 @@ class SimpleCrud
 
         $statement = $this->connection->prepare($query);
         $statement->execute($marks);
+
+        if ($this->onExecute !== null) {
+            call_user_func($this->onExecute, $this->connection, $statement, $marks);
+        }
 
         return $statement;
     }

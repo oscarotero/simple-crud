@@ -83,4 +83,24 @@ EOT
 
         $this->assertEquals($this->db->post->getScheme()['fields'][$name], $field->getScheme());
     }
+
+    public function testOnExecuteQuery()
+    {
+        $log = [];
+        $queries = [
+            'SELECT name FROM sqlite_master WHERE (type="table" OR type="view") AND name != "sqlite_sequence"',
+            'pragma table_info(`post`)',
+        ];
+
+        $this->db->onExecute(function ($pdo, $statement, $marks) use (&$log) {
+            $this->assertInstanceOf('PDO', $pdo);
+            $this->assertInstanceOf('PDOStatement', $statement);
+
+            $log[] = $statement->queryString;
+        });
+
+        $post = $this->db->post;
+
+        $this->assertEquals($log, $queries);
+    }
 }
