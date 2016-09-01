@@ -330,7 +330,11 @@ class SimpleCrud
      */
     public function setAttribute($name, $value)
     {
-        $this->attributes[$name] = $value;
+        if (is_int($name)) {
+            $this->connection->setAttribute($name, $value);
+        } else {
+            $this->attributes[$name] = $value;
+        }
 
         return $this;
     }
