@@ -69,7 +69,7 @@ class SimpleCrud
     }
 
     /**
-     * Define a callback executed for each query executed
+     * Define a callback executed for each query executed.
      *
      * @param callable|null $callback
      */

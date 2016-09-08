@@ -369,15 +369,15 @@ class Table implements ArrayAccess
             return $this->cache[$data['id']];
         }
 
-        if (!is_array($row = $this->dataFromDatabase(array_intersect_key($data, $this->fields)))) {
+        foreach ($this->fields as $name => $field) {
+            $data[$name] = $field->dataFromDatabase($data[$name]);
+        }
+
+        if (!is_array($daga = $this->dataFromDatabase(array_intersect_key($data, $this->fields)))) {
             throw new SimpleCrudException('Data not valid');
         }
 
-        foreach ($this->fields as $name => $field) {
-            $row[$name] = $field->dataFromDatabase($row[$name]);
-        }
-
-        $row = $this->create($row);
+        $row = $this->create($data);
 
         $this->cache($row);
 
