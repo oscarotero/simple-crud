@@ -373,7 +373,7 @@ class Table implements ArrayAccess
             $data[$name] = $field->dataFromDatabase($data[$name]);
         }
 
-        if (!is_array($daga = $this->dataFromDatabase(array_intersect_key($data, $this->fields)))) {
+        if (!is_array($data = $this->dataFromDatabase(array_intersect_key($data, $this->fields)))) {
             throw new SimpleCrudException('Data not valid');
         }
 
