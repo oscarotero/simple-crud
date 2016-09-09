@@ -28,7 +28,7 @@ class Mysql extends Scheme
         foreach ($result as $field) {
             $name = $field['Field'];
 
-            preg_match('#^(\w+)(\((.+)\))?( unsigned)?$#', $field['Type'], $matches);
+            preg_match('#^(\w+)(\((.+)\))?( unsigned)?#', $field['Type'], $matches);
 
             $config = [
                 'type' => $matches[1],
