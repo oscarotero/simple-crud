@@ -369,6 +369,29 @@ $post = $db->post[34]; //Returns the post 34 only if it's actived.
 You can define default modifiers for all queries: not only select, but also update, delete, etc.
 
 
+### Pagination
+
+The `select` query has a special modifier to paginate the results:
+
+```php
+$posts = $db->post->select()
+    ->page(1)
+    ->limit(50)
+    ->run();
+
+//You can set the limit as second argument of page:
+$posts = $db->post->select()
+    ->page(1, 50)
+    ->run();
+
+//On paginate the results, you have three new methods in the result:
+$posts->getPage(); //1
+$posts->getPrevPage(); //NULL
+$posts->getNextPage(); //2
+```
+
+**Note:** If the result length is lower than the max limit elements per page, it's assumed that there's no more pages, so `getNextPage()` returns `NULL`.
+
 ### Fields
 
 The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to the database for its usage. For example, in Mysql the format used to store datetime values is "Y-m-d H:i:s", so the class `SimpleCrud\Fields\Datetime` converts any string or `Datetime` instance to this format, and when you select this value, you get a Datetime instance. The available fields are:

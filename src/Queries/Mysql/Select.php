@@ -23,6 +23,7 @@ class Select extends Query
     protected $orderBy = [];
     protected $statement;
     protected $mode = 2;
+    protected $page;
 
     /**
      * Change the mode to returns just the first row.
@@ -49,6 +50,28 @@ class Select extends Query
     }
 
     /**
+     * Paginate the results
+     *
+     * @param int|string $page
+     * @param int|null   $limit
+     *
+     * @return self
+     */
+    public function page($page, $limit = null) {
+        $this->page = (int) $page;
+
+        if ($this->page < 1) {
+            $this->page = 1;
+        }
+
+        if ($limit !== null) {
+            $this->limit($limit);
+        }
+
+        return $this;
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @return Row|RowCollection|null
@@ -65,6 +88,24 @@ class Select extends Query
 
         while (($row = $statement->fetch())) {
             $result[] = $this->createRow($row);
+        }
+
+        if ($this->page !== null) {
+            $current = $this->page;
+            $next = $result->count() < $this->limit ? null : $current + 1;
+            $prev = $current > 1 ? $current - 1 : null;
+
+            $result->setMethod('getPage', function () use ($current) {
+                return $current;
+            });
+
+            $result->setMethod('getNextPage', function () use ($next) {
+                return $next;
+            });
+
+            $result->setMethod('getPrevPage', function () use ($prev) {
+                return $prev;
+            });
         }
 
         return $result;
@@ -168,6 +209,10 @@ class Select extends Query
      */
     public function __toString()
     {
+        if ($this->page !== null) {
+            $this->offset = ($this->page * $this->limit) - $this->limit;
+        }
+
         $query = 'SELECT';
         $query .= ' '.static::buildFields($this->table->name, array_keys($this->table->fields));
 
