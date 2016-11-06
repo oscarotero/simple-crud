@@ -251,8 +251,12 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     /**
      * {@inheritdoc}
      */
-    public function toArray(array $bannedEntities = array())
+    public function toArray($recursive = true, array $bannedEntities = [])
     {
+        if (!$recursive) {
+            return $this->rows;
+        }
+
         $table = $this->getTable();
 
         if (!empty($bannedEntities) && in_array($table->name, $bannedEntities)) {
@@ -262,7 +266,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         $rows = [];
 
         foreach ($this->rows as $row) {
-            $rows[] = $row->toArray($bannedEntities);
+            $rows[] = $row->toArray($recursive, $bannedEntities);
         }
 
         return $rows;

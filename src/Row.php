@@ -176,8 +176,12 @@ class Row extends AbstractRow
     /**
      * {@inheritdoc}
      */
-    public function toArray(array $bannedEntities = [])
+    public function toArray($recursive = true, array $bannedEntities = [])
     {
+        if (!$recursive) {
+            return $this->values;
+        }
+
         $table = $this->getTable();
 
         if (!empty($bannedEntities) && in_array($table->name, $bannedEntities)) {
@@ -189,7 +193,7 @@ class Row extends AbstractRow
 
         foreach ($this->relations as $name => $value) {
             if ($value !== null) {
-                $data[$name] = $value->toArray($bannedEntities);
+                $data[$name] = $value->toArray(true, $bannedEntities);
             }
         }
 

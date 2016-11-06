@@ -70,11 +70,12 @@ abstract class AbstractRow implements JsonSerializable
     /**
      * Converts this object into an array.
      * 
+     * @param bool  $recursive
      * @param array $bannedEntities
      *
      * @return array
      */
-    abstract public function toArray(array $bannedEntities = []);
+    abstract public function toArray($recursive = true, array $bannedEntities = []);
 
     /**
      * Magic method to return properties.
