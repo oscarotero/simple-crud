@@ -247,7 +247,7 @@ $category = $db->category
 
 Name | Options
 ---- | -------
-`select` | `one()`, `all()`, `leftJoin($table, $on, $marks)`, `from($table)`, `field($field)`, `relatedWith($row)`,  `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`, `orderBy($row, $direction)`
+`select` | `one()`, `all()`, `leftJoin($table, $on, $marks)`, `from($table)`, `field($field)`, `relatedWith($row)`,  `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`, `orderBy($row, $direction)`, `page($page, $limit)`
 `count` | `from($table)`, `field($field)`, `relatedWith($row)`,  `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`
 `delete` | `marks($marks)`, `where($where, $marks)`, `orWhere($where, $marks)`, `by($field, $value)`, `byId($id)`, `limit($limit)`, `offset($offset)`
 `insert` | `data($data)`, `duplications($handle)`
@@ -368,6 +368,29 @@ $post = $db->post[34]; //Returns the post 34 only if it's actived.
 
 You can define default modifiers for all queries: not only select, but also update, delete, etc.
 
+
+### Pagination
+
+The `select` query has a special modifier to paginate the results:
+
+```php
+$posts = $db->post->select()
+    ->page(1)
+    ->limit(50)
+    ->run();
+
+//You can set the limit as second argument of page:
+$posts = $db->post->select()
+    ->page(1, 50)
+    ->run();
+
+//On paginate the results, you have three new methods in the result:
+$posts->getPage(); //1
+$posts->getPrevPage(); //NULL
+$posts->getNextPage(); //2
+```
+
+**Note:** If the result length is lower than the max limit elements per page, it's assumed that there's no more pages, so `getNextPage()` returns `NULL`.
 
 ### Fields
 
