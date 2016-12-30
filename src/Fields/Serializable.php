@@ -7,6 +7,10 @@ namespace SimpleCrud\Fields;
  */
 class Serializable extends Field
 {
+    protected $config = [
+        'allowed_classes' => false
+    ];
+
     /**
      * {@inheritdoc}
      */
@@ -20,6 +24,6 @@ class Serializable extends Field
      */
     public function dataFromDatabase($data)
     {
-        return unserialize($data);
+        return @unserialize($data, $this->config) ?: [];
     }
 }
