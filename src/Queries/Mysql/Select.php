@@ -19,7 +19,7 @@ class Select extends Query
 
     use ExtendedSelectionTrait;
 
-    protected $leftJoin = [];
+    protected $join = [];
     protected $orderBy = [];
     protected $statement;
     protected $mode = 2;
@@ -122,20 +122,22 @@ class Select extends Query
     {
         $row = $this->table->createFromDatabase($data);
 
-        if (empty($this->leftJoin)) {
+        if (empty($this->join)) {
             return $row;
         }
 
-        foreach ($this->leftJoin as $join) {
-            $table = $this->table->getDatabase()->{$join['table']};
-            $values = [];
+        foreach ($this->join as $joins) {
+            foreach ($joins as $join) {
+                $table = $this->table->getDatabase()->{$join['table']};
+                $values = [];
 
-            foreach (array_keys($table->fields) as $name) {
-                $field = sprintf('%s.%s', $join['table'], $name);
-                $values[$name] = $data[$field];
+                foreach (array_keys($table->fields) as $name) {
+                    $field = sprintf('%s.%s', $join['table'], $name);
+                    $values[$name] = $data[$field];
+                }
+
+                $row->{$join['table']} = empty($values['id']) ? null : $table->createFromDatabase($values);
             }
-
-            $row->{$join['table']} = empty($values['id']) ? null : $table->createFromDatabase($values);
         }
 
         return $row;
@@ -171,6 +173,22 @@ class Select extends Query
      */
     public function leftJoin($table, $on = null, $marks = null)
     {
+        return $this->join('LEFT', $table, $on, $marks);
+    }
+
+    /**
+     * Adds a JOIN clause.
+     *
+     * @param string     $join
+     * @param string     $table
+     * @param string     $on
+     * @param array|null $marks
+     *
+     * @return self
+     */
+    public function join($join, $table, $on = null, $marks = null)
+    {
+        $join = strtoupper($join);
         $scheme = $this->table->getScheme();
 
         if (!isset($scheme['relations'][$table])) {
@@ -178,10 +196,14 @@ class Select extends Query
         }
 
         if ($scheme['relations'][$table][0] !== Scheme::HAS_ONE) {
-            throw new SimpleCrudException(sprintf("Invalid LEFT JOIN between the tables '%s' and '%s'", $this->table->name, $table));
+            throw new SimpleCrudException(sprintf("Invalid %s JOIN between the tables '%s' and '%s'", $join, $this->table->name, $table));
         }
 
-        $this->leftJoin[] = [
+        if (!isset($this->join[$join])) {
+            $this->join[$join] = [];
+        }
+
+        $this->join[$join][] = [
             'table' => $table,
             'on' => $on,
         ];
@@ -216,25 +238,30 @@ class Select extends Query
         $query = 'SELECT';
         $query .= ' '.static::buildFields($this->table->name, array_keys($this->table->fields));
 
-        foreach ($this->leftJoin as $join) {
-            $query .= ', '.static::buildFields($join['table'], array_keys($this->table->getDatabase()->{$join['table']}->fields), true);
+        foreach ($this->join as $joins) {
+            foreach ($joins as $join) {
+                $query .= ', '.static::buildFields($join['table'], array_keys($this->table->getDatabase()->{$join['table']}->fields), true);
+            }
         }
 
         $query .= $this->fieldsToString();
         $query .= sprintf(' FROM `%s`', $this->table->name);
         $query .= $this->fromToString();
 
-        foreach ($this->leftJoin as $join) {
-            $relation = $this->table->getScheme()['relations'][$join['table']];
+        foreach ($this->join as $type => $joins) {
+            foreach ($joins as $join) {
+                $relation = $this->table->getScheme()['relations'][$join['table']];
 
-            $query .= sprintf(
-                ' LEFT JOIN `%s` ON (`%s`.`id` = `%s`.`%s`%s)',
-                $join['table'],
-                $join['table'],
-                $this->table->name,
-                $relation[1],
-                empty($join['on']) ? '' : sprintf(' AND (%s)', $join['on'])
-            );
+                $query .= sprintf(
+                    ' %s JOIN `%s` ON (`%s`.`id` = `%s`.`%s`%s)',
+                    $type,
+                    $join['table'],
+                    $join['table'],
+                    $this->table->name,
+                    $relation[1],
+                    empty($join['on']) ? '' : sprintf(' AND (%s)', $join['on'])
+                );
+            }
         }
 
         $query .= $this->whereToString();
