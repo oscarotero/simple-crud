@@ -7,6 +7,8 @@ use Closure;
 
 /**
  * Manages a database table.
+ *
+ * @property Fields\Field $id
  */
 class Table implements ArrayAccess
 {
@@ -399,7 +401,7 @@ class Table implements ArrayAccess
      *
      * @param array $data
      *
-     * @return array
+     * @return Row
      */
     public function createFromDatabase(array $data)
     {

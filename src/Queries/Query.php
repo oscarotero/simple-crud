@@ -24,7 +24,7 @@ abstract class Query
     /**
      * Run the query and return the statement object.
      *
-     * @return PDOStatement
+     * @return \PDOStatement
      */
     abstract public function __invoke();
 
