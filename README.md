@@ -23,7 +23,6 @@ This package is installable and autoloadable via Composer as [simple-crud/simple
 $ composer require simple-crud/simple-crud
 ```
 
-
 ## Components
 
 SimpleCrud has the following classes:
@@ -401,7 +400,6 @@ The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to th
 * Datetime: To manage datetime values. Converts the database values to a `Datetime`
 * Decimal: Converts values to float numbers or NULL
 * Field: It's the default field and doesn't transform the value
-* File: Used to upload files into a directory and save the file name in the database. Detects instances of `Psr\Http\Message\UploadedFileInterface` (PSR-7) and returns a `SplFileInfo` instance with the file.
 * Integer: Converts values to integers or NULL
 * Json: To store json structures.
 * Serializable: To store arrays or any other serializable data structure.
@@ -412,7 +410,6 @@ The Field classes are asigned automatically according with the field type in the
 * Integer format will be asigned to any field named `id` or ending by `_id`.
 * Datetime format will be asigned to any field named `pubdate` or ending by `At` (for example: `createdAt`, `updatedAt` etc).
 * Boolean format will be asigned to any field named `active` or starting by `is` or `has` (for example: `isActived`, `hasContent`, etc)
-* File format will be asigned to any field named `file` or ending by `File` (for example: `imageFile`, `avatarFile`, etc)
 
 Example:
 
@@ -464,39 +461,6 @@ echo $post->title_gl;
 
 //And assign a diferent value to the current language
 $post->title = 'New title in english';
-```
-
-### Uploading files
-
-As said before, the field `File` can handle uploaded files. So, if the value is an instance of a `Psr\Http\Message\UploadedFileInterface` [see here PSR-7 standard](http://www.php-fig.org/psr/psr-7/) the file will be moved to a folder and the filename is saved in the database.
-
-* First, you must define the uploads path used by the database, using the attribute `SimpleCrud::ATTR_UPLOADS`
-* The file is saved in a subdirectory named as `[table]/[field]`. For example, the images of the field `avatar` of the table `user` will be saved in the folder `uploads/user/avatar`.
-* The filename is slugified and converted to lowercase. For example, the file `My Picture.JPG` is renamed to `my-picture.jpg`.
-* To ease the work with the file, a [SplFileInfo](http://php.net/manual/en/class.splfileinfo.php) instance is returned.
-
-Example:
-
-```php
-//Set the uploads path
-$db->setAttribute(SimpleCrud::ATTR_UPLOADS, __DIR__.'/uploads');
-
-//Get the data from the serverRequest
-$data = $request->getParsedBody();
-$files = $request->getUploadedFiles();
-
-//Create the new user
-$user = $db->user->create([
-    'name' => $data['name'],
-    'email' => $data['email'],
-    'avatar' => $files['avatar'],
-]);
-
-//Save the data
-$user->save();
-
-//Use the avatar file
-echo $user->avatar->getPathName();
 ```
 
 ## Debugging

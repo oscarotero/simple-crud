@@ -14,7 +14,6 @@ class FieldFactory implements FieldFactoryInterface
         'id' => 'Integer',
         'active' => 'Boolean',
         'pubdate' => 'Datetime',
-        'file' => 'File',
     ];
 
     protected $regexMap = [
@@ -26,9 +25,6 @@ class FieldFactory implements FieldFactoryInterface
 
         //time related (createdAt, publishedAt)
         '/[a-z]At$/' => 'Datetime',
-
-        //time related (createdAt, publishedAt)
-        '/[a-z]File$/' => 'File',
     ];
 
     protected $typeMap = [
