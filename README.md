@@ -423,6 +423,9 @@ $post = $db->post->create([
 ]);
 
 $post->save();
+
+//Use magic properties to get the Field instance
+$titleField = $db->post->title;
 ```
 
 ### Attributes

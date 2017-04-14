@@ -107,7 +107,7 @@ class FieldFactory implements FieldFactoryInterface
         $scheme = $table->getScheme()['fields'];
 
         if (!isset($scheme[$name])) {
-            throw new SimpleCrudException("The field '{$name}' does not exist in the table {$table->name}");
+            throw new SimpleCrudException(sprintf('The field "%s" does not exist in the table "%s"', $name, $table->getName()));
         }
 
         $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;

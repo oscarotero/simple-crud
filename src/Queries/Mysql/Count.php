@@ -43,7 +43,7 @@ class Count extends Query
      */
     public function __toString()
     {
-        $query = "SELECT COUNT(*) FROM `{$this->table->name}`";
+        $query = "SELECT COUNT(*) FROM `{$this->table->getName()}`";
 
         $query .= $this->fromToString();
         $query .= $this->whereToString();

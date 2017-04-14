@@ -20,7 +20,7 @@ class Insert extends BaseInsert
 
         $fields = array_keys($this->data);
 
-        $query = "INSERT OR REPLACE INTO `{$this->table->name}`";
+        $query = "INSERT OR REPLACE INTO `{$this->table->getName()}`";
         $query .= ' (`'.implode('`, `', $fields).'`)';
         $query .= ' VALUES (:'.implode(', :', $fields).')';
 

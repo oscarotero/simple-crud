@@ -28,7 +28,7 @@ class Update extends Query
 
         if (is_array($prepared)) {
             foreach ($this->data as $field => $value) {
-                $prepared[$field] = $this->table->fields[$field]->dataFromDatabase($value);
+                $prepared[$field] = $this->table->$field->dataFromDatabase($value);
             }
         }
 
@@ -68,7 +68,7 @@ class Update extends Query
      */
     public function __toString()
     {
-        $query = "UPDATE `{$this->table->name}`";
+        $query = "UPDATE `{$this->table->getName()}`";
         $query .= ' SET '.static::buildFields(array_keys($this->data));
 
         $query .= $this->whereToString();

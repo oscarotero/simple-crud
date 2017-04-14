@@ -59,7 +59,7 @@ class Sum extends Query
      */
     public function __toString()
     {
-        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->table->name}`";
+        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->table->getName()}`";
 
         $query .= $this->fromToString();
         $query .= $this->whereToString();

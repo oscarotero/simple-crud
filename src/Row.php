@@ -33,7 +33,7 @@ class Row extends AbstractRow
     public function __debugInfo()
     {
         return [
-            'table' => $this->getTable()->name,
+            'table' => $this->getTable()->getName(),
             'values' => $this->values,
         ];
     }
@@ -184,11 +184,11 @@ class Row extends AbstractRow
 
         $table = $this->getTable();
 
-        if (!empty($bannedEntities) && in_array($table->name, $bannedEntities)) {
+        if (!empty($bannedEntities) && in_array($table->getName(), $bannedEntities)) {
             return;
         }
 
-        $bannedEntities[] = $table->name;
+        $bannedEntities[] = $table->getName();
         $data = $this->values;
 
         foreach ($this->relations as $name => $value) {
@@ -248,11 +248,11 @@ class Row extends AbstractRow
         $relationTable = $row->getTable();
         $relations = $table->getScheme()['relations'];
 
-        if (!isset($relations[$relationTable->name])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->name, $relationTable->name));
+        if (!isset($relations[$relationTable->getName()])) {
+            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
         }
 
-        $relation = $relations[$relationTable->name];
+        $relation = $relations[$relationTable->getName()];
 
         if ($relation[0] === Scheme::HAS_ONE) {
             $row->relate($this);
@@ -268,13 +268,13 @@ class Row extends AbstractRow
             $row->{$relation[1]} = $this->id;
             $row->save();
 
-            if (isset($this->relations[$relationTable->name])) {
-                $this->relations[$relationTable->name][] = $row;
+            if (isset($this->relations[$relationTable->getName()])) {
+                $this->relations[$relationTable->getName()][] = $row;
             }
 
-            if ($table->name !== $relationTable->name) {
+            if ($table->getName() !== $relationTable->getName()) {
                 $cache = $row->getCache();
-                $cache[$table->name] = $this;
+                $cache[$table->getName()] = $this;
                 $row->setCache($cache);
             }
 
@@ -301,8 +301,8 @@ class Row extends AbstractRow
                 ])
                 ->run();
 
-            if (isset($this->relations[$relationTable->name])) {
-                $this->relations[$relationTable->name][] = $row;
+            if (isset($this->relations[$relationTable->getName()])) {
+                $this->relations[$relationTable->getName()][] = $row;
             }
         }
     }
@@ -320,11 +320,11 @@ class Row extends AbstractRow
         $relationTable = $row->getTable();
         $relations = $table->getScheme()['relations'];
 
-        if (!isset($relations[$relationTable->name])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->name, $relationTable->name));
+        if (!isset($relations[$relationTable->getName()])) {
+            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
         }
 
-        $relation = $relations[$relationTable->name];
+        $relation = $relations[$relationTable->getName()];
 
         if ($relation[0] === Scheme::HAS_ONE) {
             $row->unrelate($this);
@@ -338,13 +338,13 @@ class Row extends AbstractRow
                 $row->save();
             }
 
-            if (isset($this->relations[$relationTable->name])) {
-                unset($this->relations[$relationTable->name][$row->id]);
+            if (isset($this->relations[$relationTable->getName()])) {
+                unset($this->relations[$relationTable->getName()][$row->id]);
             }
 
-            if ($table->name !== $relationTable->name) {
+            if ($table->getName() !== $relationTable->getName()) {
                 $cache = $row->getCache();
-                $cache[$table->name] = new NullValue();
+                $cache[$table->getName()] = new NullValue();
                 $row->setCache($cache);
             }
 
@@ -361,11 +361,11 @@ class Row extends AbstractRow
                 ->run();
 
             unset($this->relations[$relation[1]]);
-            unset($this->relations[$relationTable->name][$row->id]);
+            unset($this->relations[$relationTable->getName()][$row->id]);
 
             $cache = $row->getCache();
             unset($cache[$relation[1]]);
-            unset($cache[$table->name][$this->id]);
+            unset($cache[$table->getName()][$this->id]);
             $row->setCache($cache);
         }
     }
@@ -382,15 +382,15 @@ class Row extends AbstractRow
         $table = $this->getTable();
         $relations = $table->getScheme()['relations'];
 
-        if (!isset($relations[$relationTable->name])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->name, $relationTable->name));
+        if (!isset($relations[$relationTable->getName()])) {
+            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
         }
 
-        $relation = $relations[$relationTable->name];
+        $relation = $relations[$relationTable->getName()];
 
         if ($relation[0] === Scheme::HAS_ONE) {
             $this->{$relation[1]} = null;
-            $this->relations[$relationTable->name] = new NullValue();
+            $this->relations[$relationTable->getName()] = new NullValue();
 
             return $this->save();
         }
@@ -403,7 +403,7 @@ class Row extends AbstractRow
                 ->by($relation[1], $this->id)
                 ->run();
 
-            $this->relations[$relationTable->name] = $relationTable->createCollection();
+            $this->relations[$relationTable->getName()] = $relationTable->createCollection();
 
             return $this;
         }
@@ -416,8 +416,8 @@ class Row extends AbstractRow
                 ->by($relation[2], $this->id)
                 ->run();
 
-            $this->relations[$bridge->name] = $bridge->createCollection();
-            $this->relations[$relationTable->name] = $relationTable->createCollection();
+            $this->relations[$bridge->getName()] = $bridge->createCollection();
+            $this->relations[$relationTable->getName()] = $relationTable->createCollection();
         }
     }
 }

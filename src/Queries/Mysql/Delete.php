@@ -27,7 +27,7 @@ class Delete extends Query
      */
     public function __toString()
     {
-        $query = "DELETE FROM `{$this->table->name}`";
+        $query = "DELETE FROM `{$this->table->getName()}`";
 
         $query .= $this->whereToString();
         $query .= $this->limitToString();

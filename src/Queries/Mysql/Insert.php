@@ -27,7 +27,7 @@ class Insert extends Query
 
         if (is_array($prepared)) {
             foreach ($this->data as $field => $value) {
-                $prepared[$field] = $this->table->fields[$field]->dataFromDatabase($value);
+                $prepared[$field] = $this->table->$field->dataFromDatabase($value);
             }
         }
 
@@ -59,7 +59,7 @@ class Insert extends Query
 
         $id = $this->table->getDatabase()->lastInsertId();
 
-        return $this->table->fields['id']->dataFromDatabase($id);
+        return $this->table->id->dataFromDatabase($id);
     }
 
     /**
@@ -82,12 +82,12 @@ class Insert extends Query
     public function __toString()
     {
         if (empty($this->data)) {
-            return "INSERT INTO `{$this->table->name}` (`id`) VALUES (NULL)";
+            return "INSERT INTO `{$this->table->getName()}` (`id`) VALUES (NULL)";
         }
 
         $fields = array_keys($this->data);
 
-        $query = "INSERT INTO `{$this->table->name}`";
+        $query = "INSERT INTO `{$this->table->getName()}`";
         $query .= ' (`'.implode('`, `', $fields).'`)';
         $query .= ' VALUES (:'.implode(', :', $fields).')';
 

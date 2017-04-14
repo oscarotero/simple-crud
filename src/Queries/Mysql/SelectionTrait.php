@@ -82,17 +82,17 @@ trait SelectionTrait
     {
         if (is_array($value)) {
             if (empty($value)) {
-                return $this->where("`{$this->table->name}`.`{$field}` IS NULL");
+                return $this->where("`{$this->table->getName()}`.`{$field}` IS NULL");
             }
 
-            return $this->where("`{$this->table->name}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
+            return $this->where("`{$this->table->getName()}`.`{$field}` IN (:{$field})", [":{$field}" => $value]);
         }
 
         if ($value === null) {
-            return $this->where("`{$this->table->name}`.`{$field}` IS NULL");
+            return $this->where("`{$this->table->getName()}`.`{$field}` IS NULL");
         }
 
-        return $this->where("`{$this->table->name}`.`{$field}` = :{$field}", [":{$field}" => $value]);
+        return $this->where("`{$this->table->getName()}`.`{$field}` = :{$field}", [":{$field}" => $value]);
     }
 
     /**

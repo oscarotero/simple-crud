@@ -50,8 +50,8 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\Table', $post);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
 
-        $this->assertCount(7, $post->fields);
-        $this->assertEquals('post', $post->name);
+        $this->assertCount(7, $post->getScheme()['fields']);
+        $this->assertEquals('post', $post->getName());
         $this->assertEquals($this->db->getScheme()['post'], $post->getScheme());
     }
 
@@ -74,7 +74,7 @@ EOT
     public function testFields($name, $type)
     {
         $post = $this->db->post;
-        $field = $post->fields[$name];
+        $field = $post->$name;
 
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $field);
         $this->assertInstanceOf('SimpleCrud\\Fields\\'.$type, $field);

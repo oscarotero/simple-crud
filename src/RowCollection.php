@@ -23,7 +23,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     public function __debugInfo()
     {
         return [
-            'table' => $this->getTable()->name,
+            'table' => $this->getTable()->getName(),
             'rows' => $this->rows,
         ];
     }
@@ -84,11 +84,11 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
             $statement = $select();
 
             foreach ($this->rows as $row) {
-                $row->{$related->name} = $related->createCollection();
+                $row->{$related->getName()} = $related->createCollection();
             }
 
             while (($data = $statement->fetch())) {
-                $this->rows[$data[$relation[2]]]->{$related->name}[] = $result[] = $select->createRow($data);
+                $this->rows[$data[$relation[2]]]->{$related->getName()}[] = $result[] = $select->createRow($data);
             }
 
             return $result;
@@ -259,7 +259,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
         $table = $this->getTable();
 
-        if (!empty($bannedEntities) && in_array($table->name, $bannedEntities)) {
+        if (!empty($bannedEntities) && in_array($table->getName(), $bannedEntities)) {
             return;
         }
 
@@ -316,17 +316,17 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         }
 
         foreach ($rows1 as $row) {
-            $row->{$table2->name} = $table2->createCollection();
+            $row->{$table2->getName()} = $table2->createCollection();
         }
 
         foreach ($rows2 as $row) {
             $id = $row->{$relation[1]};
 
             if (isset($rows1[$id])) {
-                $rows1[$id]->{$table2->name}[] = $row;
-                $row->{$table1->name} = $rows1[$id];
+                $rows1[$id]->{$table2->getName()}[] = $row;
+                $row->{$table1->getName()} = $rows1[$id];
             } else {
-                $row->{$table1->name} = null;
+                $row->{$table1->getName()} = null;
             }
         }
     }

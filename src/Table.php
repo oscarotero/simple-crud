@@ -10,14 +10,13 @@ use Closure;
  */
 class Table implements ArrayAccess
 {
+    private $name;
     private $db;
     private $row;
     private $rowCollection;
     private $cache = [];
-
-    public $name;
-    public $fields = [];
-    public $queriesModifiers = [];
+    private $queriesModifiers = [];
+    private $fields = [];
 
     /**
      * Constructor.
@@ -119,6 +118,36 @@ class Table implements ArrayAccess
     }
 
     /**
+     * Magic method to get the Field instance of a table field
+     *
+     * @param string $name The field name
+     *
+     * @throws SimpleCrudException
+     *
+     * @return Fields\Field
+     */
+    public function __get($name)
+    {
+        if (!isset($this->fields[$name])) {
+            throw new SimpleCrudException(sprintf('The field "%s" does not exist in the table "%s"', $name, $this->name));
+        }
+
+        return $this->fields[$name];
+    }
+
+    /**
+     * Magic method to check if a field exists or not.
+     *
+     * @param string $name
+     *
+     * @return bool
+     */
+    public function __isset($name)
+    {
+        return isset($this->fields[$name]);
+    }
+
+    /**
      * Check if a row with a specific id exists.
      *
      * @see ArrayAccess
@@ -210,6 +239,16 @@ class Table implements ArrayAccess
             ->byId($offset)
             ->limit(1)
             ->run();
+    }
+
+    /**
+     * Returns the table name.
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
     }
 
     /**

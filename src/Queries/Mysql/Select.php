@@ -131,7 +131,7 @@ class Select extends Query
                 $table = $this->table->getDatabase()->{$join['table']};
                 $values = [];
 
-                foreach (array_keys($table->fields) as $name) {
+                foreach (array_keys($table->getScheme()['fields']) as $name) {
                     $field = sprintf('%s.%s', $join['table'], $name);
                     $values[$name] = $data[$field];
                 }
@@ -192,11 +192,11 @@ class Select extends Query
         $scheme = $this->table->getScheme();
 
         if (!isset($scheme['relations'][$table])) {
-            throw new SimpleCrudException(sprintf("The tables '%s' and '%s' are not related", $this->table->name, $table));
+            throw new SimpleCrudException(sprintf("The tables '%s' and '%s' are not related", $this->table->getName(), $table));
         }
 
         if ($scheme['relations'][$table][0] !== Scheme::HAS_ONE) {
-            throw new SimpleCrudException(sprintf("Invalid %s JOIN between the tables '%s' and '%s'", $join, $this->table->name, $table));
+            throw new SimpleCrudException(sprintf("Invalid %s JOIN between the tables '%s' and '%s'", $join, $this->table->getName(), $table));
         }
 
         if (!isset($this->join[$join])) {
@@ -236,16 +236,16 @@ class Select extends Query
         }
 
         $query = 'SELECT';
-        $query .= ' '.static::buildFields($this->table->name, array_keys($this->table->fields));
+        $query .= ' '.static::buildFields($this->table->getName(), array_keys($this->table->getScheme()['fields']));
 
         foreach ($this->join as $joins) {
             foreach ($joins as $join) {
-                $query .= ', '.static::buildFields($join['table'], array_keys($this->table->getDatabase()->{$join['table']}->fields), true);
+                $query .= ', '.static::buildFields($join['table'], array_keys($this->table->getDatabase()->{$join['table']}->getScheme()['fields']), true);
             }
         }
 
         $query .= $this->fieldsToString();
-        $query .= sprintf(' FROM `%s`', $this->table->name);
+        $query .= sprintf(' FROM `%s`', $this->table->getName());
         $query .= $this->fromToString();
 
         foreach ($this->join as $type => $joins) {
@@ -257,7 +257,7 @@ class Select extends Query
                     $type,
                     $join['table'],
                     $join['table'],
-                    $this->table->name,
+                    $this->table->getName(),
                     $relation[1],
                     empty($join['on']) ? '' : sprintf(' AND (%s)', $join['on'])
                 );

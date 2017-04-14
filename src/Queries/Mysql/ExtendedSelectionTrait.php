@@ -58,18 +58,18 @@ trait ExtendedSelectionTrait
         $table = $row->getTable();
         $scheme = $this->table->getScheme();
 
-        if (!isset($scheme['relations'][$table->name])) {
-            throw new SimpleCrudException(sprintf('The tables %s and %s are no related', $table->name, $this->table->name));
+        if (!isset($scheme['relations'][$table->getName()])) {
+            throw new SimpleCrudException(sprintf('The tables %s and %s are no related', $table->getName(), $this->table->getName()));
         }
 
-        $relation = $scheme['relations'][$table->name];
+        $relation = $scheme['relations'][$table->getName()];
 
         switch ($relation[0]) {
             case Scheme::HAS_ONE:
                 return $this->by($relation[1], $row->id);
 
             case Scheme::HAS_MANY:
-                if ($table->name === $this->table->name) {
+                if ($table->getName() === $this->table->getName()) {
                     return $this->by($relation[1], $row->id);
                 }
 
@@ -77,17 +77,17 @@ trait ExtendedSelectionTrait
 
             case Scheme::HAS_MANY_TO_MANY:
                 $this->from($relation[1]);
-                $this->from($table->name);
+                $this->from($table->getName());
 
                 $this->fields[] = sprintf('`%s`.`%s`', $relation[1], $relation[3]);
-                $this->where(sprintf('`%s`.`%s` = `%s`.`id`', $relation[1], $relation[2], $this->table->name));
-                $this->where(sprintf('`%s`.`%s` = `%s`.`id`', $relation[1], $relation[3], $table->name));
-                $this->where(sprintf('`%s`.`id` IN (:%s)', $table->name, $relation[3]), [':'.$relation[3] => $row->id]);
+                $this->where(sprintf('`%s`.`%s` = `%s`.`id`', $relation[1], $relation[2], $this->table->getName()));
+                $this->where(sprintf('`%s`.`%s` = `%s`.`id`', $relation[1], $relation[3], $table->getName()));
+                $this->where(sprintf('`%s`.`id` IN (:%s)', $table->getName(), $relation[3]), [':'.$relation[3] => $row->id]);
 
                 return $this;
 
             default:
-                throw new SimpleCrudException(sprintf('Invalid relation type between %s and %s', $table->name, $this->table->name));
+                throw new SimpleCrudException(sprintf('Invalid relation type between %s and %s', $table->getName(), $this->table->getName()));
         }
     }
 
