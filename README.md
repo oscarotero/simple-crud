@@ -404,6 +404,7 @@ The purpose of the `SimpleCrud\Fields` classes is to convert the data from/to th
 * Json: To store json structures.
 * Serializable: To store arrays or any other serializable data structure.
 * Set: Manages multiple values. For example: ['red', 'blue', 'green'] will be stored as "red,blue,green" in database.
+* Other advanced fields can be found here: https://github.com/oscarotero/simple-crud-extra-fields
 
 The Field classes are asigned automatically according with the field type in the database. There are also "special names" that have specific types asigned:
 
