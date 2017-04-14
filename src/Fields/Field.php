@@ -32,6 +32,10 @@ class Field
      */
     public function dataToDatabase($data)
     {
+        if ($data === '' && $this->getScheme()['null']) {
+            return;
+        }
+
         return $data;
     }
 
