@@ -14,7 +14,8 @@ class Field
     protected $config = [];
 
     /**
-     * {@inheritdoc}
+     * @param Table $table
+     * @param string $name
      */
     public function __construct(Table $table, $name)
     {
@@ -23,7 +24,11 @@ class Field
     }
 
     /**
-     * {@inheritdoc}
+     * Converts the data to save in the database
+     *
+     * @param mixed $data
+     *
+     * @return mixed
      */
     public function dataToDatabase($data)
     {
@@ -31,7 +36,11 @@ class Field
     }
 
     /**
-     * {@inheritdoc}
+     * Converts the data to be used
+     *
+     * @param mixed $data
+     *
+     * @return mixed
      */
     public function dataFromDatabase($data)
     {
@@ -39,7 +48,9 @@ class Field
     }
 
     /**
-     * {@inheritdoc}
+     * Returns the field scheme
+     *
+     * @return array
      */
     public function getScheme()
     {
@@ -47,7 +58,9 @@ class Field
     }
 
     /**
-     * {@inheritdoc}
+     * Returns a config value
+     *
+     * @return mixed
      */
     public function getConfig($name)
     {
@@ -55,10 +68,17 @@ class Field
     }
 
     /**
-     * {@inheritdoc}
+     * Edit a config value
+     *
+     * @param string $name
+     * @param mixed $value
+     *
+     * @return self
      */
     public function setConfig($name, $value)
     {
         $this->config[$name] = $value;
+
+        return $this;
     }
 }
