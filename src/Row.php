@@ -72,7 +72,8 @@ class Row extends AbstractRow
 
         //It's a relation
         if (array_key_exists($name, $this->relations)) {
-            return $this->relations[$name] ?: new NullValue();
+            $return = $this->relations[$name] ?: new NullValue();
+            return $return;
         }
 
         //It's a localizable field
@@ -90,12 +91,15 @@ class Row extends AbstractRow
         $scheme = $this->getTable()->getScheme();
 
         if (isset($scheme['relations'][$name])) {
-            return ($this->relations[$name] = call_user_func([$this, $name])->run()) ?: new NullValue();
+            $return = call_user_func([$this, $name])->run() ?: new NullValue();
+            $this->relations[$name] = $return;
+            return $return;
         }
 
         //Exists as a function
         if (method_exists($this, $name)) {
-            return $this->$name();
+            $return = $this->$name();
+            return $return;
         }
 
         throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
