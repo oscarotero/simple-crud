@@ -4,6 +4,7 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
 use SimpleCrud\Table;
+use SimpleCrud\Fields\Field;
 
 /**
  * Manages a database update query.
@@ -56,8 +57,8 @@ class Update extends Query
     {
         $marks = $this->marks;
 
-        foreach ($this->data as $field => $value) {
-            $marks[":__{$field}"] = $value;
+        foreach ($this->data as $fieldName => $value) {
+            $marks[":__{$fieldName}"] = $value;
         }
 
         return $this->table->getDatabase()->execute((string) $this, $marks);
@@ -69,8 +70,7 @@ class Update extends Query
     public function __toString()
     {
         $query = "UPDATE `{$this->table->getName()}`";
-        $query .= ' SET '.static::buildFields(array_keys($this->data));
-
+        $query .= ' SET '.static::buildFields(array_intersect_key($this->table->getFields(), $this->data));
         $query .= $this->whereToString();
         $query .= $this->limitToString();
 
@@ -80,16 +80,16 @@ class Update extends Query
     /**
      * Generates the data part of a UPDATE query.
      *
-     * @param array $fields
+     * @param Field[] $fields
      *
      * @return string
      */
-    protected static function buildFields(array $fields)
+    public static function buildFields(array $fields)
     {
         $query = [];
 
-        foreach ($fields as $field) {
-            $query[] = "`{$field}` = :__{$field}";
+        foreach ($fields as $fieldName => $field) {
+            $query[] = "`{$fieldName}` = ".$field->getValueExpression(":__{$fieldName}");
         }
 
         return implode(', ', $query);

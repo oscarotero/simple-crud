@@ -36,6 +36,7 @@ class FieldFactory implements FieldFactoryInterface
         'int' => 'Integer',
         'mediumint' => 'Integer',
         'set' => 'Set',
+        'point' => 'Point',
         'smallint' => 'Integer',
         'tinyint' => 'Integer',
         'year' => 'Integer',

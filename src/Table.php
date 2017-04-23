@@ -264,6 +264,16 @@ class Table implements ArrayAccess
     }
 
     /**
+     * Returns all fields.
+     *
+     * @return Fields\Field[]
+     */
+    public function getFields()
+    {
+        return $this->fields;
+    }
+
+    /**
      * Returns the table scheme.
      *
      * @return array

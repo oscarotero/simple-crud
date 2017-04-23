@@ -85,15 +85,15 @@ class Insert extends Query
             return "INSERT INTO `{$this->table->getName()}` (`id`) VALUES (NULL)";
         }
 
-        $fields = array_keys($this->data);
+        $fields = array_intersect_key($this->table->getFields(), $this->data);
 
         $query = "INSERT INTO `{$this->table->getName()}`";
-        $query .= ' (`'.implode('`, `', $fields).'`)';
-        $query .= ' VALUES (:'.implode(', :', $fields).')';
+        $query .= ' (`'.implode('`, `', array_keys($fields)).'`)';
+        $query .= ' VALUES ('.self::buildFields($fields).')';
 
         if ($this->duplications) {
             $query .= ' ON DUPLICATE KEY UPDATE';
-            $query .= ' id = LAST_INSERT_ID(id), '.static::buildFields($fields);
+            $query .= ' id = LAST_INSERT_ID(id), '.Update::buildFields($fields);
         }
 
         return $query;
@@ -110,8 +110,8 @@ class Insert extends Query
     {
         $query = [];
 
-        foreach ($fields as $field) {
-            $query[] = "`{$field}` = :{$field}";
+        foreach ($fields as $fieldName => $field) {
+            $query[] = $field->getValueExpression(":{$fieldName}");
         }
 
         return implode(', ', $query);

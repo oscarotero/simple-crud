@@ -236,11 +236,11 @@ class Select extends Query
         }
 
         $query = 'SELECT';
-        $query .= ' '.static::buildFields($this->table->getName(), array_keys($this->table->getScheme()['fields']));
+        $query .= ' '.static::buildFields($this->table);
 
         foreach ($this->join as $joins) {
             foreach ($joins as $join) {
-                $query .= ', '.static::buildFields($join['table'], array_keys($this->table->getDatabase()->{$join['table']}->getScheme()['fields']), true);
+                $query .= ', '.static::buildFields($this->table->getDatabase()->{$join['table']}, true);
             }
         }
 
@@ -278,22 +278,18 @@ class Select extends Query
     /**
      * Generates the fields/tables part of a SELECT query.
      *
-     * @param string $table
-     * @param array  $fields
-     * @param bool   $rename
+     * @param Table $table
+     * @param bool  $rename
      *
      * @return string
      */
-    protected static function buildFields($table, array $fields, $rename = false)
+    protected static function buildFields(Table $table, $rename = false)
     {
+        $tableName = $table->getName();
         $query = [];
 
-        foreach ($fields as $field) {
-            if ($rename) {
-                $query[] = "`{$table}`.`{$field}` as `{$table}.{$field}`";
-            } else {
-                $query[] = "`{$table}`.`{$field}`";
-            }
+        foreach ($table->getFields() as $fieldName => $field) {
+            $query[] = $field->getSelectExpression($rename ? "{$tableName}.{$fieldName}" : null);
         }
 
         return implode(', ', $query);
