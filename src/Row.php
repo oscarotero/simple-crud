@@ -63,7 +63,7 @@ class Row extends AbstractRow
      *
      * @param string $name
      */
-    public function __get($name)
+    public function &__get($name)
     {
         //It's a field
         if (array_key_exists($name, $this->values)) {
