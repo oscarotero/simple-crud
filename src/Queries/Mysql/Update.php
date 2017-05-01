@@ -70,7 +70,7 @@ class Update extends Query
     public function __toString()
     {
         $query = "UPDATE `{$this->table->getName()}`";
-        $query .= ' SET '.static::buildFields(array_intersect_key($this->table->getFields(), $this->data));
+        $query .= ' SET '.static::buildFields(array_intersect_key($this->table->getFields(), $this->data), '__');
         $query .= $this->whereToString();
         $query .= $this->limitToString();
 
@@ -81,15 +81,16 @@ class Update extends Query
      * Generates the data part of a UPDATE query.
      *
      * @param Field[] $fields
+     * @param string  $prefix
      *
      * @return string
      */
-    public static function buildFields(array $fields)
+    public static function buildFields(array $fields, $prefix = '')
     {
         $query = [];
 
         foreach ($fields as $fieldName => $field) {
-            $query[] = "`{$fieldName}` = ".$field->getValueExpression(":__{$fieldName}");
+            $query[] = "`{$fieldName}` = ".$field->getValueExpression(":{$prefix}{$fieldName}");
         }
 
         return implode(', ', $query);
