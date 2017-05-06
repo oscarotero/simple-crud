@@ -53,8 +53,28 @@ class Point extends Field
      */
     public function dataToDatabase($data)
     {
-        if (is_array($data)) {
+        if (self::isValid($data)) {
             return 'POINT('.implode(' ', $data).')';
         }
+    }
+
+    /**
+     * Check whether the value is valid before save in the database
+     *
+     * @param mixed $data
+     *
+     * @return bool
+     */
+    private static function isValid($data)
+    {
+        if (!is_array($data)) {
+            return false;
+        }
+
+        if (!isset($data[0]) || !isset($data[1]) || count($data) > 2) {
+            return false;
+        }
+
+        return is_numeric($data[0]) && is_numeric($data[1]);
     }
 }
