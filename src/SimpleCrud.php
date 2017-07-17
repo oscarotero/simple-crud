@@ -22,7 +22,7 @@ class SimpleCrud
     protected $fieldFactory;
 
     /**
-     * Set the connection and the tableFactory.
+     * Set the connection.
      *
      * @param PDO $connection
      */
