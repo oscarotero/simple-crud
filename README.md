@@ -575,7 +575,7 @@ namespace MyModels;
 
 use SimpleCrud\Table;
 
-class Posts extends Table
+class Post extends Table
 {
     public function selectLatest()
     {
@@ -605,7 +605,7 @@ namespace MyModels;
 
 use SimpleCrud\Table;
 
-class Posts extends Table
+class Post extends Table
 {
     public function dataToDatabase (array $data, $new)
     {
@@ -637,7 +637,7 @@ namespace MyModels;
 
 use SimpleCrud\Table;
 
-class Posts extends Table
+class Post extends Table
 {
     public function init()
     {
