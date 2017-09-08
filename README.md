@@ -103,23 +103,23 @@ Use `ArrayAccess` interface to access to the data using the `id`:
 
 ```php
 //Get the post id = 3;
-$post = $db->posts[3];
+$post = $db->post[3];
 
 //Check if a row exists
-if (isset($db->posts[3])) {
+if (isset($db->post[3])) {
     echo 'exists';
 }
 
 //Delete a post
-unset($db->posts[3]);
+unset($db->post[3]);
 
 //Update a post
-$db->posts[3] = [
+$db->post[3] = [
     'title' => 'Hello world'
 ];
 
 //Insert a new post
-$db->posts[] = [
+$db->post[] = [
     'title' => 'Hello world 2'
 ];
 ```
@@ -165,7 +165,7 @@ $updateQuery
     ->limit(1);
 
 //get the query as string
-echo $updateQuery; //UPDATE `posts` ...
+echo $updateQuery; //UPDATE `post` ...
 
 //execute the query and returns a PDOStatement with the result
 $statement = $updateQuery();
@@ -234,7 +234,7 @@ echo $post->title;
 //Get the post id = 23
 $post = $db->post[23];
 
-//Select the category related with this posts
+//Select the category related with this post
 $category = $db->category
     ->select()
     ->relatedWith($post)
