@@ -262,11 +262,11 @@ Both `Row` and `RowCollection` can load automatically other related data. Just u
 //Get the category id=34
 $category = $db->category[34];
 
-//Load the post of this category
-$post = $category->post;
+//Load the posts of this category
+$posts = $category->post;
 
 //This is equivalent to:
-$post = $db->post
+$posts = $db->post
     ->select()
     ->relatedWith($category)
     ->run();
