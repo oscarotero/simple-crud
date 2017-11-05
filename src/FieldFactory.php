@@ -32,6 +32,7 @@ class FieldFactory implements FieldFactoryInterface
         'boolean' => 'Boolean',
         'date' => 'Date',
         'datetime' => 'Datetime',
+        'decimal' => 'Decimal',
         'float' => 'Decimal',
         'int' => 'Integer',
         'mediumint' => 'Integer',
