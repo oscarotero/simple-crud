@@ -98,8 +98,6 @@ class Insert extends Query
 
             $query .= ' ON DUPLICATE KEY UPDATE';
             $query .= ' id = LAST_INSERT_ID(id), '.Update::buildFields($fields);
-
-            var_dump($query);
         }
 
         return $query;
