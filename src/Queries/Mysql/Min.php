@@ -7,16 +7,16 @@ use SimpleCrud\Table;
 use PDO;
 
 /**
- * Manages a database select sum query in Mysql databases.
+ * Manages a database select min query in Mysql databases.
  */
-class Sum extends Query
+class Min extends Query
 {
     use ExtendedSelectionTrait;
 
     protected $field;
 
     /**
-     * Set the field name to sum over.
+     * Set the field name to maximize over.
      *
      * @param string $field
      *
@@ -60,7 +60,7 @@ class Sum extends Query
      */
     public function __toString()
     {
-        $query = "SELECT SUM(`{$this->field}`) FROM `{$this->table->getName()}`";
+        $query = "SELECT MIN(`{$this->field}`) FROM `{$this->table->getName()}`";
 
         $query .= $this->fromToString();
         $query .= $this->whereToString();
