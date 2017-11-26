@@ -5,11 +5,12 @@ namespace SimpleCrud\Queries\Mysql;
 use SimpleCrud\Queries\Query;
 use SimpleCrud\Table;
 
+
 /**
- * Manages a database select sum query in Mysql databases.
+ * Manages a database select max query in Mysql databases.
  */
-class Sum extends Query
+class Max extends Query
 {
     use AggregationTrait;
-    const AGGREGATION_FUNCTION = 'SUM';
+    const AGGREGATION_FUNCTION = 'MAX';
 }
