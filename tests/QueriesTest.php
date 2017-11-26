@@ -115,9 +115,9 @@ EOT
 
         $query = $this->db->post->sum()
             ->field('id')
-            ->where('id > 3');
+            ->where('id < 3');
 
-        $this->assertEquals('SELECT SUM(`id`) FROM `post` WHERE (id > 3)', (string) $query);
+        $this->assertEquals('SELECT SUM(`id`) FROM `post` WHERE (id < 3)', (string) $query);
         $this->assertInternalType('int', $query->run());
 
         $query = $this->db->post->sum()
