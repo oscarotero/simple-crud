@@ -34,6 +34,7 @@ class FieldFactory implements FieldFactoryInterface
         'datetime' => 'Datetime',
         'decimal' => 'Decimal',
         'float' => 'Decimal',
+        'real' => 'Decimal', //sqlite
         'int' => 'Integer',
         'mediumint' => 'Integer',
         'set' => 'Set',

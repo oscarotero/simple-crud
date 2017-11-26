@@ -20,7 +20,8 @@ CREATE TABLE "post" (
     `publishedAt` TEXT,
     `isActive`    INTEGER,
     `hasContent`  INTEGER,
-    `type`        TEXT
+    `type`        TEXT,
+    `rating`      REAL
 );
 EOT
             );
@@ -50,7 +51,7 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\Table', $post);
         $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
 
-        $this->assertCount(7, $post->getScheme()['fields']);
+        $this->assertCount(8, $post->getScheme()['fields']);
         $this->assertEquals('post', $post->getName());
         $this->assertEquals($this->db->getScheme()['post'], $post->getScheme());
     }
@@ -65,6 +66,7 @@ EOT
             ['isActive', 'Boolean'],
             ['hasContent', 'Boolean'],
             ['type', 'Field'],
+            ['rating', 'Decimal'],
         ];
     }
 

@@ -36,9 +36,10 @@ trait AggregationTrait
     public function run()
     {
         $result = $this->__invoke()->fetch();
-        $num = (float) $result[0];
+        $fnum = (float) $result[0];
+        $inum = (int) $fnum;
 
-        return ($num % 1 === 0) ? (int) $num : $num;
+        return ($fnum == $inum) ? $inum : $fnum;
     }
 
     /**
