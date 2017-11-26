@@ -31,14 +31,14 @@ trait AggregationTrait
     /**
      * Run the query and return the value.
      * 
-     * @return int
+     * @return int|float
      */
     public function run()
     {
         $result = $this->__invoke()->fetch();
-        $field = $this->table->{$this->field};
-        
-        return $field->dataFromDatabase($result[0]);
+        $num = (float) $result[0];
+
+        return ($num % 1 === 0) ? (int) $num : $num;
     }
 
     /**
