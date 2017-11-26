@@ -249,66 +249,110 @@ class Row extends AbstractRow
     public function relate(Row $row)
     {
         $table = $this->getTable();
-        $relationTable = $row->getTable();
         $relations = $table->getScheme()['relations'];
+        $rows = [];
 
-        if (!isset($relations[$relationTable->getName()])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
+        foreach (func_get_args() as $row) {
+            $relationTable = $row->getTable();
+
+            if (!isset($relations[$relationTable->getName()])) {
+                throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
+            }
+
+            $relation = $relations[$relationTable->getName()];
+
+            if (!isset($relations[$relation[0]])) {
+                $relations[$relation[0]] = [];
+            }
+
+            $relations[$relation[0]][] = [
+                $relation,
+                $relationTable,
+                $row
+            ];
         }
 
-        $relation = $relations[$relationTable->getName()];
+        if (isset($relations[Scheme::HAS_ONE])) {
+            foreach ($relations[Scheme::HAS_ONE] as $r) {
+                list($relation, $relationTable, $row) = $r;
 
-        if ($relation[0] === Scheme::HAS_ONE) {
-            $row->relate($this);
+                if ($row->id === null) {
+                    $row->save();
+                }
 
-            return $this;
+                $this->{$relation[1]} = $row->id;
+                $this->relations[$relationTable->getName()] = $row;
+            }
+
+            $this->save();
+
+            foreach ($relations[Scheme::HAS_ONE] as $r) {
+                list($relation, $relationTable, $row) = $r;
+
+                if ($table->getName() !== $relationTable->getName()) {
+                    $cache = $row->getCache();
+
+                    if (isset($cache[$table->getName()])) {
+                        $cache[$table->getName()][] = $this;
+                        $row->setCache($cache);
+                    }
+                }
+            }
         }
 
-        if ($relation[0] === Scheme::HAS_MANY) {
+        if (isset($relations[Scheme::HAS_MANY])) {
             if ($this->id === null) {
                 $this->save();
             }
 
-            $row->{$relation[1]} = $this->id;
-            $row->save();
+            foreach ($relations[Scheme::HAS_MANY] as $r) {
+                list($relation, $relationTable, $row) = $r;
 
-            if (isset($this->relations[$relationTable->getName()])) {
-                $this->relations[$relationTable->getName()][] = $row;
-            }
-
-            if ($table->getName() !== $relationTable->getName()) {
-                $cache = $row->getCache();
-                $cache[$table->getName()] = $this;
-                $row->setCache($cache);
-            }
-
-            return $this;
-        }
-
-        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
-            $bridge = $this->getDatabase()->{$relation[1]};
-
-            if ($row->id === null) {
+                $row->{$relation[1]} = $this->id;
                 $row->save();
-            }
 
+                if (isset($this->relations[$relationTable->getName()])) {
+                    $this->relations[$relationTable->getName()][] = $row;
+                }
+
+                if ($table->getName() !== $relationTable->getName()) {
+                    $cache = $row->getCache();
+                    $cache[$table->getName()] = $this;
+                    $row->setCache($cache);
+                }
+            }
+        }
+
+        if (isset($relations[Scheme::HAS_MANY_TO_MANY])) {
             if ($this->id === null) {
                 $this->save();
             }
 
-            $bridge
-                ->insert()
-                ->duplications()
-                ->data([
-                    $relation[2] => $this->id,
-                    $relation[3] => $row->id,
-                ])
-                ->run();
+            foreach ($relations[Scheme::HAS_MANY_TO_MANY] as $r) {
+                list($relation, $relationTable, $row) = $r;
 
-            if (isset($this->relations[$relationTable->getName()])) {
-                $this->relations[$relationTable->getName()][] = $row;
+                $bridge = $this->getDatabase()->{$relation[1]};
+
+                if ($row->id === null) {
+                    $row->save();
+                }
+
+                $bridge
+                    ->insert()
+                    ->duplications()
+                    ->data([
+                        $relation[2] => $this->id,
+                        $relation[3] => $row->id,
+                    ])
+                    ->run();
+
+                if (isset($this->relations[$relationTable->getName()])) {
+                    $this->relations[$relationTable->getName()][] = $row;
+                }
             }
         }
+
+        return $this;
     }
 
     /**
