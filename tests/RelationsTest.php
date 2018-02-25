@@ -162,8 +162,7 @@ EOT
         $a11 = $db->category->create(['name' => 'A11'])->save();
         $a21 = $db->category->create(['name' => 'A21'])->save();
 
-        $a->relate($a1);
-        $a->relate($a2);
+        $a->relate($a1, $a2);
         $a1->relate($a11);
         $a2->relate($a21);
 
@@ -187,8 +186,7 @@ EOT
 
         $post = $db->post->create(['title' => 'second']);
 
-        $post->relate($category1);
-        $post->relate($category2);
+        $post->relate($category1, $category2);
 
         $this->assertCount(2, $post->category);
 

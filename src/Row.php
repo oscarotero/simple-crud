@@ -242,7 +242,7 @@ class Row extends AbstractRow
     /**
      * Relate this row with other row and save the relation.
      *
-     * @param Row $row
+     * @param Row ...$row
      *
      * @return $this
      */
