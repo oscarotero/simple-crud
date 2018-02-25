@@ -42,6 +42,7 @@ class FieldFactory implements FieldFactoryInterface
         'smallint' => 'Integer',
         'tinyint' => 'Integer',
         'year' => 'Integer',
+        'json' => 'Json',
     ];
 
     /**
