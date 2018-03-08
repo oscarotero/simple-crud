@@ -25,7 +25,10 @@ class Update extends Query
      */
     public function data(array $data, array &$prepared = null)
     {
-        $this->data = $this->table->prepareDataToDatabase($data, false);
+        $this->data = array_intersect_key(
+            $this->table->prepareDataToDatabase($data, false),
+            $data
+        );
 
         if (is_array($prepared)) {
             foreach ($this->data as $field => $value) {
