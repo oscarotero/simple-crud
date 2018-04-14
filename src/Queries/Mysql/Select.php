@@ -24,6 +24,7 @@ class Select extends Query
     protected $statement;
     protected $mode = 2;
     protected $page;
+    protected $calcFoundRows = false;
 
     /**
      * Change the mode to returns just the first row.
@@ -45,6 +46,22 @@ class Select extends Query
     public function all()
     {
         $this->mode = self::MODE_ALL;
+
+        return $this;
+    }
+
+    /**
+     * Adds a LIMIT clause.
+     *
+     * @param int  $limit
+     * @param bool $calcFoundRows
+     *
+     * @return self
+     */
+    public function limit($limit, $calcFoundRows = false)
+    {
+        $this->limit = $limit;
+        $this->calcFoundRows = (bool) $calcFoundRows;
 
         return $this;
     }
@@ -85,6 +102,15 @@ class Select extends Query
         }
 
         $result = $this->table->createCollection();
+
+        if ($this->calcFoundRows) {
+            $total = $this->table->getDatabase()->execute((string) 'SELECT FOUND_ROWS()')->fetch();
+            $total = (int) $total[0];
+
+            $result->setMethod('getTotal', function () use ($total) {
+                return $total;
+            });
+        }
 
         while (($row = $statement->fetch())) {
             $result[] = $this->createRow($row);
@@ -236,6 +262,11 @@ class Select extends Query
         }
 
         $query = 'SELECT';
+
+        if ($this->calcFoundRows) {
+            $query .= ' SQL_CALC_FOUND_ROWS';
+        }
+
         $query .= ' '.static::buildFields($this->table);
 
         foreach ($this->join as $joins) {
