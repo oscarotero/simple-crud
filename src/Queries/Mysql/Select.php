@@ -104,7 +104,7 @@ class Select extends Query
         $result = $this->table->createCollection();
 
         if ($this->calcFoundRows) {
-            $total = $this->table->getDatabase()->execute((string) 'SELECT FOUND_ROWS()')->fetch();
+            $total = $this->table->getDatabase()->execute('SELECT FOUND_ROWS()')->fetch();
             $total = (int) $total[0];
 
             $result->setMethod('getTotal', function () use ($total) {
