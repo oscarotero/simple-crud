@@ -60,6 +60,18 @@ EOT
         $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num` FROM `post` WHERE (title NOT NULL) AND (id = 1 OR id = 2) AND (`post`.`body` = :body) ORDER BY title LIMIT 3, 1', (string) $query);
     }
 
+    public function testSelectPage()
+    {
+        $query = $this->db->post->select()
+            ->one()
+            ->where('title NOT NULL')
+            ->where('id = 1 OR id = 2')
+            ->page(2, 5)
+            ->orderBy('title');
+
+        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num` FROM `post` WHERE (title NOT NULL) AND (id = 1 OR id = 2) ORDER BY title LIMIT 5, 5', (string) $query);
+    }
+
     public function testInsert()
     {
         $query = $this->db->post->insert()

@@ -103,9 +103,10 @@ class Select extends Query
 
         $result = $this->table->createCollection();
 
+        $total = null;
+
         if ($this->calcFoundRows) {
-            $total = $this->table->getDatabase()->execute('SELECT FOUND_ROWS()')->fetch();
-            $total = (int) $total[0];
+            $total = $this->getFoundRows();
 
             $result->setMethod('getTotal', function () use ($total) {
                 return $total;
@@ -118,7 +119,8 @@ class Select extends Query
 
         if ($this->page !== null) {
             $current = $this->page;
-            $next = $result->count() < $this->limit ? null : $current + 1;
+            // $next = $result->count() < $this->limit ? null : $current + 1;
+            $next = ($current * $this->limit) < $total ? $current + 1 : null;
             $prev = $current > 1 ? $current - 1 : null;
 
             $result->setMethod('getPage', function () use ($current) {
@@ -264,7 +266,7 @@ class Select extends Query
         $query = 'SELECT';
 
         if ($this->calcFoundRows) {
-            $query .= ' SQL_CALC_FOUND_ROWS';
+            $query .= ' '.static::buildFoundRows();
         }
 
         $query .= ' '.static::buildFields($this->table);
@@ -324,5 +326,25 @@ class Select extends Query
         }
 
         return implode(', ', $query);
+    }
+
+    /**
+     * Generates the SQL_CALC_FOUND_ROWS part of a SELECT query.
+     *
+     * @return string
+     */
+    protected static function buildFoundRows()
+    {
+        return 'SQL_CALC_FOUND_ROWS';
+    }
+
+    /**
+     * Returns the total rows found
+     * 
+     * @return int
+     */
+    protected function getFoundRows() {
+        $total = $this->table->getDatabase()->execute('SELECT FOUND_ROWS()')->fetch();
+        return (int) $total[0];
     }
 }
