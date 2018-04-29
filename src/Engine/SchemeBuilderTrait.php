@@ -1,36 +1,28 @@
 <?php
+declare(strict_types=1);
 
-namespace SimpleCrud\Scheme;
+namespace SimpleCrud\Engine;
 
 use SimpleCrud\SimpleCrud;
 
-/**
- * Base class used by all queries.
- */
-abstract class Scheme
+trait SchemeBuilderTrait
 {
-    const HAS_ONE = 1;
-    const HAS_MANY = 2;
-    const HAS_MANY_TO_MANY = 4;
+    private $db;
 
-    protected $db;
+    public static function buildScheme(SimpleCrud $db): array
+    {
+        return (new static($db))->detect();
+    }
 
-    /**
-     * Constructor.
-     *
-     * @param SimpleCrud $db
-     */
-    public function __construct(SimpleCrud $db)
+    private function __construct(SimpleCrud $db)
     {
         $this->db = $db;
     }
 
     /**
      * Return the database scheme.
-     * 
-     * @return array
      */
-    public function __invoke()
+    private function detect(): array
     {
         $scheme = [];
 
@@ -46,12 +38,12 @@ abstract class Scheme
 
             foreach ($scheme as $relTable => &$relInfo) {
                 if (isset($relInfo['fields'][$foreingKey])) {
-                    $info['relations'][$relTable] = [self::HAS_MANY, $foreingKey];
+                    $info['relations'][$relTable] = [SchemeInterface::HAS_MANY, $foreingKey];
 
                     if ($table === $relTable) {
-                        $relInfo['relations'][$table] = [self::HAS_MANY, $foreingKey];
+                        $relInfo['relations'][$table] = [SchemeInterface::HAS_MANY, $foreingKey];
                     } else {
-                        $relInfo['relations'][$table] = [self::HAS_ONE, $foreingKey];
+                        $relInfo['relations'][$table] = [SchemeInterface::HAS_ONE, $foreingKey];
                     }
                     continue;
                 }
@@ -66,8 +58,8 @@ abstract class Scheme
                     $relForeingKey = "{$relTable}_id";
 
                     if (isset($scheme[$bridge]['fields'][$foreingKey]) && isset($scheme[$bridge]['fields'][$relForeingKey])) {
-                        $info['relations'][$relTable] = [self::HAS_MANY_TO_MANY, $bridge, $foreingKey, $relForeingKey];
-                        $relInfo['relations'][$table] = [self::HAS_MANY_TO_MANY, $bridge, $relForeingKey, $foreingKey];
+                        $info['relations'][$relTable] = [SchemeInterface::HAS_MANY_TO_MANY, $bridge, $foreingKey, $relForeingKey];
+                        $relInfo['relations'][$table] = [SchemeInterface::HAS_MANY_TO_MANY, $bridge, $relForeingKey, $foreingKey];
                     }
                 }
             }
@@ -78,17 +70,11 @@ abstract class Scheme
 
     /**
      * Return all tables.
-     *
-     * @return array
      */
-    abstract protected function getTables();
+    abstract protected function getTables(): array;
 
     /**
      * Return the scheme of a table.
-     * 
-     * @param string $table
-     *
-     * @return array
      */
-    abstract protected function getTableFields($table);
+    abstract protected function getTableFields(string $table): array;
 }

@@ -1,14 +1,20 @@
 <?php
+declare(strict_types=1);
 
 namespace SimpleCrud;
 
+use Latitude\QueryBuilder\QueryFactory;
+use Latitude\QueryBuilder\Query;
 use Exception;
+use RuntimeException;
+use PDOStatement;
 use PDO;
 
 class SimpleCrud
 {
+    const ENGINE_MYSQL = 'mysql';
+    const ENGINE_SQLITE = 'sqlite';
     const ATTR_LOCALE = 'simplecrud.language';
-    const ATTR_UPLOADS = 'simplecrud.uploads';
 
     protected $connection;
     protected $scheme;
@@ -21,11 +27,6 @@ class SimpleCrud
     protected $queryFactory;
     protected $fieldFactory;
 
-    /**
-     * Set the connection.
-     *
-     * @param PDO $connection
-     */
     public function __construct(PDO $connection)
     {
         $this->connection = $connection;
@@ -34,12 +35,8 @@ class SimpleCrud
 
     /**
      * Set the database scheme.
-     * 
-     * @param array $scheme
-     * 
-     * @return self
      */
-    public function setScheme(array $scheme)
+    public function setScheme(array $scheme): self
     {
         $this->scheme = $scheme;
 
@@ -47,22 +44,38 @@ class SimpleCrud
     }
 
     /**
-     * Returns the database scheme.
-     * 
-     * @return array
+     * Get the engine type
      */
-    public function getScheme()
+    public function getEngineType(): string
+    {
+        $engine = $this->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        switch ($engine) {
+            case self::ENGINE_MYSQL:
+            case self::ENGINE_SQLITE:
+                return $engine;
+            
+            default:
+                throw new RuntimeException("Invalid engine type {$engine}");
+        }
+    }
+
+    /**
+     * Get the namespace for the engine used
+     */
+    public function getEngineNamespace(): string
+    {
+        return 'SimpleCrud\\Engine\\'.ucfirst($this->getEngineType()).'\\';
+    }
+
+    /**
+     * Returns the database scheme.
+     */
+    public function getScheme(): array
     {
         if ($this->scheme === null) {
-            $class = 'SimpleCrud\\Scheme\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME));
-
-            if (!class_exists($class)) {
-                throw new SimpleCrudException(sprintf('Scheme class "%s" not found', $class));
-            }
-
-            $factory = new $class($this);
-
-            $this->setScheme($factory());
+            $builder = $this->getEngineNamespace().'SchemeBuilder';
+            $this->setScheme($builder::buildScheme($this));
         }
 
         return $this->scheme;
@@ -70,22 +83,18 @@ class SimpleCrud
 
     /**
      * Define a callback executed for each query executed.
-     *
-     * @param callable|null $callback
      */
-    public function onExecute(callable $callback = null)
+    public function onExecute(callable $callback = null): self
     {
         $this->onExecute = $callback;
+
+        return $this;
     }
 
     /**
      * Set the TableFactory instance used to create all tables.
-     *
-     * @param TableFactory $tableFactory
-     * 
-     * @return self
      */
-    public function setTableFactory(TableFactory $tableFactory)
+    public function setTableFactory(TableFactory $tableFactory): self
     {
         $this->tableFactory = $tableFactory;
 
@@ -94,10 +103,8 @@ class SimpleCrud
 
     /**
      * Returns the TableFactory instance used.
-     *
-     * @return TableFactory
      */
-    public function getTableFactory()
+    public function getTableFactory(): TableFactory
     {
         if ($this->tableFactory === null) {
             return $this->tableFactory = (new TableFactory())->setAutocreate();
@@ -107,31 +114,13 @@ class SimpleCrud
     }
 
     /**
-     * Set the QueryFactory instance used by the tables.
-     *
-     * @param QueryFactory $queryFactory
-     *
-     * @return self
+     * Returns the QueryFactory instance used to create the queries.
      */
-    public function setQueryFactory(QueryFactory $queryFactory)
-    {
-        $this->queryFactory = $queryFactory;
-
-        return $this;
-    }
-
-    /**
-     * Returns the QueryFactory instance used by the tables.
-     *
-     * @return QueryFactory
-     */
-    public function getQueryFactory()
+    public function query(): QueryFactory
     {
         if ($this->queryFactory === null) {
-            $queryFactory = new QueryFactory();
-            $queryFactory->addNamespace('SimpleCrud\\Queries\\'.ucfirst($this->getAttribute(PDO::ATTR_DRIVER_NAME)).'\\');
-
-            return $this->queryFactory = $queryFactory;
+            $builder = $this->getEngineNamespace().'QueryFactoryBuilder';
+            $this->queryFactory = $builder::buildQueryFactory($this);
         }
 
         return $this->queryFactory;
@@ -139,12 +128,8 @@ class SimpleCrud
 
     /**
      * Set the FieldFactory instance used by the tables.
-     *
-     * @param FieldFactory $fieldFactory
-     *
-     * @return self
      */
-    public function setFieldFactory(FieldFactory $fieldFactory)
+    public function setFieldFactory(FieldFactory $fieldFactory): self
     {
         $this->fieldFactory = $fieldFactory;
 
@@ -153,10 +138,8 @@ class SimpleCrud
 
     /**
      * Returns the FieldFactory instance used by the tables.
-     *
-     * @return FieldFactory
      */
-    public function getFieldFactory()
+    public function getFieldFactory(): FieldFactory
     {
         if ($this->fieldFactory === null) {
             return $this->fieldFactory = new FieldFactory();
@@ -198,35 +181,18 @@ class SimpleCrud
     /**
      * Execute a query and returns the statement object with the result.
      *
-     * @param string $query The Mysql query to execute
-     * @param array  $marks The marks passed to the statement
+     * @param  string|Query $query
      *
      * @throws Exception On error preparing or executing the statement
-     *
-     * @return PDOStatement The result
      */
-    public function execute($query, array $marks = null)
+    public function execute($query, array $marks = null): PDOStatement
     {
-        $query = (string) $query;
-
-        if (!empty($marks)) {
-            foreach ($marks as $name => $mark) {
-                if (is_array($mark)) {
-                    foreach ($mark as &$val) {
-                        $val = $this->connection->quote($val);
-                    }
-
-                    $query = str_replace($name, implode(', ', $mark), $query);
-                    unset($marks[$name]);
-                }
-            }
-
-            if (empty($marks)) {
-                $marks = null;
-            }
+        if ($query instanceof Query) {
+            $marks = $query->params();
+            $query = $query->sql();
         }
 
-        $statement = $this->connection->prepare($query);
+        $statement = $this->connection->prepare((string) $query);
         $statement->execute($marks);
 
         if ($this->onExecute !== null) {
@@ -238,8 +204,6 @@ class SimpleCrud
 
     /**
      * Execute a callable inside a transaction.
-     *
-     * @param callable $callable The function with all operations
      *
      * @return mixed The callable returned value
      */
@@ -266,20 +230,16 @@ class SimpleCrud
 
     /**
      * Returns the last insert id.
-     *
-     * @return string
      */
-    public function lastInsertId()
+    public function lastInsertId(): string
     {
         return $this->connection->lastInsertId();
     }
 
     /**
      * Starts a transaction if it's not started yet.
-     *
-     * @return bool True if a the transaction is started or false if don't
      */
-    public function beginTransaction()
+    public function beginTransaction(): bool
     {
         if (!$this->inTransaction()) {
             $this->connection->beginTransaction();
@@ -323,12 +283,11 @@ class SimpleCrud
     /**
      * Saves a new attribute.
      *
-     * @param string $name
      * @param mixed  $value
      *
      * @return $this
      */
-    public function setAttribute($name, $value)
+    public function setAttribute(string $name, $value): self
     {
         if (is_int($name)) {
             $this->connection->setAttribute($name, $value);

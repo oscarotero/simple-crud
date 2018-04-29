@@ -2,7 +2,7 @@
 
 namespace SimpleCrud;
 
-use SimpleCrud\Scheme\Scheme;
+use SimpleCrud\Engine\SchemeInterface;
 
 /**
  * Stores the data of an table row.
@@ -148,7 +148,7 @@ class Row extends AbstractRow
         $relation = $scheme['relations'][$name][0];
 
         //Check types
-        if ($relation === Scheme::HAS_ONE) {
+        if ($relation === SchemeInterface::HAS_ONE) {
             if ($value !== null && !($value instanceof self)) {
                 throw new SimpleCrudException(sprintf('Invalid value: %s must be a Row instance or null', $name));
             }
@@ -272,8 +272,8 @@ class Row extends AbstractRow
             ];
         }
 
-        if (isset($relations[Scheme::HAS_ONE])) {
-            foreach ($relations[Scheme::HAS_ONE] as $r) {
+        if (isset($relations[SchemeInterface::HAS_ONE])) {
+            foreach ($relations[SchemeInterface::HAS_ONE] as $r) {
                 list($relation, $relationTable, $row) = $r;
 
                 if ($row->id === null) {
@@ -286,7 +286,7 @@ class Row extends AbstractRow
 
             $this->save();
 
-            foreach ($relations[Scheme::HAS_ONE] as $r) {
+            foreach ($relations[SchemeInterface::HAS_ONE] as $r) {
                 list($relation, $relationTable, $row) = $r;
 
                 if ($table->getName() !== $relationTable->getName()) {
@@ -300,12 +300,12 @@ class Row extends AbstractRow
             }
         }
 
-        if (isset($relations[Scheme::HAS_MANY])) {
+        if (isset($relations[SchemeInterface::HAS_MANY])) {
             if ($this->id === null) {
                 $this->save();
             }
 
-            foreach ($relations[Scheme::HAS_MANY] as $r) {
+            foreach ($relations[SchemeInterface::HAS_MANY] as $r) {
                 list($relation, $relationTable, $row) = $r;
 
                 $row->{$relation[1]} = $this->id;
@@ -323,12 +323,12 @@ class Row extends AbstractRow
             }
         }
 
-        if (isset($relations[Scheme::HAS_MANY_TO_MANY])) {
+        if (isset($relations[SchemeInterface::HAS_MANY_TO_MANY])) {
             if ($this->id === null) {
                 $this->save();
             }
 
-            foreach ($relations[Scheme::HAS_MANY_TO_MANY] as $r) {
+            foreach ($relations[SchemeInterface::HAS_MANY_TO_MANY] as $r) {
                 list($relation, $relationTable, $row) = $r;
 
                 $bridge = $this->getDatabase()->{$relation[1]};
@@ -374,13 +374,13 @@ class Row extends AbstractRow
 
         $relation = $relations[$relationTable->getName()];
 
-        if ($relation[0] === Scheme::HAS_ONE) {
+        if ($relation[0] === SchemeInterface::HAS_ONE) {
             $row->unrelate($this);
 
             return $this;
         }
 
-        if ($relation[0] === Scheme::HAS_MANY) {
+        if ($relation[0] === SchemeInterface::HAS_MANY) {
             if ($row->{$relation[1]} === $this->id) {
                 $row->{$relation[1]} = null;
                 $row->save();
@@ -399,7 +399,7 @@ class Row extends AbstractRow
             return $this;
         }
 
-        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+        if ($relation[0] === SchemeInterface::HAS_MANY_TO_MANY) {
             $bridge = $this->getDatabase()->{$relation[1]};
 
             $bridge
@@ -436,14 +436,14 @@ class Row extends AbstractRow
 
         $relation = $relations[$relationTable->getName()];
 
-        if ($relation[0] === Scheme::HAS_ONE) {
+        if ($relation[0] === SchemeInterface::HAS_ONE) {
             $this->{$relation[1]} = null;
             $this->relations[$relationTable->getName()] = new NullValue();
 
             return $this->save();
         }
 
-        if ($relation[0] === Scheme::HAS_MANY) {
+        if ($relation[0] === SchemeInterface::HAS_MANY) {
             $relationTable->update()
                 ->data([
                     $relation[1] => null,
@@ -456,7 +456,7 @@ class Row extends AbstractRow
             return $this;
         }
 
-        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+        if ($relation[0] === SchemeInterface::HAS_MANY_TO_MANY) {
             $bridge = $this->getDatabase()->{$relation[1]};
 
             $bridge

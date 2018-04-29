@@ -1,9 +1,13 @@
 <?php
+namespace SimpleCrud\Tests;
 
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
+use PHPUnit\Framework\TestCase;
+use PDO;
+use DateTime;
 
-class RowTest extends PHPUnit_Framework_TestCase
+class RowTest extends TestCase
 {
     private $db;
 

@@ -4,7 +4,7 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\AbstractRow;
 use SimpleCrud\SimpleCrudException;
-use SimpleCrud\Scheme\Scheme;
+use SimpleCrud\Engine\SchemeInterface;
 
 /**
  * Extended trait.
@@ -65,17 +65,17 @@ trait ExtendedSelectionTrait
         $relation = $scheme['relations'][$table->getName()];
 
         switch ($relation[0]) {
-            case Scheme::HAS_ONE:
+            case SchemeInterface::HAS_ONE:
                 return $this->by($relation[1], $row->id);
 
-            case Scheme::HAS_MANY:
+            case SchemeInterface::HAS_MANY:
                 if ($table->getName() === $this->table->getName()) {
                     return $this->by($relation[1], $row->id);
                 }
 
                 return $this->byId($row->{$relation[1]});
 
-            case Scheme::HAS_MANY_TO_MANY:
+            case SchemeInterface::HAS_MANY_TO_MANY:
                 $this->from($relation[1]);
                 $this->from($table->getName());
 

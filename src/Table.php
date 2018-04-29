@@ -108,6 +108,7 @@ class Table implements ArrayAccess
      */
     public function __call($name, $arguments)
     {
+        
         $query = $this->getDatabase()->getQueryFactory()->get($this, $name);
 
         if (isset($this->queriesModifiers[$name])) {

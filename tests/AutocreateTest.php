@@ -1,8 +1,13 @@
 <?php
 
-use SimpleCrud\SimpleCrud;
+namespace SimpleCrud\Tests;
 
-class AutocreateTest extends PHPUnit_Framework_TestCase
+use SimpleCrud\SimpleCrud;
+use PHPUnit\Framework\TestCase;
+use Latitude\QueryBuilder\QueryFactory;
+use PDO;
+
+class AutocreateTest extends TestCase
 {
     private $db;
 
@@ -32,7 +37,7 @@ EOT
     {
         $this->assertInstanceOf('SimpleCrud\\TableFactory', $this->db->getTableFactory());
         $this->assertInstanceOf('SimpleCrud\\FieldFactory', $this->db->getFieldFactory());
-        $this->assertInstanceOf('SimpleCrud\\QueryFactory', $this->db->getQueryFactory());
+        $this->assertInstanceOf(QueryFactory::class, $this->db->query());
         $this->assertInternalType('array', $this->db->getScheme());
 
         $this->db->setAttribute('bar', 'foo');
@@ -88,7 +93,7 @@ EOT
     {
         $log = [];
         $queries = [
-            'SELECT name FROM sqlite_master WHERE (type="table" OR type="view") AND name != "sqlite_sequence"',
+            'SELECT "name" FROM "sqlite_master" WHERE "type" IN (?, ?) AND "name" != ?',
             'pragma table_info(`post`)',
         ];
 

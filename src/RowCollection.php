@@ -2,7 +2,7 @@
 
 namespace SimpleCrud;
 
-use SimpleCrud\Scheme\Scheme;
+use SimpleCrud\Engine\SchemeInterface;
 use ArrayAccess;
 use Iterator;
 use Countable;
@@ -59,7 +59,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
         //It's already loaded relation
         if (in_array($name, $this->loadedRelations, true)) {
-            if ($relation[0] === Scheme::HAS_ONE) {
+            if ($relation[0] === SchemeInterface::HAS_ONE) {
                 foreach ($this->rows as $row) {
                     $result[] = $row->$name;
                 }
@@ -80,7 +80,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
         $select = $related->select()->relatedWith($this);
 
         //Many to many
-        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
+        if ($relation[0] === SchemeInterface::HAS_MANY_TO_MANY) {
             $statement = $select();
 
             foreach ($this->rows as $row) {
@@ -311,7 +311,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
      */
     private static function join(Table $table1, $rows1, Table $table2, $rows2, array $relation)
     {
-        if ($relation[0] === Scheme::HAS_ONE) {
+        if ($relation[0] === SchemeInterface::HAS_ONE) {
             list($table2, $rows2, $table1, $rows1) = [$table1, $rows1, $table2, $rows2];
         }
 

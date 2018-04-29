@@ -3,7 +3,7 @@
 namespace SimpleCrud;
 
 use JsonSerializable;
-use SimpleCrud\Scheme\Scheme;
+use SimpleCrud\Engine\SchemeInterface;
 use Closure;
 
 /**
@@ -157,7 +157,7 @@ abstract class AbstractRow implements JsonSerializable
         $relation = $table->getScheme()['relations'][$name];
         $related = $table->getDatabase()->$name;
 
-        if ($relation[0] === Scheme::HAS_ONE) {
+        if ($relation[0] === SchemeInterface::HAS_ONE) {
             return $related->select()->one()->relatedWith($this);
         }
 

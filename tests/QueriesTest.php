@@ -1,8 +1,11 @@
 <?php
+namespace SimpleCrud\Tests;
 
 use SimpleCrud\SimpleCrud;
+use PHPUnit\Framework\TestCase;
+use PDO;
 
-class QueriesTest extends PHPUnit_Framework_TestCase
+class QueriesTest extends TestCase
 {
     private $db;
 

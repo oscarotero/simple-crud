@@ -1,9 +1,12 @@
 <?php
+namespace SimpleCrud\Tests;
 
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
+use PHPUnit\Framework\TestCase;
+use PDO;
 
-class CustomPropertiesTest extends PHPUnit_Framework_TestCase
+class CustomPropertiesTest extends TestCase
 {
     private $db;
 

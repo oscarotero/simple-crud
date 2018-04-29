@@ -4,7 +4,7 @@ namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\SimpleCrudException;
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Scheme\Scheme;
+use SimpleCrud\Engine\SchemeInterface;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
 use PDO;
@@ -223,7 +223,7 @@ class Select extends Query
             throw new SimpleCrudException(sprintf("The tables '%s' and '%s' are not related", $this->table->getName(), $table));
         }
 
-        if ($scheme['relations'][$table][0] !== Scheme::HAS_ONE) {
+        if ($scheme['relations'][$table][0] !== SchemeInterface::HAS_ONE) {
             throw new SimpleCrudException(sprintf("Invalid %s JOIN between the tables '%s' and '%s'", $join, $this->table->getName(), $table));
         }
 
