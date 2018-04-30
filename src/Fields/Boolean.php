@@ -2,23 +2,14 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * To normalize boolean values.
- */
 class Boolean extends Field
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function databaseValue($value, array $data = [])
     {
-        return (integer) filter_var($data, FILTER_VALIDATE_BOOLEAN);
+        return (int) filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    public function rowValue($value, array $data = [])
     {
         return (bool) $data;
     }

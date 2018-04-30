@@ -2,11 +2,10 @@
 
 namespace SimpleCrud\Fields;
 
-use SimpleCrud\SimpleCrud;
+use Latitude\QueryBuilder\StatementInterface;
+use function Latitude\QueryBuilder\express;
+use function Latitude\QueryBuilder\param;
 
-/**
- * To slugify values before save.
- */
 class Point extends Field
 {
     /**
@@ -35,11 +34,11 @@ class Point extends Field
     /**
      * {@inheritdoc}
      */
-    public function dataFromDatabase($data)
+    public function rowValue($value, array $data = [])
     {
         //POINT(X Y)
-        if ($data !== null) {
-            $points = explode(' ', substr($data, 6, -1), 2);
+        if ($value !== null) {
+            $points = explode(' ', substr($value, 6, -1), 2);
 
             return [
                 floatval($points[0]),
@@ -48,24 +47,24 @@ class Point extends Field
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function valueToParam($value): StatementInterface
     {
-        if (self::isValid($data)) {
-            return 'POINT('.implode(' ', $data).')';
+        if ($value instanceof StatementInterface) {
+            return $value;
         }
+
+        if (self::isValid($value)) {
+            return express('POINT(%s, %s)', param($value[0]), param($value[1]));
+        }
+
+        return param(null);
     }
 
     /**
      * Check whether the value is valid before save in the database
-     *
      * @param mixed $data
-     *
-     * @return bool
      */
-    private static function isValid($data)
+    private static function isValid($data): bool
     {
         if (!is_array($data)) {
             return false;

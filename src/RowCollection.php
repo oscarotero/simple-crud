@@ -2,22 +2,33 @@
 
 namespace SimpleCrud;
 
-use SimpleCrud\Engine\SchemeInterface;
 use ArrayAccess;
-use Iterator;
 use Countable;
+use Iterator;
+use SimpleCrud\Engine\SchemeInterface;
 
 /**
  * Stores a collection of rows.
  */
 class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Countable
 {
+    protected $table = [];
+
     private $rows = [];
     private $loadedRelations = [];
 
+    public function __construct(Table $table, array $rows)
+    {
+        $this->table = $table;
+
+        foreach ($rows as $row) {
+            $this[] = $row;
+        }
+    }
+
     /**
      * Debug info.
-     * 
+     *
      * @return array
      */
     public function __debugInfo()
@@ -32,6 +43,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
      * Magic method to get properties from all rows.
      *
      * @see self::get()
+     * @param mixed $name
      */
     public function __get($name)
     {
@@ -162,6 +174,8 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
+     * @param mixed $value
      */
     public function offsetSet($offset, $value)
     {
@@ -178,6 +192,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetExists($offset)
     {
@@ -186,6 +201,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetUnset($offset)
     {
@@ -194,6 +210,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetGet($offset)
     {
@@ -302,7 +319,7 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
     /**
      * Join two related tables.
-     * 
+     *
      * @param Table               $table1
      * @param RowCollection|array $rows1
      * @param Table               $table2

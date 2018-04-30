@@ -1,9 +1,10 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
 
 use ArrayAccess;
-use Closure;
+use function Latitude\QueryBuilder\field;
 
 /**
  * Manages a database table.
@@ -14,41 +15,24 @@ class Table implements ArrayAccess
 {
     private $name;
     private $db;
-    private $row;
-    private $rowCollection;
     private $cache = [];
-    private $queriesModifiers = [];
     private $fields = [];
+    private $defaults = [];
 
-    /**
-     * Constructor.
-     *
-     * @param SimpleCrud $db
-     * @param string     $name
-     */
-    final public function __construct(SimpleCrud $db, $name)
+    final public function __construct(SimpleCrud $db, string $name)
     {
         $this->db = $db;
         $this->name = $name;
-
-        $this->setRow(new Row($this));
-        $this->setRowCollection(new RowCollection($this));
 
         $fieldFactory = $db->getFieldFactory();
 
         foreach (array_keys($this->getScheme()['fields']) as $name) {
             $this->fields[$name] = $fieldFactory->get($this, $name);
+            $this->defaults[$name] = null;
         }
-
-        $this->init();
     }
 
-    /**
-     * Debug info.
-     * 
-     * @return array
-     */
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         return [
             'name' => $this->name,
@@ -56,16 +40,18 @@ class Table implements ArrayAccess
         ];
     }
 
-    /**
-     * Callback used to init the table.
-     */
-    protected function init()
+    public function getDefaults(array $overrides = null): array
     {
+        if (empty($overrides)) {
+            return $this->defaults;
+        }
+
+        return array_intersect_key($overrides, $this->defaults) + $this->defaults;
     }
 
     /**
      * Store a row in the cache.
-     * 
+     *
      * @param Row $row
      */
     public function cache(Row $row)
@@ -83,7 +69,7 @@ class Table implements ArrayAccess
 
     /**
      * Register a new query modifier.
-     * 
+     *
      * @param string   $name
      * @param callable $modifier
      */
@@ -99,16 +85,15 @@ class Table implements ArrayAccess
     /**
      * Magic method to create queries related with this table.
      *
-     * @param string $name
-     * @param array  $arguments
-     *
      * @throws SimpleCrudException
      *
-     * @return Queries\Query|null
+     * @return Queries\Query
      */
-    public function __call($name, $arguments)
+    public function __call(string $name, array $arguments)
     {
-        
+        $class = $this->getDatabase()->getEngineNamespace().'Query\\'.ucfirst($name);
+
+        return $class::create($this, $arguments);
         $query = $this->getDatabase()->getQueryFactory()->get($this, $name);
 
         if (isset($this->queriesModifiers[$name])) {
@@ -154,17 +139,16 @@ class Table implements ArrayAccess
      * Check if a row with a specific id exists.
      *
      * @see ArrayAccess
-     *
-     * @return bool
+     * @param mixed $offset
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         if (array_key_exists($offset, $this->cache)) {
             return !empty($this->cache[$offset]);
         }
 
         return $this->count()
-            ->byId($offset)
+            ->where(field('id')->eq($offset))
             ->limit(1)
             ->run() === 1;
     }
@@ -174,6 +158,7 @@ class Table implements ArrayAccess
      *
      * @see ArrayAccess
      *
+     * @param  mixed    $offset
      * @return Row|null
      */
     public function offsetGet($offset)
@@ -184,7 +169,7 @@ class Table implements ArrayAccess
 
         return $this->cache[$offset] = $this->select()
             ->one()
-            ->byId($offset)
+            ->where(field('id')->eq($offset))
             ->run();
     }
 
@@ -192,6 +177,8 @@ class Table implements ArrayAccess
      * Store a row with a specific id.
      *
      * @see ArrayAccess
+     * @param mixed $offset
+     * @param mixed $value
      */
     public function offsetSet($offset, $value)
     {
@@ -199,11 +186,7 @@ class Table implements ArrayAccess
         if ($offset === null) {
             $value['id'] = null;
 
-            $this->insert()
-                ->data($value)
-                ->run();
-
-            return;
+            return $this->insert($value)->run();
         }
 
         //Update if the element is cached
@@ -233,6 +216,7 @@ class Table implements ArrayAccess
      * Remove a row with a specific id.
      *
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetUnset($offset)
     {
@@ -284,179 +268,47 @@ class Table implements ArrayAccess
         return $this->db->getScheme()[$this->name];
     }
 
-    /**
-     * Returns an attribute.
-     *
-     * @param string $name
-     *
-     * @return null|mixed
-     */
-    public function getAttribute($name)
-    {
-        return $this->db->getAttribute($name);
-    }
-
-    /**
-     * Defines the Row class used by this table.
-     *
-     * @param Row $row
-     */
-    public function setRow(Row $row)
-    {
-        $this->row = $row;
-    }
-
-    /**
-     * Register a custom method to the row.
-     *
-     * @param string  $name
-     * @param Closure $method
-     *
-     * @return self
-     */
-    public function setRowMethod($name, Closure $method)
-    {
-        $this->row->setMethod($name, $method);
-
-        return $this;
-    }
-
-    /**
-     * Defines the RowCollection class used by this table.
-     *
-     * @param RowCollection $rowCollection
-     */
-    public function setRowCollection(RowCollection $rowCollection)
-    {
-        $this->rowCollection = $rowCollection;
-    }
-
-    /**
-     * Register a custom method to the rowCollections.
-     *
-     * @param string  $name
-     * @param Closure $method
-     *
-     * @return self
-     */
-    public function setRowCollectionMethod($name, Closure $method)
-    {
-        $this->rowCollection->setMethod($name, $method);
-
-        return $this;
-    }
-
-    /**
-     * Creates a new row instance.
-     *
-     * @param array $data The values of the row
-     *
-     * @return Row
-     */
-    public function create(array $data = [])
+    public function create(array $data = [], $fromDatabase = false): Row
     {
         if (isset($data['id']) && isset($this->cache[$data['id']]) && is_object($this->cache[$data['id']])) {
             return $this->cache[$data['id']];
         }
 
-        $row = clone $this->row;
-
-        foreach ($data as $name => $value) {
-            $row->$name = $value;
+        if ($fromDatabase) {
+            $row = new Row($this, $this->rowValues($data));
+            $this->cache($row);
+            return $row;
         }
 
-        return $row;
+        return new Row($this, $data);
     }
 
-    /**
-     * Creates a new rowCollection instance.
-     *
-     * @param array $data Rows added to this collection
-     *
-     * @return RowCollection
-     */
-    public function createCollection(array $data = [])
+    public function createCollection(array $data = []): RowCollection
     {
-        $rowCollection = clone $this->rowCollection;
-
-        foreach ($data as $row) {
-            $rowCollection[] = $row;
-        }
-
-        return $rowCollection;
+        return new RowCollection($this, $data);
     }
 
-    /**
-     * Default data converter/validator from database.
-     *
-     * @param array $data The values before insert to database
-     * @param bool  $new  True for inserts, false for updates
-     */
-    public function dataToDatabase(array $data, $new)
+    public function databaseValues(array $data): array
     {
-        return $data;
-    }
-
-    /**
-     * Default data converter from database.
-     *
-     * @param array $data The database format values
-     */
-    public function dataFromDatabase(array $data)
-    {
-        return $data;
-    }
-
-    /**
-     * Prepares the data from the result of a database selection.
-     *
-     * @param array $data
-     *
-     * @return Row
-     */
-    public function createFromDatabase(array $data)
-    {
-        //Get from cache
-        if (isset($this->cache[$data['id']]) && is_object(isset($this->cache[$data['id']]))) {
-            return $this->cache[$data['id']];
-        }
-
-        foreach ($this->fields as $name => $field) {
-            $data[$name] = $field->dataFromDatabase($data[$name]);
-        }
-
-        if (!is_array($data = $this->dataFromDatabase(array_intersect_key($data, $this->fields)))) {
-            throw new SimpleCrudException('Data not valid');
-        }
-
-        $row = $this->create($data);
-
-        $this->cache($row);
-
-        return $row;
-    }
-
-    /**
-     * Prepares the data before save into database (used by update and insert).
-     *
-     * @param array $data
-     * @param bool  $new
-     *
-     * @return array
-     */
-    public function prepareDataToDatabase(array $data, $new)
-    {
-        if (!is_array($data = $this->dataToDatabase($data, $new))) {
-            throw new SimpleCrudException('Data not valid');
-        }
-
-        if (array_diff_key($data, $this->fields)) {
-            throw new SimpleCrudException('Invalid fields');
-        }
-
-        //Transform data before save to database
         foreach ($data as $key => &$value) {
-            $value = $this->fields[$key]->dataToDatabase($value);
+            if (!isset($this->fields[$key])) {
+                throw new SimpleCrudException(sprintf('Invalid field (%s)', $key));
+            }
+
+            $value = $this->fields[$key]->databaseValue($value, $data);
+        }
+
+        return $data;
+    }
+
+    public function rowValues(array $data): array
+    {
+        foreach ($data as $key => &$value) {
+            if (!isset($this->fields[$key])) {
+                throw new SimpleCrudException(sprintf('Invalid field (%s)', $key));
+            }
+
+            $value = $this->fields[$key]->rowValue($value, $data);
         }
 
         return $data;

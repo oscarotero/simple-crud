@@ -1,10 +1,11 @@
 <?php
 
 namespace SimpleCrud\Tests;
+
+use PDO;
+use PHPUnit\Framework\TestCase;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
-use PHPUnit\Framework\TestCase;
-use PDO;
 
 class SchemeTest extends TestCase
 {
@@ -16,7 +17,7 @@ class SchemeTest extends TestCase
 
         $this->db->executeTransaction(function ($db) {
             $db->execute(
-<<<EOT
+<<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title`       TEXT
@@ -25,7 +26,7 @@ EOT
             );
 
             $db->execute(
-<<<EOT
+<<<'EOT'
 CREATE TABLE "category" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `name`        TEXT
@@ -34,7 +35,7 @@ EOT
             );
 
             $db->execute(
-<<<EOT
+<<<'EOT'
 CREATE TABLE "comment" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `text`        TEXT,
@@ -44,7 +45,7 @@ EOT
             );
 
             $db->execute(
-<<<EOT
+<<<'EOT'
 CREATE TABLE "category_post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `category_id` INTEGER NOT NULL,

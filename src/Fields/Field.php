@@ -2,115 +2,62 @@
 
 namespace SimpleCrud\Fields;
 
+use Latitude\QueryBuilder\StatementInterface;
 use SimpleCrud\Table;
+use function Latitude\QueryBuilder\identify;
+use function Latitude\QueryBuilder\param;
 
-/**
- * Generic field.
- */
 class Field
 {
     protected $table;
     protected $name;
     protected $config = [];
 
-    /**
-     * @param Table $table
-     * @param string $name
-     */
-    public function __construct(Table $table, $name)
+    public function __construct(Table $table, string $name)
     {
         $this->table = $table;
         $this->name = $name;
     }
 
-    /**
-     * Converts the data to save in the database
-     *
-     * @param mixed $data
-     *
-     * @return mixed
-     */
-    public function dataToDatabase($data)
+    public function databaseValue($value, array $data)
     {
-        if ($data === '' && $this->getScheme()['null']) {
+        if ($value === '' && $this->getScheme()['null']) {
             return;
         }
 
-        return $data;
+        return $value;
     }
 
-    /**
-     * Converts the data to be used
-     *
-     * @param mixed $data
-     *
-     * @return mixed
-     */
-    public function dataFromDatabase($data)
+    public function rowValue($value, array $data = [])
     {
-        return $data;
+        return $value;
     }
 
-    /**
-     * Returns the field scheme
-     *
-     * @return array
-     */
-    public function getScheme()
+    public function getScheme(): array
     {
         return $this->table->getScheme()['fields'][$this->name];
     }
 
-    /**
-     * Returns the expression used to get the value from the database
-     *
-     * @param string|null $as
-     *
-     * @return string
-     */
-    public function getSelectExpression($as = null)
+    public function getIdentifier(): StatementInterface
     {
-        $tableName = $this->table->getName();
-        $fieldName = $this->name;
+        return identify(sprintf('%s.%s', $this->table->getName(), $this->name));
+    }
 
-        if ($as) {
-            return "`{$tableName}`.`{$fieldName}` as `{$as}`";
+    public function valueToParam($value): StatementInterface
+    {
+        if ($value instanceof StatementInterface) {
+            return $value;
         }
 
-        return "`{$tableName}`.`{$fieldName}`";
+        return param($value);
     }
 
-    /**
-     * Returns the expression used to save the value in the database
-     *
-     * @param string $mark
-     *
-     * @return string
-     */
-    public function getValueExpression($mark)
-    {
-        return $mark;
-    }
-
-    /**
-     * Returns a config value
-     *
-     * @return mixed
-     */
-    public function getConfig($name)
+    public function getConfig(string $name)
     {
         return isset($this->config[$name]) ? $this->config[$name] : null;
     }
 
-    /**
-     * Edit a config value
-     *
-     * @param string $name
-     * @param mixed $value
-     *
-     * @return self
-     */
-    public function setConfig($name, $value)
+    public function setConfig(string $name, $value): self
     {
         $this->config[$name] = $value;
 

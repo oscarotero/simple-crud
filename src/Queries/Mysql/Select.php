@@ -2,12 +2,12 @@
 
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\SimpleCrudException;
-use SimpleCrud\Queries\Query;
-use SimpleCrud\Engine\SchemeInterface;
-use SimpleCrud\RowCollection;
-use SimpleCrud\Table;
 use PDO;
+use SimpleCrud\Engine\SchemeInterface;
+use SimpleCrud\Queries\Query;
+use SimpleCrud\RowCollection;
+use SimpleCrud\SimpleCrudException;
+use SimpleCrud\Table;
 
 /**
  * Manages a database select query.
@@ -28,7 +28,7 @@ class Select extends Query
 
     /**
      * Change the mode to returns just the first row.
-     * 
+     *
      * @return self
      */
     public function one()
@@ -40,7 +40,7 @@ class Select extends Query
 
     /**
      * Change the mode to returns all rows.
-     * 
+     *
      * @return self
      */
     public function all()
@@ -74,7 +74,8 @@ class Select extends Query
      *
      * @return self
      */
-    public function page($page, $limit = null) {
+    public function page($page, $limit = null)
+    {
         $this->page = (int) $page;
 
         if ($this->page < 1) {
@@ -143,7 +144,7 @@ class Select extends Query
      * Create a row and insert the joined rows if exist.
      *
      * @param array $data
-     * 
+     *
      * @return Row
      */
     public function createRow(array $data)
@@ -340,10 +341,11 @@ class Select extends Query
 
     /**
      * Returns the total rows found
-     * 
+     *
      * @return int
      */
-    protected function getFoundRows() {
+    protected function getFoundRows()
+    {
         $total = $this->table->getDatabase()->execute('SELECT FOUND_ROWS()')->fetch();
         return (int) $total[0];
     }

@@ -1,7 +1,7 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
-namespace SimpleCrud\Engine;
+namespace SimpleCrud\Engine\Common;
 
 use SimpleCrud\SimpleCrud;
 

@@ -9,38 +9,30 @@ use SimpleCrud\Engine\SchemeInterface;
  */
 class Row extends AbstractRow
 {
+    protected $table = [];
+
     private $values = [];
     private $relations = [];
     private $changed = false;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function __construct(Table $table)
+    public function __construct(Table $table, array $values)
     {
-        parent::__construct($table);
-
-        foreach ($table->getScheme()['fields'] as $name => $field) {
-            $this->values[$name] = null;
-        }
+        $this->table = $table;
+        $this->values = $table->getDefaults($values);
+        $this->changed = empty($this->values['id']);
     }
 
-    /**
-     * Debug info.
-     * 
-     * @return array
-     */
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         return [
-            'table' => $this->getTable()->getName(),
+            'table' => $this->table->getName(),
             'values' => $this->values,
         ];
     }
 
     /**
      * Return the current cache.
-     * 
+     *
      * @return array
      */
     public function getCache()
@@ -50,7 +42,7 @@ class Row extends AbstractRow
 
     /**
      * Set a new cache.
-     * 
+     *
      * @param array $relations
      */
     public function setCache(array $relations)
@@ -221,14 +213,13 @@ class Row extends AbstractRow
     public function save()
     {
         if ($this->changed) {
+            $values = $this->table->databaseValues($this->values);
+
             if (empty($this->id)) {
-                $this->id = $this->table->insert()
-                    ->data($this->values, $this->values)
-                    ->run();
+                $this->id = $this->table->insert($values)->run();
             } else {
-                $this->table->update()
-                    ->data($this->values, $this->values)
-                    ->byId($this->id)
+                $this->table->update($values)
+                    ->where(field('id')->eq($this->id))
                     ->limit(1)
                     ->run();
             }
@@ -268,7 +259,7 @@ class Row extends AbstractRow
             $relations[$relation[0]][] = [
                 $relation,
                 $relationTable,
-                $row
+                $row,
             ];
         }
 
@@ -408,12 +399,11 @@ class Row extends AbstractRow
                 ->by($relation[3], $row->id)
                 ->run();
 
-            unset($this->relations[$relation[1]]);
-            unset($this->relations[$relationTable->getName()][$row->id]);
+            unset($this->relations[$relation[1]], $this->relations[$relationTable->getName()][$row->id]);
 
             $cache = $row->getCache();
-            unset($cache[$relation[1]]);
-            unset($cache[$table->getName()][$this->id]);
+            unset($cache[$relation[1]], $cache[$table->getName()][$this->id]);
+
             $row->setCache($cache);
         }
     }

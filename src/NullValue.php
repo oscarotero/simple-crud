@@ -60,6 +60,5 @@ class NullValue implements JsonSerializable
      */
     public function jsonSerialize()
     {
-        return;
     }
 }

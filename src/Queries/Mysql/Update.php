@@ -2,9 +2,8 @@
 
 namespace SimpleCrud\Queries\Mysql;
 
-use SimpleCrud\Queries\Query;
-use SimpleCrud\Table;
 use SimpleCrud\Fields\Field;
+use SimpleCrud\Queries\Query;
 
 /**
  * Manages a database update query.

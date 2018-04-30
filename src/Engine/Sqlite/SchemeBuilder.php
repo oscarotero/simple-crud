@@ -1,12 +1,12 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace SimpleCrud\Engine\Sqlite;
 
-use function Latitude\QueryBuilder\field;
-use SimpleCrud\Engine\SchemeBuilderTrait;
-use SimpleCrud\Engine\SchemeBuilderInterface;
 use PDO;
+use SimpleCrud\Engine\Common\SchemeBuilderTrait;
+use SimpleCrud\Engine\SchemeBuilderInterface;
+use function Latitude\QueryBuilder\field;
 
 class SchemeBuilder implements SchemeBuilderInterface
 {
@@ -21,7 +21,7 @@ class SchemeBuilder implements SchemeBuilderInterface
             ->andWhere(field('name')->notEq('sqlite_sequence'))
             ->compile();
 
-        return $this->db->execute($query)->fetchAll(PDO::FETCH_COLUMN, 0);
+        return $this->db->execute($query->sql(), $query->params())->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     protected function getTableFields(string $table): array

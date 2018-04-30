@@ -1,11 +1,12 @@
 <?php
 namespace SimpleCrud\Tests;
 
+use DateTime;
+use PDO;
+use PHPUnit\Framework\TestCase;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
-use PHPUnit\Framework\TestCase;
-use PDO;
-use DateTime;
+use function Latitude\QueryBuilder\field;
 
 class RowTest extends TestCase
 {
@@ -17,7 +18,7 @@ class RowTest extends TestCase
 
         $this->db->executeTransaction(function ($db) {
             $db->execute(
-<<<EOT
+<<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title`       TEXT,
@@ -35,11 +36,11 @@ EOT
 
         $data = [
             'title' => 'Second post',
-            'publishedAt' => new DateTime(),
+            'publishedAt' => new DateTime('04-06-2017'),
             'isActive' => true,
         ];
 
-        //Test cache        
+        //Test cache
         $this->assertFalse(isset($db->post[1]));
 
         $db->post[] = ['title' => 'First post'];
@@ -72,7 +73,6 @@ EOT
         $saved2 = $db->post[2];
 
         $this->assertNotSame($saved2, $post);
-
         $this->assertEquals($saved2->toArray(), $post->toArray());
     }
 
@@ -84,7 +84,7 @@ EOT
         $db->post[] = ['title' => 'Two'];
 
         $posts = $db->post->select()
-            ->by('title', ['One', 'Two'])
+            ->where(field('title')->in('One', 'Two'))
             ->run();
 
         $this->assertInstanceOf('SimpleCrud\\RowCollection', $posts);

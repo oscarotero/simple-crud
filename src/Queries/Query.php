@@ -37,7 +37,7 @@ abstract class Query
 
     /**
      * Executes the query and returns true if it's ok.
-     * 
+     *
      * @return mixed
      */
     public function run()

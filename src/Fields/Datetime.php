@@ -2,36 +2,27 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * Normalices datetime values.
- */
 class Datetime extends Field
 {
     protected $format = 'Y-m-d H:i:s';
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function databaseValue($value, array $data = [])
     {
-        if (empty($data)) {
+        if (empty($value)) {
             return;
         }
 
-        if (is_string($data)) {
-            return date($this->format, strtotime($data));
+        if (is_string($value)) {
+            return date($this->format, strtotime($value));
         }
 
-        if ($data instanceof \Datetime) {
-            return $data->format($this->format);
+        if ($value instanceof \Datetime) {
+            return $value->format($this->format);
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    public function rowValue($value, array $data = [])
     {
-        return $data ? new \Datetime($data) : null;
+        return $value ? new \Datetime($value) : null;
     }
 }

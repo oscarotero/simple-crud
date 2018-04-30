@@ -2,28 +2,19 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * To serialize values before save.
- */
 class Serializable extends Field
 {
     protected $config = [
-        'allowed_classes' => false
+        'allowed_classes' => false,
     ];
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function databaseValue($value, array $data = [])
     {
-        return serialize($data);
+        return serialize($value);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    public function rowValue($value, array $data = [])
     {
-        return @unserialize($data, $this->config) ?: [];
+        return @unserialize($value, $this->config) ?: [];
     }
 }

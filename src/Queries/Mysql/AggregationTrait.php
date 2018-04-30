@@ -30,7 +30,7 @@ trait AggregationTrait
 
     /**
      * Run the query and return the value.
-     * 
+     *
      * @return mixed
      */
     public function run()
@@ -59,7 +59,7 @@ trait AggregationTrait
      */
     public function __toString()
     {
-        $query = "SELECT ".self::AGGREGATION_FUNCTION."(`{$this->field}`) FROM `{$this->table->getName()}`";
+        $query = 'SELECT '.self::AGGREGATION_FUNCTION."(`{$this->field}`) FROM `{$this->table->getName()}`";
 
         $query .= $this->fromToString();
         $query .= $this->whereToString();

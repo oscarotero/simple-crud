@@ -2,28 +2,19 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * Normalices "set" values, to work with them as arrays.
- */
 class Set extends Field
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function databaseValue($value, array $data = [])
     {
-        if (is_array($data)) {
-            return implode(',', $data);
+        if (is_array($value)) {
+            return implode(',', $value);
         }
 
-        return $data;
+        return $value;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    public function rowValue($value, array $data = [])
     {
-        return explode(',', $data);
+        return explode(',', $value);
     }
 }

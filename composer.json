@@ -19,7 +19,8 @@
 	},
 	"require": {
 		"php": ">=7.1",
-		"latitude/latitude": "^3.0"
+		"latitude/latitude": "^3.0",
+		"hoa/ruler": "2.17.05.16"
 	},
 	"autoload": {
 		"psr-4": {
@@ -28,9 +29,11 @@
 		}
 	},
 	"require-dev": {
-		"phpunit/phpunit": "^6.0"
+		"phpunit/phpunit": "^6.0",
+		"friendsofphp/php-cs-fixer": "^2.11"
 	},
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "cs-fix": "php-cs-fixer fix ."
     }
 }

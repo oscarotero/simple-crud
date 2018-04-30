@@ -3,8 +3,8 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\AbstractRow;
-use SimpleCrud\SimpleCrudException;
 use SimpleCrud\Engine\SchemeInterface;
+use SimpleCrud\SimpleCrudException;
 
 /**
  * Extended trait.
@@ -67,14 +67,12 @@ trait ExtendedSelectionTrait
         switch ($relation[0]) {
             case SchemeInterface::HAS_ONE:
                 return $this->by($relation[1], $row->id);
-
             case SchemeInterface::HAS_MANY:
                 if ($table->getName() === $this->table->getName()) {
                     return $this->by($relation[1], $row->id);
                 }
 
                 return $this->byId($row->{$relation[1]});
-
             case SchemeInterface::HAS_MANY_TO_MANY:
                 $this->from($relation[1]);
                 $this->from($table->getName());
@@ -85,7 +83,6 @@ trait ExtendedSelectionTrait
                 $this->where(sprintf('`%s`.`id` IN (:%s)', $table->getName(), $relation[3]), [':'.$relation[3] => $row->id]);
 
                 return $this;
-
             default:
                 throw new SimpleCrudException(sprintf('Invalid relation type between %s and %s', $table->getName(), $this->table->getName()));
         }
@@ -94,6 +91,7 @@ trait ExtendedSelectionTrait
     /**
      * add extra fields to the code.
      *
+     * @param  mixed  $prepend
      * @return string
      */
     protected function fieldsToString($prepend = ', ')
@@ -104,6 +102,7 @@ trait ExtendedSelectionTrait
     /**
      * add extra fields to the code.
      *
+     * @param  mixed  $prepend
      * @return string
      */
     protected function fromToString($prepend = ', ')

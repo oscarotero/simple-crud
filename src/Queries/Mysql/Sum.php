@@ -3,7 +3,6 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Table;
 
 /**
  * Manages a database select sum query in Mysql databases.

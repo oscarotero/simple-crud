@@ -1,14 +1,14 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace SimpleCrud;
 
-use Latitude\QueryBuilder\QueryFactory;
-use Latitude\QueryBuilder\Query;
 use Exception;
-use RuntimeException;
-use PDOStatement;
+use Latitude\QueryBuilder\Query;
+use Latitude\QueryBuilder\QueryFactory;
 use PDO;
+use PDOStatement;
+use RuntimeException;
 
 class SimpleCrud
 {
@@ -54,7 +54,6 @@ class SimpleCrud
             case self::ENGINE_MYSQL:
             case self::ENGINE_SQLITE:
                 return $engine;
-            
             default:
                 throw new RuntimeException("Invalid engine type {$engine}");
         }
@@ -157,7 +156,7 @@ class SimpleCrud
      *
      * @return Table
      */
-    public function __get($name)
+    public function __get($name): Table
     {
         if (isset($this->tables[$name])) {
             return $this->tables[$name];
@@ -181,17 +180,10 @@ class SimpleCrud
     /**
      * Execute a query and returns the statement object with the result.
      *
-     * @param  string|Query $query
-     *
-     * @throws Exception On error preparing or executing the statement
+     * @throws Exception
      */
-    public function execute($query, array $marks = null): PDOStatement
+    public function execute(string $query, array $marks = null): PDOStatement
     {
-        if ($query instanceof Query) {
-            $marks = $query->params();
-            $query = $query->sql();
-        }
-
         $statement = $this->connection->prepare((string) $query);
         $statement->execute($marks);
 
@@ -283,7 +275,7 @@ class SimpleCrud
     /**
      * Saves a new attribute.
      *
-     * @param mixed  $value
+     * @param mixed $value
      *
      * @return $this
      */

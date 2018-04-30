@@ -1,13 +1,10 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud\Engine\Sqlite\Query;
 
-use SimpleCrud\Table;
+use SimpleCrud\Engine\Common\Query;
 
-class Select
+class Select extends Query\Select
 {
-    public function __construct(Table $table)
-    {
-
-    }
 }

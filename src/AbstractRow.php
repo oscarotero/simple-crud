@@ -2,9 +2,9 @@
 
 namespace SimpleCrud;
 
+use Closure;
 use JsonSerializable;
 use SimpleCrud\Engine\SchemeInterface;
-use Closure;
 
 /**
  * Base class used by Row and RowCollection.
@@ -69,7 +69,7 @@ abstract class AbstractRow implements JsonSerializable
 
     /**
      * Converts this object into an array.
-     * 
+     *
      * @param bool  $recursive
      * @param array $bannedEntities
      *
@@ -79,7 +79,7 @@ abstract class AbstractRow implements JsonSerializable
 
     /**
      * Magic method to return properties.
-     * 
+     *
      * @param string $name
      *
      * @return mixed
@@ -88,7 +88,7 @@ abstract class AbstractRow implements JsonSerializable
 
     /**
      * Magic method to edit a property.
-     * 
+     *
      * @param string $name
      * @param mixed  $value
      *
@@ -136,6 +136,7 @@ abstract class AbstractRow implements JsonSerializable
      * Magic method to execute queries or custom methods.
      *
      * @param string $name
+     * @param mixed  $arguments
      */
     public function __call($name, $arguments)
     {

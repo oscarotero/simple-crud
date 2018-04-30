@@ -2,9 +2,9 @@
 
 namespace SimpleCrud\Queries\Sqlite;
 
-use SimpleCrud\SimpleCrudException;
-use SimpleCrud\Queries\Mysql;
 use PDO;
+use SimpleCrud\Queries\Mysql;
+use SimpleCrud\SimpleCrudException;
 
 /**
  * Manages a database select count query in Mysql databases.

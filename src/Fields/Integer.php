@@ -2,36 +2,20 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * To normalize integer values.
- */
 class Integer extends Field
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function rowValue($value, array $data = [])
     {
-        return static::normalize($data);
+        return static::normalize($value);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    public function databaseValue($value, array $data = [])
     {
-        return static::normalize($data);
+        return static::normalize($value);
     }
 
-    /**
-     * Normalize a number.
-     *
-     * @param mixed $number
-     *
-     * @return int|null
-     */
-    protected static function normalize($number)
+    protected static function normalize($number): ?int
     {
-        return strlen($number) ? (integer) $number : null;
+        return strlen($number) ? (int) $number : null;
     }
 }

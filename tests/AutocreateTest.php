@@ -2,10 +2,10 @@
 
 namespace SimpleCrud\Tests;
 
-use SimpleCrud\SimpleCrud;
-use PHPUnit\Framework\TestCase;
 use Latitude\QueryBuilder\QueryFactory;
 use PDO;
+use PHPUnit\Framework\TestCase;
+use SimpleCrud\SimpleCrud;
 
 class AutocreateTest extends TestCase
 {
@@ -17,7 +17,7 @@ class AutocreateTest extends TestCase
 
         $this->db->executeTransaction(function ($db) {
             $db->execute(
-<<<EOT
+<<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title`       TEXT,
@@ -77,6 +77,8 @@ EOT
 
     /**
      * @dataProvider dataProviderFields
+     * @param mixed $name
+     * @param mixed $type
      */
     public function testFields($name, $type)
     {

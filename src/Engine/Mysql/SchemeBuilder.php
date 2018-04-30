@@ -1,26 +1,23 @@
 <?php
+declare(strict_types = 1);
 
-namespace SimpleCrud\Scheme;
+namespace SimpleCrud\Engine\Mysql;
 
 use PDO;
+use SimpleCrud\Engine\Common\SchemeBuilderTrait;
+use SimpleCrud\Engine\SchemeBuilderInterface;
+use function Latitude\QueryBuilder\field;
 
-/**
- * Class to retrieve info from a mysql database.
- */
-class Mysql extends Scheme
+class SchemeBuilder implements SchemeBuilderInterface
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function getTables()
+    use SchemeBuilderTrait;
+
+    protected function getTables(): array
     {
         return $this->db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    protected function getTableFields($table)
+    protected function getTableFields(string $table): array
     {
         $result = $this->db->execute("DESCRIBE `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
         $fields = [];
@@ -44,7 +41,6 @@ class Mysql extends Scheme
                 case 'set':
                     $config['values'] = explode(',', $matches[3]);
                     break;
-
                 default:
                     if (!isset($matches[3])) {
                         $config['length'] = null;

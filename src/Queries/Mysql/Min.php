@@ -3,8 +3,6 @@
 namespace SimpleCrud\Queries\Mysql;
 
 use SimpleCrud\Queries\Query;
-use SimpleCrud\Table;
-
 
 /**
  * Manages a database select min query in Mysql databases.
