@@ -6,6 +6,7 @@ namespace SimpleCrud;
 use Exception;
 use Latitude\QueryBuilder\Query;
 use Latitude\QueryBuilder\QueryFactory;
+use SimpleCrud\Engine\SchemeInterface;
 use PDO;
 use PDOStatement;
 use RuntimeException;
@@ -34,16 +35,6 @@ class SimpleCrud
     }
 
     /**
-     * Set the database scheme.
-     */
-    public function setScheme(array $scheme): self
-    {
-        $this->scheme = $scheme;
-
-        return $this;
-    }
-
-    /**
      * Get the engine type
      */
     public function getEngineType(): string
@@ -67,14 +58,11 @@ class SimpleCrud
         return 'SimpleCrud\\Engine\\'.ucfirst($this->getEngineType()).'\\';
     }
 
-    /**
-     * Returns the database scheme.
-     */
-    public function getScheme(): array
+    public function getScheme(): SchemeInterface
     {
         if ($this->scheme === null) {
-            $builder = $this->getEngineNamespace().'SchemeBuilder';
-            $this->setScheme($builder::buildScheme($this));
+            $scheme = $this->getEngineNamespace().'Scheme';
+            $this->scheme = new $scheme($this);
         }
 
         return $this->scheme;
@@ -172,9 +160,9 @@ class SimpleCrud
      *
      * @return bool
      */
-    public function __isset($name)
+    public function __isset(string $name): bool
     {
-        return isset($this->getScheme()[$name]);
+        return isset($this->getScheme()->toArray()[$name]);
     }
 
     /**

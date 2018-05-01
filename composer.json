@@ -19,7 +19,7 @@
 	},
 	"require": {
 		"php": ">=7.1",
-		"latitude/latitude": "^3.0",
+		"latitude/latitude": "^3.1",
 		"hoa/ruler": "2.17.05.16"
 	},
 	"autoload": {

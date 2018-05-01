@@ -239,6 +239,16 @@ class Table implements ArrayAccess
     }
 
     /**
+     * Returns the foreign key.
+     *
+     * @return string
+     */
+    public function getForeignKey()
+    {
+        return "{$this->name}_id";
+    }
+
+    /**
      * Returns the SimpleCrud instance associated with this table.
      *
      * @return SimpleCrud
@@ -265,7 +275,7 @@ class Table implements ArrayAccess
      */
     public function getScheme()
     {
-        return $this->db->getScheme()[$this->name];
+        return $this->db->getScheme()->toArray()[$this->name];
     }
 
     public function create(array $data = [], $fromDatabase = false): Row

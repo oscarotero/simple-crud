@@ -66,13 +66,13 @@ EOT
             ->one()
             ->where(field('title')->isNotNull())
             ->andWhere(field('id')->in(1, 2))
-            ->criteria('body = "content"')
+            ->andWhere($this->db->post->body->criteria()->eq('content'))
             ->offset(3)
             ->orderBy('title');
 
         $q = $query->compile();
 
-        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num`, `post`.`point` FROM `post` WHERE `title` IS NOT NULL AND `id` IN (?, ?) AND `body` = ? ORDER BY `title` LIMIT 1 OFFSET 3', $q->sql());
+        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num`, `post`.`point` FROM `post` WHERE `title` IS NOT NULL AND `id` IN (?, ?) AND `post`.`body` = ? ORDER BY `title` LIMIT 1 OFFSET 3', $q->sql());
         $this->assertEquals([1, 2, 'content'], $q->params());
 
         $result = $query();
@@ -120,7 +120,7 @@ EOT
                 'body' => 'Body',
                 'point' => [23, 45],
             ])
-            ->criteria('id = 3');
+            ->where(field('id')->eq(3));
 
         $q = $query->compile();
 
@@ -134,7 +134,7 @@ EOT
     public function testDelete()
     {
         $query = $this->db->post->delete()
-            ->criteria('id = 3');
+            ->where(field('id')->eq(3));
 
         $q = $query->compile();
 
@@ -148,7 +148,7 @@ EOT
     public function testCount()
     {
         $query = $this->db->post->count()
-            ->criteria('id = 3');
+            ->where(field('id')->eq(3));
 
         $q = $query->compile();
 
@@ -162,7 +162,7 @@ EOT
     public function testSum()
     {
         $query = $this->db->post->sum('id')
-            ->criteria('id < 3');
+            ->where(field('id')->lt(3));
 
         $q = $query->compile();
 
@@ -176,7 +176,7 @@ EOT
     public function testMax()
     {
         $query = $this->db->post->max('id')
-            ->criteria('id < 3');
+            ->where(field('id')->lt(3));
 
         $q = $query->compile();
 
@@ -190,7 +190,7 @@ EOT
     public function testMin()
     {
         $query = $this->db->post->min('id')
-            ->criteria('id < 3');
+            ->where(field('id')->lt(3));
 
         $q = $query->compile();
 
@@ -204,7 +204,7 @@ EOT
     public function testAvg()
     {
         $query = $this->db->post->avg('id')
-            ->criteria('id < 3');
+            ->where(field('id')->lt(3));
 
         $q = $query->compile();
 

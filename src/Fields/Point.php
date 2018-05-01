@@ -3,7 +3,7 @@
 namespace SimpleCrud\Fields;
 
 use Latitude\QueryBuilder\StatementInterface;
-use function Latitude\QueryBuilder\express;
+use function Latitude\QueryBuilder\fn;
 use function Latitude\QueryBuilder\param;
 
 class Point extends Field
@@ -47,14 +47,14 @@ class Point extends Field
         }
     }
 
-    public function valueToParam($value): StatementInterface
+    public function param($value): StatementInterface
     {
         if ($value instanceof StatementInterface) {
             return $value;
         }
 
         if (self::isValid($value)) {
-            return express('POINT(%s, %s)', param($value[0]), param($value[1]));
+            return fn('POINT', param($value[0]), param($value[1]));
         }
 
         return param(null);

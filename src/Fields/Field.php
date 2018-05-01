@@ -3,8 +3,10 @@
 namespace SimpleCrud\Fields;
 
 use Latitude\QueryBuilder\StatementInterface;
+use Latitude\QueryBuilder\Builder\CriteriaBuilder;
 use SimpleCrud\Table;
 use function Latitude\QueryBuilder\identify;
+use function Latitude\QueryBuilder\field;
 use function Latitude\QueryBuilder\param;
 
 class Field
@@ -38,12 +40,17 @@ class Field
         return $this->table->getScheme()['fields'][$this->name];
     }
 
-    public function getIdentifier(): StatementInterface
+    public function identify(): StatementInterface
     {
         return identify(sprintf('%s.%s', $this->table->getName(), $this->name));
     }
 
-    public function valueToParam($value): StatementInterface
+    public function criteria(): CriteriaBuilder
+    {
+        return field(sprintf('%s.%s', $this->table->getName(), $this->name));
+    }
+
+    public function param($value): StatementInterface
     {
         if ($value instanceof StatementInterface) {
             return $value;

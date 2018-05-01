@@ -4,14 +4,12 @@ declare(strict_types = 1);
 namespace SimpleCrud\Engine\Mysql;
 
 use PDO;
-use SimpleCrud\Engine\Common\SchemeBuilderTrait;
-use SimpleCrud\Engine\SchemeBuilderInterface;
+use SimpleCrud\Engine\Common\Scheme as BaseScheme;
+use SimpleCrud\Engine\SchemeInterface;
 use function Latitude\QueryBuilder\field;
 
-class SchemeBuilder implements SchemeBuilderInterface
+class Scheme extends BaseScheme implements SchemeInterface
 {
-    use SchemeBuilderTrait;
-
     protected function getTables(): array
     {
         return $this->db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);

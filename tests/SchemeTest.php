@@ -175,6 +175,6 @@ EOT
             ],
         ];
 
-        $this->assertEquals($scheme, $db->getScheme());
+        $this->assertEquals($scheme, $db->getScheme()->toArray());
     }
 }

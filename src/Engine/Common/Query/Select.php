@@ -21,7 +21,7 @@ abstract class Select implements QueryInterface
 
         $fields = array_map(
             function ($field) {
-                return $field->getIdentifier();
+                return $field->identify();
             },
             array_values($table->getFields())
         );

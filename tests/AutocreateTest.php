@@ -38,7 +38,8 @@ EOT
         $this->assertInstanceOf('SimpleCrud\\TableFactory', $this->db->getTableFactory());
         $this->assertInstanceOf('SimpleCrud\\FieldFactory', $this->db->getFieldFactory());
         $this->assertInstanceOf(QueryFactory::class, $this->db->query());
-        $this->assertInternalType('array', $this->db->getScheme());
+        $this->assertInstanceOf('SimpleCrud\\Engine\\SchemeInterface', $this->db->getScheme());
+        $this->assertInternalType('array', $this->db->getScheme()->toArray());
 
         $this->db->setAttribute('bar', 'foo');
 
@@ -58,7 +59,7 @@ EOT
 
         $this->assertCount(8, $post->getScheme()['fields']);
         $this->assertEquals('post', $post->getName());
-        $this->assertEquals($this->db->getScheme()['post'], $post->getScheme());
+        $this->assertEquals($this->db->getScheme()->toArray()['post'], $post->getScheme());
     }
 
     public function dataProviderFields()

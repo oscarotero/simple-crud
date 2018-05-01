@@ -26,7 +26,7 @@ abstract class Update implements QueryInterface
     public function set(array $data): self
     {
         foreach ($data as $fieldName => &$value) {
-            $value = $this->table->{$fieldName}->valueToParam($value);
+            $value = $this->table->{$fieldName}->param($value);
         }
 
         $this->query->set($data);
