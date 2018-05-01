@@ -5,6 +5,7 @@ namespace SimpleCrud\Engine\Common;
 
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
+use SimpleCrud\Row;
 use SimpleCrud\Engine\SchemeInterface;
 use Latitude\QueryBuilder\Query\SelectQuery;
 use function Latitude\QueryBuilder\criteria;
@@ -49,6 +50,22 @@ abstract class Scheme
         }
     }
 
+    public function relate(Row $row1, Row $row2)
+    {
+        $table1 = $row1->getTable();
+        $table2 = $row2->getTable();
+
+        switch ($this->getRelation($table1, $table2)) {
+            case SchemeInterface::HAS_ONE:
+                $row1->{$table2->getForeignKey()} = $row2->id;
+                break;
+
+            case SchemeInterface::HAS_MANY:
+                $row2->{$table1->getForeignKey()} = $row1->id;
+                break;
+        }
+    }
+
     public function applyRelationCriteria(SelectQuery $query, Table $table1, Table $table2, $values)
     {
         switch ($this->getRelation($table1, $table2)) {
@@ -80,7 +97,7 @@ abstract class Scheme
                 throw new \Exception("Error Processing Request", 1);
         }
 
-        if (is_array($value)) {
+        if (is_array($values)) {
             $query->andWhere($criteria->in(...$values));
         } else {
             $query->andWhere($criteria->eq($values));

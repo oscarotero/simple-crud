@@ -230,6 +230,15 @@ class Row extends AbstractRow
         return $this;
     }
 
+    public function relate(Row ...$rows)
+    {
+        $scheme = $this->getDatabase()->getScheme();
+
+        foreach ($rows as $row) {
+            $scheme->relate($this, $row);
+        }
+    }
+
     /**
      * Relate this row with other row and save the relation.
      *
@@ -237,7 +246,7 @@ class Row extends AbstractRow
      *
      * @return $this
      */
-    public function relate(Row $row)
+    public function _relate(Row $row)
     {
         $table = $this->getTable();
         $relations = $table->getScheme()['relations'];

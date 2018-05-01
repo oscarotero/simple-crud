@@ -3,21 +3,19 @@
 namespace SimpleCrud\Tests;
 
 use Latitude\QueryBuilder\QueryFactory;
-use PDO;
-use PHPUnit\Framework\TestCase;
+use SimpleCrud\Table;
 use SimpleCrud\SimpleCrud;
+use SimpleCrud\TableFactory;
+use SimpleCrud\FieldFactory;
+use SimpleCrud\Engine\SchemeInterface;
+use PDO;
 
-class AutocreateTest extends TestCase
+class AutocreateTest extends AbstractTestCase
 {
-    private $db;
-
-    public function setUp()
+    private function createDatabase()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
-
-        $this->db->executeTransaction(function ($db) {
-            $db->execute(
-<<<'EOT'
+        return $this->createSqliteDatabase([
+            <<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title`       TEXT,
@@ -29,40 +27,46 @@ CREATE TABLE "post" (
     `rating`      REAL
 );
 EOT
-            );
-        });
+        ]);
     }
 
-    public function testDatabase()
+    public function testDatabase(): SimpleCrud
     {
-        $this->assertInstanceOf('SimpleCrud\\TableFactory', $this->db->getTableFactory());
-        $this->assertInstanceOf('SimpleCrud\\FieldFactory', $this->db->getFieldFactory());
-        $this->assertInstanceOf(QueryFactory::class, $this->db->query());
-        $this->assertInstanceOf('SimpleCrud\\Engine\\SchemeInterface', $this->db->getScheme());
-        $this->assertInternalType('array', $this->db->getScheme()->toArray());
+        $db = $this->createDatabase();
 
-        $this->db->setAttribute('bar', 'foo');
+        $this->assertInstanceOf(TableFactory::class, $db->getTableFactory());
+        $this->assertInstanceOf(FieldFactory::class, $db->getFieldFactory());
+        $this->assertInstanceOf(QueryFactory::class, $db->query());
+        $this->assertInstanceOf(SchemeInterface::class, $db->getScheme());
+        $this->assertInternalType('array', $db->getScheme()->toArray());
 
-        $this->assertEquals('sqlite', $this->db->getAttribute(PDO::ATTR_DRIVER_NAME));
-        $this->assertEquals('foo', $this->db->getAttribute('bar'));
+        $db->setAttribute('bar', 'foo');
+
+        $this->assertEquals('sqlite', $db->getAttribute(PDO::ATTR_DRIVER_NAME));
+        $this->assertEquals('foo', $db->getAttribute('bar'));
+
+        return $db;
     }
 
-    public function testTable()
+    /**
+     * @depends testDatabase
+     */
+    public function testTable(SimpleCrud $db)
     {
-        $this->assertTrue(isset($this->db->post));
-        $this->assertFalse(isset($this->db->invalid));
+        $this->assertTrue(isset($db->post));
+        $this->assertFalse(isset($db->invalid));
 
-        $post = $this->db->post;
+        $post = $db->post;
 
-        $this->assertInstanceOf('SimpleCrud\\Table', $post);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
+        $this->assertInstanceOf(Table::class, $post);
+        $this->assertInstanceOf(SimpleCrud::class, $post->getDatabase());
 
         $this->assertCount(8, $post->getScheme()['fields']);
         $this->assertEquals('post', $post->getName());
-        $this->assertEquals($this->db->getScheme()->toArray()['post'], $post->getScheme());
+        $this->assertEquals($db->getScheme()->toArray()['post'], $post->getScheme());
     }
 
-    public function dataProviderFields()
+    public function dataProviderFields(): array
     {
         return [
             ['id', 'Integer'],
@@ -78,37 +82,16 @@ EOT
 
     /**
      * @dataProvider dataProviderFields
-     * @param mixed $name
-     * @param mixed $type
+     * @depends testDatabase
      */
-    public function testFields($name, $type)
+    public function testFields(string $name, string $type, SimpleCrud $db)
     {
-        $post = $this->db->post;
+        $post = $db->post;
         $field = $post->$name;
 
         $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $field);
         $this->assertInstanceOf('SimpleCrud\\Fields\\'.$type, $field);
 
-        $this->assertEquals($this->db->post->getScheme()['fields'][$name], $field->getScheme());
-    }
-
-    public function testOnExecuteQuery()
-    {
-        $log = [];
-        $queries = [
-            'SELECT "name" FROM "sqlite_master" WHERE "type" IN (?, ?) AND "name" != ?',
-            'pragma table_info(`post`)',
-        ];
-
-        $this->db->onExecute(function ($pdo, $statement, $marks) use (&$log) {
-            $this->assertInstanceOf('PDO', $pdo);
-            $this->assertInstanceOf('PDOStatement', $statement);
-
-            $log[] = $statement->queryString;
-        });
-
-        $post = $this->db->post;
-
-        $this->assertEquals($log, $queries);
+        $this->assertEquals($db->post->getScheme()['fields'][$name], $field->getScheme());
     }
 }

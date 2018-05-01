@@ -24,8 +24,12 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"SimpleCrud\\": "src",
-			"SimpleCrud\\Tests\\": "src/tests"
+			"SimpleCrud\\": "src"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"SimpleCrud\\Tests\\": "tests"
 		}
 	},
 	"require-dev": {

@@ -2,115 +2,168 @@
 namespace SimpleCrud\Tests;
 
 use PDO;
-use PHPUnit\Framework\TestCase;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Engine\SchemeInterface;
 use SimpleCrud\Table;
 
-class RelationsTest extends TestCase
+class RelationsTest extends AbstractTestCase
 {
-    private $db;
-
-    public function setUp()
+    private function createDatabase()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
-
-        $this->db->executeTransaction(function ($db) {
-            $db->execute(
-<<<'EOT'
+        return $this->createSqliteDatabase([
+            <<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title`       TEXT
 );
 EOT
-            );
-
-            $db->execute(
-<<<'EOT'
+            ,
+            <<<'EOT'
 CREATE TABLE "category" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `name`        TEXT,
     `category_id` INTEGER
 );
 EOT
-            );
-
-            $db->execute(
-<<<'EOT'
+            ,
+            <<<'EOT'
 CREATE TABLE "comment" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `text`        TEXT,
     `post_id`     INTEGER
 );
 EOT
-            );
-
-            $db->execute(
-<<<'EOT'
+            ,
+            <<<'EOT'
 CREATE TABLE "category_post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `category_id` INTEGER NOT NULL,
     `post_id`     INTEGER NOT NULL
 );
 EOT
-            );
-        });
+        ]);
     }
 
-    public function testRelatedQuery()
+    public function testCreation(): SimpleCrud
     {
-        $db = $this->db;
+        $db = $this->createDatabase();
 
-        $post = $db->post->create(['id' => 1])->save();
-        $comment = $db->comment->create(['id' => 1])->save();
-        $scheme = $db->getScheme();
+        $db->post[] = ['title' => 'First post'];
+        $db->category[] = ['name' => 'First category'];
+        $db->comment[] = ['text' => 'Comment', 'post_id' => 1];
+        $db->category_post[] = ['category_id' => 1, 'post_id' => 1];
 
-        // HAS_MANY_TO_MANY
-        $query = $db->category->select()->relatedWith($post)->compile();
+        $this->assertEquals(1, $db->post->count()->run());
+        $this->assertEquals(1, $db->category->count()->run());
+        $this->assertEquals(1, $db->comment->count()->run());
+        $this->assertEquals(1, $db->category_post->count()->run());
 
-        $this->assertEquals(
-            SchemeInterface::HAS_MANY_TO_MANY,
-            $scheme->getRelation($db->category, $db->post)
-        );
-        $this->assertEquals([1], $query->params());
-        $this->assertEquals(
-            'SELECT "category"."id", "category"."name", "category"."category_id", "category_post"."post_id" FROM "category", "category_post" WHERE "category_post"."category_id" = "category"."id" AND "category_post"."post_id" = ?',
-            $query->sql()
-        );
+        return $db;
+    }
 
-        // HAS_ONE
-        $query = $db->comment->select()->relatedWith($post)->compile();
+    /**
+     * @depends testCreation
+     */
+    public function testHasOneQuery(SimpleCrud $db)
+    {
+        $query = $db->comment->select()
+            ->relatedWith($db->post[1])
+            ->compile();
 
         $this->assertEquals(
             SchemeInterface::HAS_ONE,
-            $scheme->getRelation($db->comment, $db->post)
+            $db->getScheme()->getRelation($db->comment, $db->post)
         );
+
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
             'SELECT "comment"."id", "comment"."text", "comment"."post_id" FROM "comment" WHERE "comment"."post_id" = ?',
             $query->sql()
         );
+    }
 
-        // HAS_MANY
-        $query = $db->post->select()->relatedWith($comment)->compile();
+    /**
+     * @depends testCreation
+     */
+    public function testHasManyQuery(SimpleCrud $db)
+    {
+        $query = $db->post->select()
+            ->relatedWith($db->comment[1])
+            ->compile();
 
         $this->assertEquals(
             SchemeInterface::HAS_MANY,
-            $scheme->getRelation($db->post, $db->comment)
-        );
-        $this->assertEquals([1], $query->params());
-        $this->assertEquals(
-            'SELECT "post"."id", "post"."title" FROM "post" WHERE "post"."id" = ? LIMIT 1',
-            $comment->post()->compile()->sql()
+            $db->getScheme()->getRelation($db->post, $db->comment)
         );
 
+        $this->assertEquals([1], $query->params());
+        $this->assertEquals(
+            'SELECT "post"."id", "post"."title" FROM "post" WHERE "post"."id" = ?',
+            $query->sql()
+        );
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testHasManyToManyQuery(SimpleCrud $db)
+    {
+        $query = $db->category->select()
+            ->relatedWith($db->post[1])
+            ->compile();
+
+        $this->assertEquals(
+            SchemeInterface::HAS_MANY_TO_MANY,
+            $db->getScheme()->getRelation($db->category, $db->post)
+        );
+
+        $this->assertEquals([1], $query->params());
+        $this->assertEquals(
+            'SELECT "category"."id", "category"."name", "category"."category_id", "category_post"."post_id" FROM "category", "category_post" WHERE "category_post"."category_id" = "category"."id" AND "category_post"."post_id" = ?',
+            $query->sql()
+        );
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testHasOneNullQuery(SimpleCrud $db)
+    {
         // id = NULL
-        $query = $db->comment->select()->relatedWith($db->post->create())->compile();
+        $query = $db->comment->select()
+            ->relatedWith($db->post->create())
+            ->compile();
 
         $this->assertEquals(
             'SELECT "comment"."id", "comment"."text", "comment"."post_id" FROM "comment" WHERE "comment"."post_id" = NULL',
             $query->sql()
         );
+    }
+
+    public function testRelateOne()
+    {
+        $db = $this->createDatabase();
+
+        $post = $db->post->create(['title' => 'First post'])->save();
+        $category = $db->category->create(['name' => 'First category'])->save();
+        $comment = $db->comment->create(['text' => 'Comment'])->save();
+
+        $comment->relate($post);
+
+        $this->assertEquals($post->id, $comment->post_id);
+    }
+
+    public function testRelateMany()
+    {
+        $db = $this->createDatabase();
+
+        $post = $db->post->create(['title' => 'First post'])->save();
+        $category = $db->category->create(['name' => 'First category'])->save();
+        $comment = $db->comment->create(['text' => 'Comment'])->save();
+
+        $post->relate($comment);
+
+        $this->assertEquals($post->id, $comment->post_id);
     }
 
     public function _testDirectRelatedData()

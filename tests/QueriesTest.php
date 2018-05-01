@@ -6,31 +6,34 @@ use PHPUnit\Framework\TestCase;
 use SimpleCrud\SimpleCrud;
 use function Latitude\QueryBuilder\field;
 
-class QueriesTest extends TestCase
+class QueriesTest extends AbstractTestCase
 {
-    private $db;
-
-    public function setUp()
+    private function createDatabase()
     {
-        $this->db = new SimpleCrud(new PDO('mysql:host=127.0.0.1;charset=utf8', 'root', ''));
-
-        $this->db->executeTransaction(function ($db) {
-            $db->execute('DROP DATABASE IF EXISTS `simple_crud`');
-            $db->execute('CREATE DATABASE `simple_crud`');
-            $db->execute('USE `simple_crud`');
-            $db->execute(
-<<<'EOT'
+        return $this->createMysqlDatabase([
+            'DROP DATABASE IF EXISTS `simple_crud`',
+            'CREATE DATABASE `simple_crud`',
+            'USE `simple_crud`',
+            <<<'EOT'
 CREATE TABLE `post` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(100) DEFAULT '',
-  `body` text,
-  `num` decimal(10,0) DEFAULT NULL,
-  `point` point DEFAULT NULL,
-  PRIMARY KEY (`id`)
+    `id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `title` varchar(100) DEFAULT '',
+    `body`  text,
+    `num`   decimal(10,0) DEFAULT NULL,
+    `point` point DEFAULT NULL,
+    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 EOT
-            );
-        });
+        ]);
+    }
+
+    public function testCreation(): SimpleCrud
+    {
+        $db = $this->createDatabase();
+
+        $this->assertInstanceOf(SimpleCrud::class, $db);
+
+        return $db;
     }
 
     public function dataProviderQueries()
@@ -50,23 +53,26 @@ EOT
 
     /**
      * @dataProvider dataProviderQueries
-     * @param mixed $name
+     * @depends testCreation
      */
-    public function testQueries($name)
+    public function testQueries(string $name, SimpleCrud $db)
     {
-        $query = $this->db->post->$name();
+        $query = $db->post->$name();
 
         $this->assertInstanceOf('SimpleCrud\\Engine\\Mysql\\Query\\'.ucfirst($name), $query);
         $this->assertInstanceOf('SimpleCrud\\Engine\\QueryInterface', $query);
     }
 
-    public function testSelect()
+    /**
+     * @depends testCreation
+     */
+    public function testSelect(SimpleCrud $db)
     {
-        $query = $this->db->post->select()
+        $query = $db->post->select()
             ->one()
             ->where(field('title')->isNotNull())
             ->andWhere(field('id')->in(1, 2))
-            ->andWhere($this->db->post->body->criteria()->eq('content'))
+            ->andWhere($db->post->body->criteria()->eq('content'))
             ->offset(3)
             ->orderBy('title');
 
@@ -79,9 +85,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testSelectPage()
+    /**
+     * @depends testCreation
+     */
+    public function testSelectPage(SimpleCrud $db)
     {
-        $query = $this->db->post->select()
+        $query = $db->post->select()
             ->one()
             ->where(field('title')->isNotNull())
             ->andWhere(field('id')->in(1, 2))
@@ -97,9 +106,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testInsert()
+    /**
+     * @depends testCreation
+     */
+    public function testInsert(SimpleCrud $db)
     {
-        $query = $this->db->post->insert([
+        $query = $db->post->insert([
                 'title' => 'Title',
                 'body' => 'Body',
                 'point' => [222, 333],
@@ -113,9 +125,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testUpdate()
+    /**
+     * @depends testCreation
+     */
+    public function testUpdate(SimpleCrud $db)
     {
-        $query = $this->db->post->update([
+        $query = $db->post->update([
                 'title' => 'Title',
                 'body' => 'Body',
                 'point' => [23, 45],
@@ -131,9 +146,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testDelete()
+    /**
+     * @depends testCreation
+     */
+    public function testDelete(SimpleCrud $db)
     {
-        $query = $this->db->post->delete()
+        $query = $db->post->delete()
             ->where(field('id')->eq(3));
 
         $q = $query->compile();
@@ -145,9 +163,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testCount()
+    /**
+     * @depends testCreation
+     */
+    public function testCount(SimpleCrud $db)
     {
-        $query = $this->db->post->count()
+        $query = $db->post->count()
             ->where(field('id')->eq(3));
 
         $q = $query->compile();
@@ -159,9 +180,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testSum()
+    /**
+     * @depends testCreation
+     */
+    public function testSum(SimpleCrud $db)
     {
-        $query = $this->db->post->sum('id')
+        $query = $db->post->sum('id')
             ->where(field('id')->lt(3));
 
         $q = $query->compile();
@@ -173,9 +197,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testMax()
+    /**
+     * @depends testCreation
+     */
+    public function testMax(SimpleCrud $db)
     {
-        $query = $this->db->post->max('id')
+        $query = $db->post->max('id')
             ->where(field('id')->lt(3));
 
         $q = $query->compile();
@@ -187,9 +214,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testMin()
+    /**
+     * @depends testCreation
+     */
+    public function testMin(SimpleCrud $db)
     {
-        $query = $this->db->post->min('id')
+        $query = $db->post->min('id')
             ->where(field('id')->lt(3));
 
         $q = $query->compile();
@@ -201,9 +231,12 @@ EOT
         $this->assertInstanceOf('PDOStatement', $result);
     }
 
-    public function testAvg()
+    /**
+     * @depends testCreation
+     */
+    public function testAvg(SimpleCrud $db)
     {
-        $query = $this->db->post->avg('id')
+        $query = $db->post->avg('id')
             ->where(field('id')->lt(3));
 
         $q = $query->compile();

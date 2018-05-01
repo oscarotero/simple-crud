@@ -12,6 +12,7 @@
          convertWarningsToExceptions="true"
          processIsolation="false"
          stopOnFailure="false"
+         bootstrap="./vendor/autoload.php"
          failOnWarning="true">
 	<testsuites>
 		<testsuite name="All tests">
