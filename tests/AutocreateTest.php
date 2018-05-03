@@ -3,12 +3,12 @@
 namespace SimpleCrud\Tests;
 
 use Latitude\QueryBuilder\QueryFactory;
-use SimpleCrud\Table;
-use SimpleCrud\SimpleCrud;
-use SimpleCrud\TableFactory;
-use SimpleCrud\FieldFactory;
-use SimpleCrud\Engine\SchemeInterface;
 use PDO;
+use SimpleCrud\Engine\SchemeInterface;
+use SimpleCrud\FieldFactory;
+use SimpleCrud\SimpleCrud;
+use SimpleCrud\Table;
+use SimpleCrud\TableFactory;
 
 class AutocreateTest extends AbstractTestCase
 {

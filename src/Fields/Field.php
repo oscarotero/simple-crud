@@ -2,11 +2,11 @@
 
 namespace SimpleCrud\Fields;
 
-use Latitude\QueryBuilder\StatementInterface;
 use Latitude\QueryBuilder\Builder\CriteriaBuilder;
+use Latitude\QueryBuilder\StatementInterface;
 use SimpleCrud\Table;
-use function Latitude\QueryBuilder\identify;
 use function Latitude\QueryBuilder\field;
+use function Latitude\QueryBuilder\identify;
 use function Latitude\QueryBuilder\param;
 
 class Field

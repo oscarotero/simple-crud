@@ -6,10 +6,10 @@ namespace SimpleCrud;
 use Exception;
 use Latitude\QueryBuilder\Query;
 use Latitude\QueryBuilder\QueryFactory;
-use SimpleCrud\Engine\SchemeInterface;
 use PDO;
 use PDOStatement;
 use RuntimeException;
+use SimpleCrud\Engine\SchemeInterface;
 
 class SimpleCrud
 {

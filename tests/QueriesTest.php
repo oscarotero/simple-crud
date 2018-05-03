@@ -1,8 +1,6 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use PDO;
-use PHPUnit\Framework\TestCase;
 use SimpleCrud\SimpleCrud;
 use function Latitude\QueryBuilder\field;
 

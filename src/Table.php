@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use ArrayAccess;
+use SimpleCrud\Fields\Field;
 use function Latitude\QueryBuilder\field;
 
 /**
@@ -233,19 +234,27 @@ class Table implements ArrayAccess
      *
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
     /**
-     * Returns the foreign key.
-     *
-     * @return string
+     * Returns the foreign key name.
      */
-    public function getForeignKey()
+    public function getForeignKey(): string
     {
         return "{$this->name}_id";
+    }
+
+    /**
+     * Returns the foreign key.
+     */
+    public function getJoinField(Table $table): Field
+    {
+        $field = $table->getForeignKey();
+
+        return $this->fields[$field];
     }
 
     /**

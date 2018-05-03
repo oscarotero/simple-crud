@@ -4,7 +4,7 @@ namespace SimpleCrud\Fields;
 
 class Decimal extends Field
 {
-	public function rowValue($value, array $data = [])
+    public function rowValue($value, array $data = [])
     {
         return static::normalize($value);
     }

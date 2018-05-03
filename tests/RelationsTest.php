@@ -1,9 +1,8 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use PDO;
-use SimpleCrud\SimpleCrud;
 use SimpleCrud\Engine\SchemeInterface;
+use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
 
 class RelationsTest extends AbstractTestCase

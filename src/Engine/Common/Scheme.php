@@ -3,12 +3,10 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Engine\Common;
 
+use SimpleCrud\Engine\SchemeInterface;
+use SimpleCrud\Row;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
-use SimpleCrud\Row;
-use SimpleCrud\Engine\SchemeInterface;
-use Latitude\QueryBuilder\Query\SelectQuery;
-use function Latitude\QueryBuilder\criteria;
 
 abstract class Scheme
 {
@@ -59,48 +57,9 @@ abstract class Scheme
             case SchemeInterface::HAS_ONE:
                 $row1->{$table2->getForeignKey()} = $row2->id;
                 break;
-
             case SchemeInterface::HAS_MANY:
                 $row2->{$table1->getForeignKey()} = $row1->id;
                 break;
-        }
-    }
-
-    public function applyRelationCriteria(SelectQuery $query, Table $table1, Table $table2, $values)
-    {
-        switch ($this->getRelation($table1, $table2)) {
-            case SchemeInterface::HAS_ONE:
-                $criteria = $table1->{$table2->getForeignKey()}->criteria();
-                break;
-
-            case SchemeInterface::HAS_MANY:
-                $field = $table1 === $table2 ? $table2->getForeignKey() : 'id';
-                $criteria = $table1->{$field}->criteria();
-                break;
-
-            case SchemeInterface::HAS_MANY_TO_MANY:
-                $bridge = $this->getManyToManyTableName($table1, $table2);
-                $bridge = $this->db->{$bridge};
-                $criteria = $bridge->{$table2->getForeignKey()}->criteria();
-
-                $query
-                    ->addFrom($bridge->getName())
-                    ->addColumns($bridge->{$table2->getForeignKey()}->identify())
-                    ->andWhere(criteria(
-                        '%s = %s',
-                        $bridge->{$table1->getForeignKey()}->identify(),
-                        $table1->id->identify()
-                    ));
-                break;
-
-            default:
-                throw new \Exception("Error Processing Request", 1);
-        }
-
-        if (is_array($values)) {
-            $query->andWhere($criteria->in(...$values));
-        } else {
-            $query->andWhere($criteria->eq($values));
         }
     }
 
@@ -110,6 +69,13 @@ abstract class Scheme
         $name2 = $table2->getName();
 
         return $name1 < $name2 ? "{$name1}_{$name2}" : "{$name2}_{$name1}";
+    }
+
+    public function getManyToManyTable(Table $table1, Table $table2): Table
+    {
+        $name = $this->getManyToManyTableName($table1, $table2);
+
+        return $this->db->{$name};
     }
 
     protected function detectScheme(): array
