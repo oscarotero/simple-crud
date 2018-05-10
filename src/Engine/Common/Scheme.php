@@ -4,7 +4,6 @@ declare(strict_types = 1);
 namespace SimpleCrud\Engine\Common;
 
 use SimpleCrud\Engine\SchemeInterface;
-use SimpleCrud\Row;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
 
@@ -29,53 +28,17 @@ abstract class Scheme
 
     public function getRelation(Table $table1, Table $table2): ?int
     {
-        if (isset($table1->{$table2->getForeignKey()})) {
+        if ($table1->getJoinField($table2)) {
             return SchemeInterface::HAS_ONE;
         }
 
-        if (isset($table2->{$table1->getForeignKey()})) {
+        if ($table2->getJoinField($table1)) {
             return SchemeInterface::HAS_MANY;
         }
 
-        $bridge = $this->getManyToManyTableName($table1, $table2);
-
-        if ($this->db->$bridge) {
-            $bridge = $this->db->$bridge;
-
-            if (isset($bridge->{$table1->getForeignKey()}) && isset($bridge->{$table2->getForeignKey()})) {
-                return SchemeInterface::HAS_MANY_TO_MANY;
-            }
+        if ($table1->getJoinTable($table2)) {
+            return SchemeInterface::HAS_MANY_TO_MANY;
         }
-    }
-
-    public function relate(Row $row1, Row $row2)
-    {
-        $table1 = $row1->getTable();
-        $table2 = $row2->getTable();
-
-        switch ($this->getRelation($table1, $table2)) {
-            case SchemeInterface::HAS_ONE:
-                $row1->{$table2->getForeignKey()} = $row2->id;
-                break;
-            case SchemeInterface::HAS_MANY:
-                $row2->{$table1->getForeignKey()} = $row1->id;
-                break;
-        }
-    }
-
-    public function getManyToManyTableName(Table $table1, Table $table2): string
-    {
-        $name1 = $table1->getName();
-        $name2 = $table2->getName();
-
-        return $name1 < $name2 ? "{$name1}_{$name2}" : "{$name2}_{$name1}";
-    }
-
-    public function getManyToManyTable(Table $table1, Table $table2): Table
-    {
-        $name = $this->getManyToManyTableName($table1, $table2);
-
-        return $this->db->{$name};
     }
 
     protected function detectScheme(): array

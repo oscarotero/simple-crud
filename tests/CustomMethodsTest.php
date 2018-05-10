@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
 
-class CustomPropertiesTest extends TestCase
+class CustomPropertiesTest //extends TestCase
 {
     private $db;
 

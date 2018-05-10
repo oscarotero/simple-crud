@@ -2,14 +2,16 @@
 
 namespace SimpleCrud;
 
+use RuntimeException;
 use SimpleCrud\Engine\SchemeInterface;
+use function Latitude\QueryBuilder\field;
 
 /**
  * Stores the data of an table row.
  */
 class Row extends AbstractRow
 {
-    protected $table = [];
+    protected $table;
 
     private $values = [];
     private $relations = [];
@@ -220,7 +222,6 @@ class Row extends AbstractRow
             } else {
                 $this->table->update($values)
                     ->where(field('id')->eq($this->id))
-                    ->limit(1)
                     ->run();
             }
 
@@ -230,241 +231,122 @@ class Row extends AbstractRow
         return $this;
     }
 
-    public function relate(Row ...$rows)
+    public function relate(Row ...$rows): self
     {
-        $scheme = $this->getDatabase()->getScheme();
+        $table1 = $this->table;
 
         foreach ($rows as $row) {
-            $scheme->relate($this, $row);
-        }
-    }
+            $table2 = $row->getTable();
 
-    /**
-     * Relate this row with other row and save the relation.
-     *
-     * @param Row ...$row
-     *
-     * @return $this
-     */
-    public function _relate(Row $row)
-    {
-        $table = $this->getTable();
-        $relations = $table->getScheme()['relations'];
-        $rows = [];
-
-        foreach (func_get_args() as $row) {
-            $relationTable = $row->getTable();
-
-            if (!isset($relations[$relationTable->getName()])) {
-                throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
-            }
-
-            $relation = $relations[$relationTable->getName()];
-
-            if (!isset($relations[$relation[0]])) {
-                $relations[$relation[0]] = [];
-            }
-
-            $relations[$relation[0]][] = [
-                $relation,
-                $relationTable,
-                $row,
-            ];
-        }
-
-        if (isset($relations[SchemeInterface::HAS_ONE])) {
-            foreach ($relations[SchemeInterface::HAS_ONE] as $r) {
-                list($relation, $relationTable, $row) = $r;
-
-                if ($row->id === null) {
-                    $row->save();
-                }
-
-                $this->{$relation[1]} = $row->id;
-                $this->relations[$relationTable->getName()] = $row;
-            }
-
-            $this->save();
-
-            foreach ($relations[SchemeInterface::HAS_ONE] as $r) {
-                list($relation, $relationTable, $row) = $r;
-
-                if ($table->getName() !== $relationTable->getName()) {
-                    $cache = $row->getCache();
-
-                    if (isset($cache[$table->getName()])) {
-                        $cache[$table->getName()][] = $this;
-                        $row->setCache($cache);
-                    }
-                }
-            }
-        }
-
-        if (isset($relations[SchemeInterface::HAS_MANY])) {
-            if ($this->id === null) {
+            //Has one
+            if ($field = $table1->getJoinField($table2)) {
+                $this->{$field->getName()} = $row->id;
                 $this->save();
+                continue;
             }
 
-            foreach ($relations[SchemeInterface::HAS_MANY] as $r) {
-                list($relation, $relationTable, $row) = $r;
-
-                $row->{$relation[1]} = $this->id;
+            //Has many
+            if ($field = $table2->getJoinField($table1)) {
+                $row->{$field->getName()} = $this->id;
                 $row->save();
-
-                if (isset($this->relations[$relationTable->getName()])) {
-                    $this->relations[$relationTable->getName()][] = $row;
-                }
-
-                if ($table->getName() !== $relationTable->getName()) {
-                    $cache = $row->getCache();
-                    $cache[$table->getName()] = $this;
-                    $row->setCache($cache);
-                }
-            }
-        }
-
-        if (isset($relations[SchemeInterface::HAS_MANY_TO_MANY])) {
-            if ($this->id === null) {
-                $this->save();
+                continue;
             }
 
-            foreach ($relations[SchemeInterface::HAS_MANY_TO_MANY] as $r) {
-                list($relation, $relationTable, $row) = $r;
+            //Has many to many
+            if ($joinTable = $table1->getJoinTable($table2)) {
+                $joinTable->insert([
+                    $joinTable->getJoinField($table1)->getName() => $this->id,
+                    $joinTable->getJoinField($table2)->getName() => $row->id,
+                ])
+                ->run();
 
-                $bridge = $this->getDatabase()->{$relation[1]};
-
-                if ($row->id === null) {
-                    $row->save();
-                }
-
-                $bridge
-                    ->insert()
-                    ->duplications()
-                    ->data([
-                        $relation[2] => $this->id,
-                        $relation[3] => $row->id,
-                    ])
-                    ->run();
-
-                if (isset($this->relations[$relationTable->getName()])) {
-                    $this->relations[$relationTable->getName()][] = $row;
-                }
+                continue;
             }
+
+            throw new RuntimeException(
+                sprintf('The tables %s and %s are not related', $table1->getName(), $table2->getName())
+            );
         }
 
         return $this;
     }
 
-    /**
-     * Unrelate this row with other row and save it.
-     *
-     * @param Row $row
-     *
-     * @return $this
-     */
-    public function unrelate(Row $row)
+    public function unrelate(Row ...$rows): self
     {
-        $table = $this->getTable();
-        $relationTable = $row->getTable();
-        $relations = $table->getScheme()['relations'];
+        $table1 = $this->table;
 
-        if (!isset($relations[$relationTable->getName()])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
-        }
+        foreach ($rows as $row) {
+            $table2 = $row->getTable();
 
-        $relation = $relations[$relationTable->getName()];
+            //Has one
+            if ($field = $table1->getJoinField($table2)) {
+                $this->{$field->getName()} = null;
+                $this->save();
+                continue;
+            }
 
-        if ($relation[0] === SchemeInterface::HAS_ONE) {
-            $row->unrelate($this);
-
-            return $this;
-        }
-
-        if ($relation[0] === SchemeInterface::HAS_MANY) {
-            if ($row->{$relation[1]} === $this->id) {
-                $row->{$relation[1]} = null;
+            //Has many
+            if ($field = $table2->getJoinField($table1)) {
+                $row->{$field->getName()} = null;
                 $row->save();
+                continue;
             }
 
-            if (isset($this->relations[$relationTable->getName()])) {
-                unset($this->relations[$relationTable->getName()][$row->id]);
+            //Has many to many
+            if ($joinTable = $table1->getJoinTable($table2)) {
+                $joinTable->delete()
+                    ->where($joinTable->getJoinField($table1)->criteria()->eq($this->id))
+                    ->where($joinTable->getJoinField($table2)->criteria()->eq($row->id))
+                    ->run();
+
+                continue;
             }
 
-            if ($table->getName() !== $relationTable->getName()) {
-                $cache = $row->getCache();
-                $cache[$table->getName()] = new NullValue();
-                $row->setCache($cache);
-            }
-
-            return $this;
+            throw new RuntimeException(
+                sprintf('The tables %s and %s are not related', $table1->getName(), $table2->getName())
+            );
         }
 
-        if ($relation[0] === SchemeInterface::HAS_MANY_TO_MANY) {
-            $bridge = $this->getDatabase()->{$relation[1]};
-
-            $bridge
-                ->delete()
-                ->by($relation[2], $this->id)
-                ->by($relation[3], $row->id)
-                ->run();
-
-            unset($this->relations[$relation[1]], $this->relations[$relationTable->getName()][$row->id]);
-
-            $cache = $row->getCache();
-            unset($cache[$relation[1]], $cache[$table->getName()][$this->id]);
-
-            $row->setCache($cache);
-        }
+        return $this;
     }
 
-    /**
-     * Unrelate this row with all rows of a specific table.
-     *
-     * @param Table $relationTable
-     *
-     * @return $this
-     */
-    public function unrelateAll(Table $relationTable)
+    public function unrelateAll(Table ...$tables): self
     {
-        $table = $this->getTable();
-        $relations = $table->getScheme()['relations'];
+        $table1 = $this->table;
 
-        if (!isset($relations[$relationTable->getName()])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
-        }
+        foreach ($tables as $table2) {
+            //Has one
+            if ($field = $table1->getJoinField($table2)) {
+                $this->{$field->getName()} = null;
+                $this->save();
+                continue;
+            }
 
-        $relation = $relations[$relationTable->getName()];
-
-        if ($relation[0] === SchemeInterface::HAS_ONE) {
-            $this->{$relation[1]} = null;
-            $this->relations[$relationTable->getName()] = new NullValue();
-
-            return $this->save();
-        }
-
-        if ($relation[0] === SchemeInterface::HAS_MANY) {
-            $relationTable->update()
-                ->data([
-                    $relation[1] => null,
+            //Has many
+            if ($field = $table2->getJoinField($table1)) {
+                $table2->update([
+                    $field->getName() => null,
                 ])
-                ->by($relation[1], $this->id)
+                ->relatedWith($table1)
                 ->run();
+                continue;
+            }
 
-            $this->relations[$relationTable->getName()] = $relationTable->createCollection();
+            //Has many to many
+            if ($joinTable = $table1->getJoinTable($table2)) {
+                $joinTable->delete()
+                    ->where($joinTable->getJoinField($table1)->criteria()->eq($this->id))
+                    ->where($joinTable->getJoinField($table2)->criteria()->isNotNull())
+                    ->run();
 
-            return $this;
+                continue;
+            }
+
+            throw new RuntimeException(
+                sprintf('The tables %s and %s are not related', $table1->getName(), $table2->getName())
+            );
         }
 
-        if ($relation[0] === SchemeInterface::HAS_MANY_TO_MANY) {
-            $bridge = $this->getDatabase()->{$relation[1]};
-
-            $bridge
-                ->delete()
-                ->by($relation[2], $this->id)
-                ->run();
-
-            $this->relations[$bridge->getName()] = $bridge->createCollection();
-            $this->relations[$relationTable->getName()] = $relationTable->createCollection();
-        }
+        return $this;
     }
 }

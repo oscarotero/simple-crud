@@ -59,9 +59,7 @@ abstract class Select implements QueryInterface
         if ($this->one) {
             $data = $statement->fetch();
 
-            if ($data) {
-                return $this->table->create($data, true);
-            }
+            return $data ? $this->table->create($data, true) : null;
         }
 
         $rows = array_map(

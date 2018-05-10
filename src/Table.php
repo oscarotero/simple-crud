@@ -250,11 +250,24 @@ class Table implements ArrayAccess
     /**
      * Returns the foreign key.
      */
-    public function getJoinField(Table $table): Field
+    public function getJoinField(Table $table): ?Field
     {
         $field = $table->getForeignKey();
 
-        return $this->fields[$field];
+        return $this->fields[$field] ?? null;
+    }
+
+    public function getJoinTable(Table $table): ?Table
+    {
+        $name1 = $this->getName();
+        $name2 = $table->getName();
+        $name = $name1 < $name2 ? "{$name1}_{$name2}" : "{$name2}_{$name1}";
+
+        $joinTable = $this->db->{$name} ?? null;
+
+        if ($joinTable && $joinTable->getJoinField($this) && $joinTable->getJoinField($table)) {
+            return $joinTable;
+        }
     }
 
     /**

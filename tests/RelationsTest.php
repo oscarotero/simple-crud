@@ -79,6 +79,47 @@ EOT
             'SELECT "comment"."id", "comment"."text", "comment"."post_id" FROM "comment" WHERE "comment"."post_id" = ?',
             $query->sql()
         );
+
+        $query = $db->comment->select()
+            ->relatedWith($db->post)
+            ->compile();
+
+        $this->assertEmpty($query->params());
+        $this->assertEquals(
+            'SELECT "comment"."id", "comment"."text", "comment"."post_id" FROM "comment" WHERE "comment"."post_id" IS NOT NULL',
+            $query->sql()
+        );
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testSelfRelateQuery(SimpleCrud $db)
+    {
+        $query = $db->category->select()
+            ->relatedWith($db->category[1])
+            ->compile();
+
+        $this->assertEquals(
+            SchemeInterface::HAS_ONE,
+            $db->getScheme()->getRelation($db->category, $db->category)
+        );
+
+        $this->assertEquals([1], $query->params());
+        $this->assertEquals(
+            'SELECT "category"."id", "category"."name", "category"."category_id" FROM "category" WHERE "category"."category_id" = ?',
+            $query->sql()
+        );
+
+        $query = $db->category->select()
+            ->relatedWith($db->category)
+            ->compile();
+
+        $this->assertEmpty($query->params());
+        $this->assertEquals(
+            'SELECT "category"."id", "category"."name", "category"."category_id" FROM "category" WHERE "category"."category_id" IS NOT NULL',
+            $query->sql()
+        );
     }
 
     /**
@@ -97,7 +138,17 @@ EOT
 
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
-            'SELECT "post"."id", "post"."title" FROM "post" WHERE "post"."id" = ?',
+            'SELECT "post"."id", "post"."title" FROM "post" LEFT JOIN "comment" ON "comment"."post_id" = "post"."id" WHERE "comment"."id" = ?',
+            $query->sql()
+        );
+
+        $query = $db->post->select()
+            ->relatedWith($db->comment)
+            ->compile();
+
+        $this->assertEmpty($query->params());
+        $this->assertEquals(
+            'SELECT "post"."id", "post"."title" FROM "post" LEFT JOIN "comment" ON "comment"."post_id" = "post"."id" WHERE "comment"."post_id" IS NOT NULL',
             $query->sql()
         );
     }
@@ -118,23 +169,17 @@ EOT
 
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
-            'SELECT "category"."id", "category"."name", "category"."category_id", "category_post"."post_id" FROM "category", "category_post" WHERE "category_post"."category_id" = "category"."id" AND "category_post"."post_id" = ?',
+            'SELECT "category"."id", "category"."name", "category"."category_id", "category_post"."post_id" FROM "category" LEFT JOIN "category_post" ON "category_post"."category_id" = "category"."id" WHERE "category_post"."post_id" = ?',
             $query->sql()
         );
-    }
 
-    /**
-     * @depends testCreation
-     */
-    public function testHasOneNullQuery(SimpleCrud $db)
-    {
-        // id = NULL
-        $query = $db->comment->select()
-            ->relatedWith($db->post->create())
+        $query = $db->category->select()
+            ->relatedWith($db->post)
             ->compile();
 
+        $this->assertEmpty($query->params());
         $this->assertEquals(
-            'SELECT "comment"."id", "comment"."text", "comment"."post_id" FROM "comment" WHERE "comment"."post_id" = NULL',
+            'SELECT "category"."id", "category"."name", "category"."category_id" FROM "category" LEFT JOIN "category_post" ON "category_post"."category_id" = "category"."id" WHERE "category_post"."post_id" IS NOT NULL',
             $query->sql()
         );
     }
@@ -144,12 +189,50 @@ EOT
         $db = $this->createDatabase();
 
         $post = $db->post->create(['title' => 'First post'])->save();
-        $category = $db->category->create(['name' => 'First category'])->save();
         $comment = $db->comment->create(['text' => 'Comment'])->save();
 
+        //Relate
         $comment->relate($post);
 
         $this->assertEquals($post->id, $comment->post_id);
+
+        $result = $db->post
+            ->select()
+            ->one()
+            ->relatedWith($comment)
+            ->run();
+
+        $this->assertSame($post, $result);
+
+        //Unrelate
+        $comment->unrelate($post);
+
+        $this->assertNull($comment->post_id);
+
+        $result = $db->post
+            ->select()
+            ->one()
+            ->relatedWith($comment)
+            ->run();
+
+        $this->assertNull($result);
+
+        //Unrelate all
+        $comment->relate($post);
+
+        $this->assertEquals($post->id, $comment->post_id);
+
+        $comment->unrelateAll($db->post);
+
+        $this->assertNull($comment->post_id);
+
+        $result = $db->post
+            ->select()
+            ->one()
+            ->relatedWith($comment)
+            ->run();
+
+        $this->assertNull($result);
     }
 
     public function testRelateMany()
@@ -157,12 +240,110 @@ EOT
         $db = $this->createDatabase();
 
         $post = $db->post->create(['title' => 'First post'])->save();
-        $category = $db->category->create(['name' => 'First category'])->save();
         $comment = $db->comment->create(['text' => 'Comment'])->save();
 
+        //Relate
         $post->relate($comment);
 
         $this->assertEquals($post->id, $comment->post_id);
+
+        $result = $db->comment
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(1, $result);
+        $this->assertSame($comment, $result[1]);
+
+        //Unrelate
+        $post->unrelate($comment);
+
+        $this->assertNull($comment->post_id);
+
+        $result = $db->comment
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(0, $result);
+
+        //Unrelate all
+        $comment2 = $db->comment->create(['text' => 'Other comment'])->save();
+        $post->relate($comment, $comment2);
+
+        $result = $db->comment
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(2, $result);
+
+        $post->unrelateAll($db->comment);
+
+        $result = $db->comment
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(0, $result);
+    }
+
+    public function testRelateManyToMany()
+    {
+        $db = $this->createDatabase();
+
+        $post = $db->post->create(['title' => 'First post'])->save();
+        $category = $db->category->create(['name' => 'First category'])->save();
+
+        //Relate
+        $post->relate($category);
+
+        $category_post = $db->category_post[1];
+
+        $this->assertNotNull($category_post);
+        $this->assertEquals($category_post->post_id, $post->id);
+        $this->assertEquals($category_post->category_id, $category->id);
+
+        $result = $db->category
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(1, $result);
+        $this->assertSame($category, $result[1]);
+
+        //Unrelate
+        $db->category_post->clearCache();
+
+        $post->unrelate($category);
+        $this->assertNull($db->category_post[1]);
+
+        $result = $db->category
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(0, $result);
+
+        //Unrelate all
+        $category2 = $db->category->create(['name' => 'Second category'])->save();
+        $post->relate($category, $category2);
+
+        $result = $db->category
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(2, $result);
+
+        $post->unrelateAll($db->category);
+
+        $result = $db->category
+            ->select()
+            ->relatedWith($post)
+            ->run();
+
+        $this->assertCount(0, $result);
     }
 
     public function _testDirectRelatedData()
@@ -218,96 +399,5 @@ EOT
         ]);
 
         $this->assertEquals($json, (string) $comments);
-    }
-
-    public function _testRelatedWithItself()
-    {
-        $db = $this->db;
-
-        $a = $db->category->create(['name' => 'A'])->save();
-        $b = $db->category->create(['name' => 'B'])->save();
-        $a1 = $db->category->create(['name' => 'A1'])->save();
-        $a2 = $db->category->create(['name' => 'A2'])->save();
-        $a11 = $db->category->create(['name' => 'A11'])->save();
-        $a21 = $db->category->create(['name' => 'A21'])->save();
-
-        $a->relate($a1, $a2);
-        $a1->relate($a11);
-        $a2->relate($a21);
-
-        $this->assertEquals([3 => 'A1', 4 => 'A2'], $a->category->name);
-        $this->assertEquals([5 => 'A11'], $a1->category->name);
-        $this->assertEquals([6 => 'A21'], $a2->category->name);
-
-        $a1->unrelate($a11);
-        $this->assertEmpty($a1->category->name);
-
-        $a->unrelate($a2);
-        $this->assertEquals([3 => 'A1'], $a->category->name);
-    }
-
-    public function _testManyToManyData()
-    {
-        $db = $this->db;
-
-        $category1 = $db->category->create(['name' => 'Category 1'])->save();
-        $category2 = $db->category->create(['name' => 'Category 2'])->save();
-
-        $post = $db->post->create(['title' => 'second']);
-
-        $post->relate($category1, $category2);
-
-        $this->assertCount(2, $post->category);
-
-        $selected = $db->category->select()->run();
-
-        $this->assertEquals((string) $selected, (string) $post->category);
-        $this->assertEquals((string) $selected, (string) $db->post->select()->run()->category);
-    }
-
-    public function _testRelateUnrelate()
-    {
-        $db = $this->db;
-
-        $post = $db->post->create(['title' => 'Post 1']);
-
-        $comment1 = $db->comment->create(['text' => 'Comment 1']);
-        $post->relate($comment1);
-        $this->assertSame($post->id, $comment1->post_id);
-        $this->assertCount(1, $post->comment);
-        $this->assertSame($post, $comment1->post);
-
-        $comment2 = $db->comment->create(['text' => 'Comment 2']);
-        $post->relate($comment2);
-        $this->assertSame($post->id, $comment2->post_id);
-        $this->assertCount(2, $post->comment);
-        $this->assertSame($post, $comment2->post);
-
-        $category1 = $db->category->create(['name' => 'Category 1']);
-        $post->relate($category1);
-        $this->assertCount(1, $post->category_post);
-        $this->assertCount(1, $category1->category_post);
-        $this->assertCount(1, $category1->post);
-        $this->assertCount(1, $post->category);
-
-        $post->unrelate($comment1);
-        $this->assertCount(1, $post->comment);
-        $this->assertInstanceOf('SimpleCrud\\NullValue', $comment1->post);
-
-        $post->unrelate($category1);
-        $this->assertCount(0, $post->category_post);
-        $this->assertCount(0, $category1->category_post);
-        $this->assertCount(0, $category1->post);
-        $this->assertCount(0, $post->category);
-
-        $category2 = $db->category->create(['name' => 'Category 2']);
-        $post->unrelate($category2);
-        $this->assertCount(0, $post->category_post);
-        $this->assertCount(0, $category2->category_post);
-        $this->assertCount(0, $category2->post);
-        $this->assertCount(0, $post->category);
-
-        $post->unrelateAll($db->comment);
-        $this->assertCount(0, $post->comment);
     }
 }

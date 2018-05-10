@@ -35,6 +35,11 @@ class Field
         return $value;
     }
 
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
     public function getScheme(): array
     {
         return $this->table->getScheme()['fields'][$this->name];

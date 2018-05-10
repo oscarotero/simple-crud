@@ -14,6 +14,4 @@ interface SchemeInterface
     public function toArray(): array;
 
     public function getRelation(Table $table1, Table $table2): ?int;
-
-    public function getManyToManyTableName(Table $table1, Table $table2): string;
 }
