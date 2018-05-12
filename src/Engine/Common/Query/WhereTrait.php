@@ -6,7 +6,7 @@ namespace SimpleCrud\Engine\Common\Query;
 use InvalidArgumentException;
 use Latitude\QueryBuilder\CriteriaInterface;
 use RuntimeException;
-use SimpleCrud\AbstractRow;
+use SimpleCrud\Row;
 use SimpleCrud\Fields\Field;
 use SimpleCrud\Table;
 use function Latitude\QueryBuilder\criteria;
@@ -29,12 +29,12 @@ trait WhereTrait
     }
 
     /**
-     * @param AbstractRow|Table
+     * @param Row|Table
      * @param mixed $related
      */
     public function relatedWith($related): self
     {
-        if ($related instanceof AbstractRow) {
+        if ($related instanceof Row) {
             return $this->applyRowRelation($related);
         }
 
@@ -88,7 +88,7 @@ trait WhereTrait
         );
     }
 
-    private function applyRowRelation(AbstractRow $row): self
+    private function applyRowRelation(Row $row): self
     {
         $table1 = $this->table;
         $table2 = $row->getTable();

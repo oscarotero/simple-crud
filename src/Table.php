@@ -26,10 +26,13 @@ class Table implements ArrayAccess
         $this->name = $name;
 
         $fieldFactory = $db->getFieldFactory();
+        $fields = $db->getScheme()->getTableFields($name);
 
-        foreach (array_keys($this->getScheme()['fields']) as $name) {
-            $this->fields[$name] = $fieldFactory->get($this, $name);
-            $this->defaults[$name] = null;
+        foreach ($fields as $info) {
+            $field = $fieldFactory->get($this, $info);
+
+            $this->fields[$field->getName()] = $field;
+            $this->defaults[$field->getName()] = null;
         }
     }
 
@@ -290,16 +293,6 @@ class Table implements ArrayAccess
         return $this->fields;
     }
 
-    /**
-     * Returns the table scheme.
-     *
-     * @return array
-     */
-    public function getScheme()
-    {
-        return $this->db->getScheme()->toArray()[$this->name];
-    }
-
     public function create(array $data = [], $fromDatabase = false): Row
     {
         if (isset($data['id']) && isset($this->cache[$data['id']]) && is_object($this->cache[$data['id']])) {
@@ -315,9 +308,9 @@ class Table implements ArrayAccess
         return new Row($this, $data);
     }
 
-    public function createCollection(array $data = []): RowCollection
+    public function createCollection(array $rows = []): RowCollection
     {
-        return new RowCollection($this, $data);
+        return new RowCollection($this, ...$rows);
     }
 
     public function databaseValues(array $data): array

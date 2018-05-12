@@ -4,54 +4,60 @@ declare(strict_types = 1);
 namespace SimpleCrud\Engine\Mysql;
 
 use PDO;
+use SimpleCrud\SimpleCrud;
 use SimpleCrud\Engine\Common\Scheme as BaseScheme;
-use SimpleCrud\Engine\SchemeInterface;
-use function Latitude\QueryBuilder\field;
 
-class Scheme extends BaseScheme implements SchemeInterface
+class Scheme extends BaseScheme
 {
-    protected function getTables(): array
+    private $db;
+
+    public function __construct(SimpleCrud $db)
+    {
+        $this->db = $db;
+    }
+
+    protected function loadTables(): array
     {
         return $this->db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
-    protected function getTableFields(string $table): array
+    protected function loadTableFields(string $table): array
     {
         $result = $this->db->execute("DESCRIBE `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
-        $fields = [];
 
-        foreach ($result as $field) {
-            $name = $field['Field'];
+        return array_map(
+            function ($field) {
+                preg_match('#^(\w+)(\((.+)\))?( unsigned)?#', $field['Type'], $matches);
 
-            preg_match('#^(\w+)(\((.+)\))?( unsigned)?#', $field['Type'], $matches);
+                $info = [
+                    'name' => $field['Field'],
+                    'type' => $matches[1],
+                    'null' => ($field['Null'] === 'YES'),
+                    'default' => $field['Default'],
+                    'unsigned' => !empty($matches[4]),
+                    'length' => null,
+                    'values' => null,
+                ];
 
-            $config = [
-                'type' => $matches[1],
-                'null' => ($field['Null'] === 'YES'),
-                'default' => $field['Default'],
-                'unsigned' => !empty($matches[4]),
-                'length' => null,
-                'values' => null,
-            ];
+                switch ($info['type']) {
+                    case 'enum':
+                    case 'set':
+                        $info['values'] = explode(',', $matches[3]);
+                        break;
 
-            switch ($config['type']) {
-                case 'enum':
-                case 'set':
-                    $config['values'] = explode(',', $matches[3]);
-                    break;
-                default:
-                    if (!isset($matches[3])) {
-                        $config['length'] = null;
-                    } elseif (strpos($matches[3], ',')) {
-                        $config['length'] = floatval(str_replace(',', '.', $matches[3]));
-                    } else {
-                        $config['length'] = intval($matches[3]);
-                    }
-            }
+                    default:
+                        if (!isset($matches[3])) {
+                            $info['length'] = null;
+                        } elseif (strpos($matches[3], ',')) {
+                            $info['length'] = floatval(str_replace(',', '.', $matches[3]));
+                        } else {
+                            $info['length'] = intval($matches[3]);
+                        }
+                }
 
-            $fields[$name] = $config;
-        }
-
-        return $fields;
+                return $info;
+            },
+            $result
+        );
     }
 }

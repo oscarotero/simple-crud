@@ -4,11 +4,12 @@ namespace SimpleCrud\Tests;
 
 use Latitude\QueryBuilder\QueryFactory;
 use PDO;
-use SimpleCrud\Engine\SchemeInterface;
+use SimpleCrud\SchemeInterface;
 use SimpleCrud\FieldFactory;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
 use SimpleCrud\TableFactory;
+use SimpleCrud\Fields\Field;
 
 class AutocreateTest extends AbstractTestCase
 {
@@ -38,7 +39,6 @@ EOT
         $this->assertInstanceOf(FieldFactory::class, $db->getFieldFactory());
         $this->assertInstanceOf(QueryFactory::class, $db->query());
         $this->assertInstanceOf(SchemeInterface::class, $db->getScheme());
-        $this->assertInternalType('array', $db->getScheme()->toArray());
 
         $db->setAttribute('bar', 'foo');
 
@@ -61,9 +61,8 @@ EOT
         $this->assertInstanceOf(Table::class, $post);
         $this->assertInstanceOf(SimpleCrud::class, $post->getDatabase());
 
-        $this->assertCount(8, $post->getScheme()['fields']);
+        $this->assertCount(8, $post->getFields());
         $this->assertEquals('post', $post->getName());
-        $this->assertEquals($db->getScheme()->toArray()['post'], $post->getScheme());
     }
 
     public function dataProviderFields(): array
@@ -89,9 +88,9 @@ EOT
         $post = $db->post;
         $field = $post->$name;
 
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $field);
+        $this->assertInstanceOf(Field::class, $field);
         $this->assertInstanceOf('SimpleCrud\\Fields\\'.$type, $field);
 
-        $this->assertEquals($db->post->getScheme()['fields'][$name], $field->getScheme());
+        $this->assertEquals($name, $field->getName());
     }
 }

@@ -12,18 +12,18 @@ use function Latitude\QueryBuilder\param;
 class Field
 {
     protected $table;
-    protected $name;
+    protected $info;
     protected $config = [];
 
-    public function __construct(Table $table, string $name)
+    public function __construct(Table $table, array $info)
     {
         $this->table = $table;
-        $this->name = $name;
+        $this->info = $info;
     }
 
     public function databaseValue($value, array $data)
     {
-        if ($value === '' && $this->getScheme()['null']) {
+        if ($value === '' && $this->info['null']) {
             return;
         }
 
@@ -37,22 +37,22 @@ class Field
 
     public function getName(): string
     {
-        return $this->name;
+        return $this->info['name'];
     }
 
-    public function getScheme(): array
+    public function getInfo(): array
     {
-        return $this->table->getScheme()['fields'][$this->name];
+        return $this->info;
     }
 
     public function identify(): StatementInterface
     {
-        return identify(sprintf('%s.%s', $this->table->getName(), $this->name));
+        return identify(sprintf('%s.%s', $this->table->getName(), $this->getName()));
     }
 
     public function criteria(): CriteriaBuilder
     {
-        return field(sprintf('%s.%s', $this->table->getName(), $this->name));
+        return field(sprintf('%s.%s', $this->table->getName(), $this->getName()));
     }
 
     public function param($value): StatementInterface

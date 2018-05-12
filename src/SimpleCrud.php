@@ -9,7 +9,7 @@ use Latitude\QueryBuilder\QueryFactory;
 use PDO;
 use PDOStatement;
 use RuntimeException;
-use SimpleCrud\Engine\SchemeInterface;
+use InvalidArgumentException;
 
 class SimpleCrud
 {
@@ -28,10 +28,11 @@ class SimpleCrud
     protected $queryFactory;
     protected $fieldFactory;
 
-    public function __construct(PDO $connection)
+    public function __construct(PDO $connection, SchemeInterface $scheme = null)
     {
         $this->connection = $connection;
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->scheme = $scheme;
     }
 
     /**
@@ -150,6 +151,12 @@ class SimpleCrud
             return $this->tables[$name];
         }
 
+        if (!$this->__isset($name)) {
+            throw new InvalidArgumentException(
+                sprintf('The table "%s" does not exist', $name)
+            );
+        }
+
         return $this->tables[$name] = $this->getTableFactory()->get($this, $name);
     }
 
@@ -162,7 +169,7 @@ class SimpleCrud
      */
     public function __isset(string $name): bool
     {
-        return isset($this->getScheme()->toArray()[$name]);
+        return in_array($name, $this->getScheme()->getTables());
     }
 
     /**

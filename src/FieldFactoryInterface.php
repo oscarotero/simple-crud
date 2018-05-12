@@ -17,5 +17,5 @@ interface FieldFactoryInterface
      *
      * @return Fields\Field
      */
-    public function get(Table $table, $name);
+    public function get(Table $table, array $info);
 }

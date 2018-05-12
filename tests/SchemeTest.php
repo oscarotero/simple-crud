@@ -58,123 +58,113 @@ EOT
 
     public function testScheme()
     {
-        $db = $this->db;
+        $scheme = $this->db->getScheme();
 
-        $scheme = [
+        $expected = [
             'post' => [
-                'fields' => [
-                    'id' => [
-                        'type' => 'integer',
-                        'null' => false,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
-                    'title' => [
-                        'type' => 'text',
-                        'null' => true,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
+                [
+                    'name' => 'id',
+                    'type' => 'integer',
+                    'null' => false,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
-                'relations' => [
-                    'category' => [4, 'category_post', 'post_id', 'category_id'],
-                    'comment' => [2, 'post_id'],
-                    'category_post' => [2, 'post_id'],
+                [
+                    'name' => 'title',
+                    'type' => 'text',
+                    'null' => true,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
             ],
             'category' => [
-                'fields' => [
-                    'id' => [
-                        'type' => 'integer',
-                        'null' => false,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
-                    'name' => [
-                        'type' => 'text',
-                        'null' => true,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
+                [
+                    'name' => 'id',
+                    'type' => 'integer',
+                    'null' => false,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
-                'relations' => [
-                    'post' => [4, 'category_post', 'category_id', 'post_id'],
-                    'category_post' => [2, 'category_id'],
+                [
+                    'name' => 'name',
+                    'type' => 'text',
+                    'null' => true,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
             ],
             'comment' => [
-                'fields' => [
-                    'id' => [
-                        'type' => 'integer',
-                        'null' => false,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
-                    'text' => [
-                        'type' => 'text',
-                        'null' => true,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
-                    'post_id' => [
-                        'type' => 'integer',
-                        'null' => true,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
+                [
+                    'name' => 'id',
+                    'type' => 'integer',
+                    'null' => false,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
-                'relations' => [
-                    'post' => [1, 'post_id'],
+                [
+                    'name' => 'text',
+                    'type' => 'text',
+                    'null' => true,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
+                ],
+                [
+                    'name' => 'post_id',
+                    'type' => 'integer',
+                    'null' => true,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
             ],
             'category_post' => [
-                'fields' => [
-                    'id' => [
-                        'type' => 'integer',
-                        'null' => false,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
-                    'category_id' => [
-                        'type' => 'integer',
-                        'null' => false,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
-                    'post_id' => [
-                        'type' => 'integer',
-                        'null' => false,
-                        'default' => null,
-                        'unsigned' => false,
-                        'length' => null,
-                        'values' => null,
-                    ],
+                [
+                    'name' => 'id',
+                    'type' => 'integer',
+                    'null' => false,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
-                'relations' => [
-                    'post' => [1, 'post_id'],
-                    'category' => [1, 'category_id'],
+                [
+                    'name' => 'category_id',
+                    'type' => 'integer',
+                    'null' => false,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
+                ],
+                [
+                    'name' => 'post_id',
+                    'type' => 'integer',
+                    'null' => false,
+                    'default' => null,
+                    'unsigned' => false,
+                    'length' => null,
+                    'values' => null,
                 ],
             ],
         ];
 
-        $this->assertEquals($scheme, $db->getScheme()->toArray());
+        $this->assertEquals(array_keys($expected), $scheme->getTables());
+
+        foreach ($expected as $table => $fields) {
+            $this->assertEquals($fields, $scheme->getTableFields($table));
+        }
     }
 }

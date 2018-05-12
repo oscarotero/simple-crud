@@ -1,7 +1,7 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use SimpleCrud\Engine\SchemeInterface;
+use SimpleCrud\SchemeInterface;
 use SimpleCrud\SimpleCrud;
 use SimpleCrud\Table;
 
@@ -69,11 +69,6 @@ EOT
             ->relatedWith($db->post[1])
             ->compile();
 
-        $this->assertEquals(
-            SchemeInterface::HAS_ONE,
-            $db->getScheme()->getRelation($db->comment, $db->post)
-        );
-
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
             'SELECT "comment"."id", "comment"."text", "comment"."post_id" FROM "comment" WHERE "comment"."post_id" = ?',
@@ -104,11 +99,6 @@ EOT
             ->relatedWith($db->category[1])
             ->compile();
 
-        $this->assertEquals(
-            SchemeInterface::HAS_ONE,
-            $db->getScheme()->getRelation($db->category, $db->category)
-        );
-
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
             'SELECT "category"."id", "category"."name", "category"."category_id" FROM "category" WHERE "category"."category_id" = ?',
@@ -135,11 +125,6 @@ EOT
             ->relatedWith($db->comment[1])
             ->one()
             ->compile();
-
-        $this->assertEquals(
-            SchemeInterface::HAS_MANY,
-            $db->getScheme()->getRelation($db->post, $db->comment)
-        );
 
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
@@ -170,11 +155,6 @@ EOT
         $query = $db->category->select()
             ->relatedWith($db->post[1])
             ->compile();
-
-        $this->assertEquals(
-            SchemeInterface::HAS_MANY_TO_MANY,
-            $db->getScheme()->getRelation($db->category, $db->post)
-        );
 
         $this->assertEquals([1], $query->params());
         $this->assertEquals(

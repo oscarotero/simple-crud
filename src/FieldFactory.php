@@ -106,21 +106,15 @@ class FieldFactory implements FieldFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function get(Table $table, $name)
+    public function get(Table $table, array $info)
     {
-        $scheme = $table->getScheme()['fields'];
-
-        if (!isset($scheme[$name])) {
-            throw new SimpleCrudException(sprintf('The field "%s" does not exist in the table "%s"', $name, $table->getName()));
-        }
-
-        $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;
+        $className = $this->getClassName($info['name'], $info['type']) ?: $this->defaultType;
 
         foreach ($this->namespaces as $namespace) {
             $class = $namespace.$className;
 
             if (class_exists($class)) {
-                return new $class($table, $name);
+                return new $class($table, $info);
             }
         }
 

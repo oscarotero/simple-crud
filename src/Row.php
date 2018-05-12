@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
 
@@ -7,17 +8,17 @@ use BadMethodCallException;
 use SimpleCrud\Engine\SchemeInterface;
 use function Latitude\QueryBuilder\field;
 use SimpleCrud\Engine\Common\Query\Select;
+use JsonSerializable;
 
 /**
  * Stores the data of an table row.
  */
-class Row extends AbstractRow
+class Row implements JsonSerializable
 {
-    protected $table;
-
+    private $table;
     private $values = [];
     private $data = [];
-    private $changed = false;
+    private $changed;
 
     public function __construct(Table $table, array $values)
     {
@@ -46,18 +47,35 @@ class Row extends AbstractRow
         throw new BadMethodCallException(
             sprintf('Invalid method call %s', $name)
         );
-        
     }
 
-    public function getData(string $name = null)
+    /**
+     * @see JsonSerializable
+     */
+    public function jsonSerialize()
     {
-        if ($name === null) {
-            return $this->data;
-        }
-
-        return $this->data[$name] ?? null;
+        return $this->toArray();
     }
 
+    /**
+     * Magic method to stringify the values.
+     */
+    public function __toString()
+    {
+        return json_encode($this, JSON_NUMERIC_CHECK);
+    }
+
+    /**
+     * Returns the table associated with this row
+     */
+    public function getTable(): Table
+    {
+        return $this->table;
+    }
+
+    /**
+     * Add extra data to the row
+     */
     public function setData(string $name, $value): self
     {
         $this->data[$name] = $value;
@@ -65,6 +83,9 @@ class Row extends AbstractRow
         return $this;
     }
 
+    /**
+     * Removes a value or all extra data
+     */
     public function removeData(string $name = null): self
     {
         if ($name === null) {
@@ -76,27 +97,21 @@ class Row extends AbstractRow
         return $this;
     }
 
+    /**
+     * Returns the value of:
+     * - a value field
+     * - a related table
+     */
     public function &__get(string $name)
     {
-        //It's a field
-        if (array_key_exists($name, $this->values)) {
-            return $this->values[$name];
+        //It's a value
+        if ($valueName = $this->getValueName($name)) {
+            return $this->values[$valueName];
         }
 
         //It's data
         if (array_key_exists($name, $this->data)) {
             return $this->data[$name];
-        }
-
-        //It's a localizable field
-        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
-
-        if (!is_null($language)) {
-            $localeName = "{$name}_{$language}";
-
-            if (array_key_exists($localeName, $this->values)) {
-                return $this->values[$localeName];
-            }
         }
 
         //It's a table
@@ -113,44 +128,50 @@ class Row extends AbstractRow
         );
     }
 
+    /**
+     * Change the value of
+     * - a field
+     * - a localized field
+     */
     public function __set(string $name, $value)
     {
-        //It's a field
-        if (array_key_exists($name, $this->values)) {
-            if ($this->values[$name] !== $value) {
+        //It's a value
+        if ($valueName = $this->getValueName($name)) {
+            if ($this->values[$valueName] !== $value) {
                 $this->changed = true;
             }
 
-            return $this->values[$name] = $value;
+            return $this->values[$valueName] = $value;
         }
 
-        //It's a localizable field
-        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
-
-        if (!is_null($language)) {
-            $localeName = "{$name}_{$language}";
-
-            if (array_key_exists($localeName, $this->values)) {
-                if ($this->values[$localeName] !== $value) {
-                    $this->changed = true;
-                }
-
-                return $this->values[$localeName] = $value;
-            }
-        }
+        throw new RuntimeException(
+            sprintf('The field %s does not exists', $name)
+        );
     }
 
+    /**
+     * Check whether a value is set or not
+     */
     public function __isset(string $name): bool
     {
-        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+        $valueName = $this->getValueName($name);
 
-        if (!is_null($language) && isset($this->values["{$name}_{$language}"])) {
-            return true;
-        }
-
-        return isset($this->values[$name]) || isset($this->data[$name]);
+        return ($valueName && isset($this->values[$valueName])) || isset($this->data[$name]);
     }
 
+    /**
+     * Removes the value of a field
+     */
+    public function __unset(string $name)
+    {
+        unset($this->data[$name]);
+
+        $this->__set($name, null);
+    }
+
+    /**
+     * Returns an array with all fields of the row
+     */
     public function toArray($relations = []): array
     {
         $values = $this->values;
@@ -164,6 +185,9 @@ class Row extends AbstractRow
         return $values;
     }
 
+    /**
+     * Edit the values using an array
+     */
     public function edit(array $values): self
     {
         foreach ($values as $name => $value) {
@@ -173,6 +197,9 @@ class Row extends AbstractRow
         return $this;
     }
 
+    /**
+     * Insert/update the row in the database
+     */
     public function save(): self
     {
         if ($this->changed) {
@@ -192,6 +219,25 @@ class Row extends AbstractRow
         return $this;
     }
 
+    /**
+     * Delete the row in the database
+     */
+    public function delete(): self
+    {
+        if (!empty($this->id)) {
+            $this->table->delete()
+                ->where(field('id')->eq($this->id))
+                ->run();
+
+            $this->id = null;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Relate this row with other rows
+     */
     public function relate(Row ...$rows): self
     {
         $table1 = $this->table;
@@ -231,6 +277,9 @@ class Row extends AbstractRow
         return $this->save();
     }
 
+    /**
+     * Unrelate this row with other rows
+     */
     public function unrelate(Row ...$rows): self
     {
         $table1 = $this->table;
@@ -269,6 +318,9 @@ class Row extends AbstractRow
         return $this->save();
     }
 
+    /**
+     * Unrelate this row with all rows of other tables
+     */
     public function unrelateAll(Table ...$tables): self
     {
         $table1 = $this->table;
@@ -308,6 +360,9 @@ class Row extends AbstractRow
         return $this->save();
     }
 
+    /**
+     * Creates a select query of a table related with this row
+     */
     public function select(Table $table): Select
     {
         //Has one
@@ -316,5 +371,26 @@ class Row extends AbstractRow
         }
 
         return $table->select()->relatedWith($this);
+    }
+
+    /**
+     * Return the real field name
+     */
+    private function getValueName(string $name)
+    {
+        if (array_key_exists($name, $this->values)) {
+            return $name;
+        }
+
+         //It's a localizable field
+        $language = $this->table->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+
+        if (!is_null($language)) {
+            $name .= "_{$language}";
+
+            if (array_key_exists($name, $this->values)) {
+                return $name;
+            }
+        }
     }
 }
