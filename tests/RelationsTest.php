@@ -80,6 +80,10 @@ EOT
             $query->sql()
         );
 
+        $query2 = $db->post[1]->comment()->compile();
+        $this->assertEquals($query->params(), $query2->params());
+        $this->assertEquals($query->sql(), $query2->sql());
+
         $query = $db->comment->select()
             ->relatedWith($db->post)
             ->compile();
@@ -129,6 +133,7 @@ EOT
     {
         $query = $db->post->select()
             ->relatedWith($db->comment[1])
+            ->one()
             ->compile();
 
         $this->assertEquals(
@@ -138,9 +143,13 @@ EOT
 
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
-            'SELECT "post"."id", "post"."title" FROM "post" LEFT JOIN "comment" ON "comment"."post_id" = "post"."id" WHERE "comment"."id" = ?',
+            'SELECT "post"."id", "post"."title" FROM "post" LEFT JOIN "comment" ON "comment"."post_id" = "post"."id" WHERE "comment"."id" = ? LIMIT 1',
             $query->sql()
         );
+
+        $query2 = $db->comment[1]->post()->compile();
+        $this->assertEquals($query->params(), $query2->params());
+        $this->assertEquals($query->sql(), $query2->sql());
 
         $query = $db->post->select()
             ->relatedWith($db->comment)
@@ -173,6 +182,10 @@ EOT
             $query->sql()
         );
 
+        $query2 = $db->post[1]->category()->compile();
+        $this->assertEquals($query->params(), $query2->params());
+        $this->assertEquals($query->sql(), $query2->sql());
+
         $query = $db->category->select()
             ->relatedWith($db->post)
             ->compile();
@@ -195,6 +208,7 @@ EOT
         $comment->relate($post);
 
         $this->assertEquals($post->id, $comment->post_id);
+        $this->assertSame($post, $comment->post);
 
         $result = $db->post
             ->select()
@@ -246,6 +260,7 @@ EOT
         $post->relate($comment);
 
         $this->assertEquals($post->id, $comment->post_id);
+        $this->assertSame($post, $comment->post);
 
         $result = $db->comment
             ->select()
@@ -303,6 +318,8 @@ EOT
         $this->assertNotNull($category_post);
         $this->assertEquals($category_post->post_id, $post->id);
         $this->assertEquals($category_post->category_id, $category->id);
+        $this->assertSame($post, $category->post[1]);
+        $this->assertSame($post->category[1], $category);
 
         $result = $db->category
             ->select()
@@ -344,60 +361,5 @@ EOT
             ->run();
 
         $this->assertCount(0, $result);
-    }
-
-    public function _testDirectRelatedData()
-    {
-        $db = $this->db;
-
-        $post = $db->post->create([
-            'title' => 'first',
-        ])->save();
-
-        $this->assertInstanceOf('SimpleCrud\\RowCollection', $post->category);
-        $this->assertInstanceOf('SimpleCrud\\RowCollection', $post->comment);
-
-        $comment = $db->comment->create(['text' => 'Hello world']);
-        $comment->relate($post);
-
-        $this->assertSame($post, $comment->post);
-
-        $comment2 = $db->comment->create(['text' => 'Hello world 2']);
-        $comment2->relate($post);
-
-        $comments = $post->comment;
-
-        $this->assertCount(2, $post->comment);
-
-        $comment2->unrelate($post);
-
-        $this->assertCount(1, $post->comment);
-
-        //Left join
-        $comments = $db->comment->select()
-            ->leftJoin('post')
-            ->run();
-
-        $this->assertCount(2, $comments);
-
-        $json = json_encode([
-            [
-                'id' => 1,
-                'text' => 'Hello world',
-                'post_id' => 1,
-                'post' => [
-                    'id' => 1,
-                    'title' => 'first',
-                    'category' => [],
-                    'comment' => null,
-                ],
-            ], [
-                'id' => 2,
-                'text' => 'Hello world 2',
-                'post_id' => null,
-            ],
-        ]);
-
-        $this->assertEquals($json, (string) $comments);
     }
 }

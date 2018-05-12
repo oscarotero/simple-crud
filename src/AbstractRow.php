@@ -75,7 +75,6 @@ abstract class AbstractRow implements JsonSerializable
      *
      * @return array
      */
-    abstract public function toArray($recursive = true, array $bannedEntities = []);
 
     /**
      * Magic method to return properties.
@@ -84,7 +83,7 @@ abstract class AbstractRow implements JsonSerializable
      *
      * @return mixed
      */
-    abstract public function __get($name);
+    //abstract public function __get($name);
 
     /**
      * Magic method to edit a property.
@@ -94,7 +93,7 @@ abstract class AbstractRow implements JsonSerializable
      *
      * @return mixed
      */
-    abstract public function __set($name, $value);
+    //abstract public function __set($name, $value);
 
     /**
      * Deletes the row(s) in the database.
@@ -138,7 +137,7 @@ abstract class AbstractRow implements JsonSerializable
      * @param string $name
      * @param mixed  $arguments
      */
-    public function __call($name, $arguments)
+    public function NO__call($name, $arguments)
     {
         if (isset($this->methods[$name])) {
             if (!isset($this->bindMethods[$name])) {

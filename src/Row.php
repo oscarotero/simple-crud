@@ -3,8 +3,10 @@
 namespace SimpleCrud;
 
 use RuntimeException;
+use BadMethodCallException;
 use SimpleCrud\Engine\SchemeInterface;
 use function Latitude\QueryBuilder\field;
+use SimpleCrud\Engine\Common\Query\Select;
 
 /**
  * Stores the data of an table row.
@@ -14,7 +16,7 @@ class Row extends AbstractRow
     protected $table;
 
     private $values = [];
-    private $relations = [];
+    private $data = [];
     private $changed = false;
 
     public function __construct(Table $table, array $values)
@@ -32,42 +34,58 @@ class Row extends AbstractRow
         ];
     }
 
-    /**
-     * Return the current cache.
-     *
-     * @return array
-     */
-    public function getCache()
+    public function __call(string $name, array $arguments): Select
     {
-        return $this->relations;
+        $db = $this->table->getDatabase();
+
+        //Relations
+        if (isset($db->$name)) {
+            return $this->select($db->$name);
+        }
+
+        throw new BadMethodCallException(
+            sprintf('Invalid method call %s', $name)
+        );
+        
     }
 
-    /**
-     * Set a new cache.
-     *
-     * @param array $relations
-     */
-    public function setCache(array $relations)
+    public function getData(string $name = null)
     {
-        return $this->relations = $relations;
+        if ($name === null) {
+            return $this->data;
+        }
+
+        return $this->data[$name] ?? null;
     }
 
-    /**
-     * Magic method to return properties or load them automatically.
-     *
-     * @param string $name
-     */
-    public function &__get($name)
+    public function setData(string $name, $value): self
+    {
+        $this->data[$name] = $value;
+
+        return $this;
+    }
+
+    public function removeData(string $name = null): self
+    {
+        if ($name === null) {
+            $this->data = [];
+        } else {
+            unset($this->data[$name]);
+        }
+
+        return $this;
+    }
+
+    public function &__get(string $name)
     {
         //It's a field
         if (array_key_exists($name, $this->values)) {
             return $this->values[$name];
         }
 
-        //It's a relation
-        if (array_key_exists($name, $this->relations)) {
-            $return = $this->relations[$name] ?: new NullValue();
-            return $return;
+        //It's data
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
         }
 
         //It's a localizable field
@@ -81,31 +99,21 @@ class Row extends AbstractRow
             }
         }
 
-        //Load the relation
-        $scheme = $this->getTable()->getScheme();
+        //It's a table
+        $db = $this->table->getDatabase();
 
-        if (isset($scheme['relations'][$name])) {
-            $return = call_user_func([$this, $name])->run() ?: new NullValue();
-            $this->relations[$name] = $return;
-            return $return;
+        //Relations
+        if (isset($db->$name)) {
+            $result = $this->data[$name] = $this->select($db->$name)->run();
+            return $result;
         }
 
-        //Exists as a function
-        if (method_exists($this, $name)) {
-            $return = $this->$name();
-            return $return;
-        }
-
-        throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
+        throw new RuntimeException(
+            sprintf('Undefined property "%s"', $name)
+        );
     }
 
-    /**
-     * Magic method to store properties.
-     *
-     * @param string $name
-     * @param mixed  $value
-     */
-    public function __set($name, $value)
+    public function __set(string $name, $value)
     {
         //It's a field
         if (array_key_exists($name, $this->values)) {
@@ -130,37 +138,9 @@ class Row extends AbstractRow
                 return $this->values[$localeName] = $value;
             }
         }
-
-        //It's a relation
-        $table = $this->getTable();
-        $scheme = $table->getScheme();
-
-        if (!isset($scheme['relations'][$name])) {
-            throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
-        }
-
-        $relation = $scheme['relations'][$name][0];
-
-        //Check types
-        if ($relation === SchemeInterface::HAS_ONE) {
-            if ($value !== null && !($value instanceof self)) {
-                throw new SimpleCrudException(sprintf('Invalid value: %s must be a Row instance or null', $name));
-            }
-        } elseif (!($value instanceof RowCollection)) {
-            throw new SimpleCrudException(sprintf('Invalid value: %s must be a RowCollection', $name));
-        }
-
-        $this->relations[$name] = $value;
     }
 
-    /**
-     * Magic method to check if a property is defined or not.
-     *
-     * @param string $name Property name
-     *
-     * @return bool
-     */
-    public function __isset($name)
+    public function __isset(string $name): bool
     {
         $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
 
@@ -168,37 +148,23 @@ class Row extends AbstractRow
             return true;
         }
 
-        return isset($this->values[$name]) || isset($this->relations[$name]);
+        return isset($this->values[$name]) || isset($this->data[$name]);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function toArray($recursive = true, array $bannedEntities = [])
+    public function toArray($relations = []): array
     {
-        if (!$recursive) {
-            return $this->values;
-        }
+        $values = $this->values;
 
-        $table = $this->getTable();
-
-        if (!empty($bannedEntities) && in_array($table->getName(), $bannedEntities)) {
-            return;
-        }
-
-        $bannedEntities[] = $table->getName();
-        $data = $this->values;
-
-        foreach ($this->relations as $name => $value) {
-            if ($value !== null) {
-                $data[$name] = $value->toArray(true, $bannedEntities);
+        foreach ($relations as $name) {
+            if ($row = $this->$name) {
+                $values[$name] = $row->toArray();
             }
         }
 
-        return $data;
+        return $values;
     }
 
-    public function edit(array $values)
+    public function edit(array $values): self
     {
         foreach ($values as $name => $value) {
             $this->__set($name, $value);
@@ -207,12 +173,7 @@ class Row extends AbstractRow
         return $this;
     }
 
-    /**
-     * Saves this row in the database.
-     *
-     * @return $this
-     */
-    public function save()
+    public function save(): self
     {
         if ($this->changed) {
             $values = $this->table->databaseValues($this->values);
@@ -241,7 +202,6 @@ class Row extends AbstractRow
             //Has one
             if ($field = $table1->getJoinField($table2)) {
                 $this->{$field->getName()} = $row->id;
-                $this->save();
                 continue;
             }
 
@@ -268,7 +228,7 @@ class Row extends AbstractRow
             );
         }
 
-        return $this;
+        return $this->save();
     }
 
     public function unrelate(Row ...$rows): self
@@ -281,7 +241,6 @@ class Row extends AbstractRow
             //Has one
             if ($field = $table1->getJoinField($table2)) {
                 $this->{$field->getName()} = null;
-                $this->save();
                 continue;
             }
 
@@ -307,7 +266,7 @@ class Row extends AbstractRow
             );
         }
 
-        return $this;
+        return $this->save();
     }
 
     public function unrelateAll(Table ...$tables): self
@@ -318,7 +277,6 @@ class Row extends AbstractRow
             //Has one
             if ($field = $table1->getJoinField($table2)) {
                 $this->{$field->getName()} = null;
-                $this->save();
                 continue;
             }
 
@@ -347,6 +305,16 @@ class Row extends AbstractRow
             );
         }
 
-        return $this;
+        return $this->save();
+    }
+
+    public function select(Table $table): Select
+    {
+        //Has one
+        if ($this->table->getJoinField($table)) {
+            return $table->select()->one()->relatedWith($this);
+        }
+
+        return $table->select()->relatedWith($this);
     }
 }
