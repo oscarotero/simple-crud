@@ -4,12 +4,11 @@ namespace SimpleCrud\Tests;
 
 use Latitude\QueryBuilder\QueryFactory;
 use PDO;
-use SimpleCrud\SchemeInterface;
+use SimpleCrud\Database;
 use SimpleCrud\FieldFactory;
-use SimpleCrud\SimpleCrud;
-use SimpleCrud\Table;
-use SimpleCrud\TableFactory;
 use SimpleCrud\Fields\Field;
+use SimpleCrud\SchemeInterface;
+use SimpleCrud\Table;
 
 class AutocreateTest extends AbstractTestCase
 {
@@ -31,11 +30,10 @@ EOT
         ]);
     }
 
-    public function testDatabase(): SimpleCrud
+    public function testDatabase(): Database
     {
         $db = $this->createDatabase();
 
-        $this->assertInstanceOf(TableFactory::class, $db->getTableFactory());
         $this->assertInstanceOf(FieldFactory::class, $db->getFieldFactory());
         $this->assertInstanceOf(QueryFactory::class, $db->query());
         $this->assertInstanceOf(SchemeInterface::class, $db->getScheme());
@@ -51,7 +49,7 @@ EOT
     /**
      * @depends testDatabase
      */
-    public function testTable(SimpleCrud $db)
+    public function testTable(Database $db)
     {
         $this->assertTrue(isset($db->post));
         $this->assertFalse(isset($db->invalid));
@@ -59,7 +57,7 @@ EOT
         $post = $db->post;
 
         $this->assertInstanceOf(Table::class, $post);
-        $this->assertInstanceOf(SimpleCrud::class, $post->getDatabase());
+        $this->assertInstanceOf(Database::class, $post->getDatabase());
 
         $this->assertCount(8, $post->getFields());
         $this->assertEquals('post', $post->getName());
@@ -83,7 +81,7 @@ EOT
      * @dataProvider dataProviderFields
      * @depends testDatabase
      */
-    public function testFields(string $name, string $type, SimpleCrud $db)
+    public function testFields(string $name, string $type, Database $db)
     {
         $post = $db->post;
         $field = $post->$name;

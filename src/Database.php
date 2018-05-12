@@ -4,14 +4,14 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use Exception;
+use InvalidArgumentException;
 use Latitude\QueryBuilder\Query;
 use Latitude\QueryBuilder\QueryFactory;
 use PDO;
 use PDOStatement;
 use RuntimeException;
-use InvalidArgumentException;
 
-class SimpleCrud
+class Database
 {
     const ENGINE_MYSQL = 'mysql';
     const ENGINE_SQLITE = 'sqlite';
@@ -24,7 +24,6 @@ class SimpleCrud
     protected $attributes = [];
     protected $onExecute;
 
-    protected $tableFactory;
     protected $queryFactory;
     protected $fieldFactory;
 
@@ -77,28 +76,6 @@ class SimpleCrud
         $this->onExecute = $callback;
 
         return $this;
-    }
-
-    /**
-     * Set the TableFactory instance used to create all tables.
-     */
-    public function setTableFactory(TableFactory $tableFactory): self
-    {
-        $this->tableFactory = $tableFactory;
-
-        return $this;
-    }
-
-    /**
-     * Returns the TableFactory instance used.
-     */
-    public function getTableFactory(): TableFactory
-    {
-        if ($this->tableFactory === null) {
-            return $this->tableFactory = (new TableFactory())->setAutocreate();
-        }
-
-        return $this->tableFactory;
     }
 
     /**
@@ -157,7 +134,7 @@ class SimpleCrud
             );
         }
 
-        return $this->tables[$name] = $this->getTableFactory()->get($this, $name);
+        return $this->tables[$name] = new Table($this, $name);
     }
 
     /**

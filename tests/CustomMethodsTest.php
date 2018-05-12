@@ -3,7 +3,7 @@ namespace SimpleCrud\Tests;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 use SimpleCrud\Table;
 
 class CustomPropertiesTest //extends TestCase
@@ -12,7 +12,7 @@ class CustomPropertiesTest //extends TestCase
 
     public function setUp()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new Database(new PDO('sqlite::memory:'));
 
         $this->db->executeTransaction(function ($db) {
             $db->execute(

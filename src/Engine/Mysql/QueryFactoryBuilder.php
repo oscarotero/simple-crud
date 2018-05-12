@@ -5,12 +5,12 @@ namespace SimpleCrud\Engine\Mysql;
 
 use Latitude\QueryBuilder\Engine\MySqlEngine;
 use Latitude\QueryBuilder\QueryFactory;
+use SimpleCrud\Database;
 use SimpleCrud\Engine\QueryFactoryBuilderInterface;
-use SimpleCrud\SimpleCrud;
 
 class QueryFactoryBuilder implements QueryFactoryBuilderInterface
 {
-    public static function buildQueryFactory(SimpleCrud $db): QueryFactory
+    public static function buildQueryFactory(Database $db): QueryFactory
     {
         return new QueryFactory(new MySqlEngine());
     }

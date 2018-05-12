@@ -3,12 +3,11 @@ declare(strict_types = 1);
 
 namespace SimpleCrud;
 
-use RuntimeException;
 use BadMethodCallException;
-use SimpleCrud\Engine\SchemeInterface;
-use function Latitude\QueryBuilder\field;
-use SimpleCrud\Engine\Common\Query\Select;
 use JsonSerializable;
+use RuntimeException;
+use SimpleCrud\Engine\Common\Query\Select;
+use function Latitude\QueryBuilder\field;
 
 /**
  * Stores the data of an table row.
@@ -75,6 +74,7 @@ class Row implements JsonSerializable
 
     /**
      * Add extra data to the row
+     * @param mixed $value
      */
     public function setData(string $name, $value): self
     {
@@ -132,6 +132,7 @@ class Row implements JsonSerializable
      * Change the value of
      * - a field
      * - a localized field
+     * @param mixed $value
      */
     public function __set(string $name, $value)
     {
@@ -171,6 +172,7 @@ class Row implements JsonSerializable
 
     /**
      * Returns an array with all fields of the row
+     * @param mixed $relations
      */
     public function toArray($relations = []): array
     {
@@ -382,8 +384,8 @@ class Row implements JsonSerializable
             return $name;
         }
 
-         //It's a localizable field
-        $language = $this->table->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+        //It's a localizable field
+        $language = $this->table->getDatabase()->getAttribute(Database::ATTR_LOCALE);
 
         if (!is_null($language)) {
             $name .= "_{$language}";

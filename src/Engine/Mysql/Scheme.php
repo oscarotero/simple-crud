@@ -4,14 +4,14 @@ declare(strict_types = 1);
 namespace SimpleCrud\Engine\Mysql;
 
 use PDO;
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 use SimpleCrud\Engine\Common\Scheme as BaseScheme;
 
 class Scheme extends BaseScheme
 {
     private $db;
 
-    public function __construct(SimpleCrud $db)
+    public function __construct(Database $db)
     {
         $this->db = $db;
     }
@@ -44,7 +44,6 @@ class Scheme extends BaseScheme
                     case 'set':
                         $info['values'] = explode(',', $matches[3]);
                         break;
-
                     default:
                         if (!isset($matches[3])) {
                             $info['length'] = null;

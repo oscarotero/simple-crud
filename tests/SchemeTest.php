@@ -4,7 +4,7 @@ namespace SimpleCrud\Tests;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 use SimpleCrud\Table;
 
 class SchemeTest extends TestCase
@@ -13,7 +13,7 @@ class SchemeTest extends TestCase
 
     public function setUp()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new Database(new PDO('sqlite::memory:'));
 
         $this->db->executeTransaction(function ($db) {
             $db->execute(

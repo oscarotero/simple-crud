@@ -4,13 +4,13 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use ArrayAccess;
-use SimpleCrud\Fields\Field;
+use SimpleCrud\Engine\QueryInterface;
 use function Latitude\QueryBuilder\field;
 
 /**
  * Manages a database table.
  *
- * @property Fields\Field $id
+ * @property FieldInterface $id
  */
 class Table implements ArrayAccess
 {
@@ -20,7 +20,7 @@ class Table implements ArrayAccess
     private $fields = [];
     private $defaults = [];
 
-    final public function __construct(SimpleCrud $db, string $name)
+    final public function __construct(Database $db, string $name)
     {
         $this->db = $db;
         $this->name = $name;
@@ -44,6 +44,9 @@ class Table implements ArrayAccess
         ];
     }
 
+    /**
+     * Get the devault values used in new rows
+     */
     public function getDefaults(array $overrides = null): array
     {
         if (empty($overrides)) {
@@ -55,12 +58,12 @@ class Table implements ArrayAccess
 
     /**
      * Store a row in the cache.
-     *
-     * @param Row $row
      */
-    public function cache(Row $row)
+    public function cache(Row $row): self
     {
         $this->cache[$row->id] = $row;
+
+        return $this;
     }
 
     /**
@@ -72,56 +75,47 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Register a new query modifier.
+     * Returns a row from the cache.
+     * If the row is not cached, returns null
+     * If the row was cached but removed, returns false
      *
-     * @param string   $name
-     * @param callable $modifier
+     * @param  mixed          $id
+     * @return Row|false|null
      */
-    public function addQueryModifier($name, callable $modifier)
+    public function getCached($id)
     {
-        if (!isset($this->queriesModifiers[$name])) {
-            $this->queriesModifiers[$name] = [];
+        $row = $this->cache[$id] ?? null;
+
+        if (!$row) {
+            return $row;
         }
 
-        $this->queriesModifiers[$name][] = $modifier;
+        if (!$row->id) {
+            return $this->cache[$id] = false;
+        }
+
+        return $row;
     }
 
     /**
      * Magic method to create queries related with this table.
-     *
-     * @throws SimpleCrudException
-     *
-     * @return Queries\Query
      */
-    public function __call(string $name, array $arguments)
+    public function __call(string $name, array $arguments): QueryInterface
     {
         $class = $this->getDatabase()->getEngineNamespace().'Query\\'.ucfirst($name);
 
         return $class::create($this, $arguments);
-        $query = $this->getDatabase()->getQueryFactory()->get($this, $name);
-
-        if (isset($this->queriesModifiers[$name])) {
-            foreach ($this->queriesModifiers[$name] as $modifier) {
-                $modifier($query);
-            }
-        }
-
-        return $query;
     }
 
     /**
      * Magic method to get the Field instance of a table field
-     *
-     * @param string $name The field name
-     *
-     * @throws SimpleCrudException
-     *
-     * @return Fields\Field
      */
-    public function __get($name)
+    public function __get(string $name): FieldInterface
     {
         if (!isset($this->fields[$name])) {
-            throw new SimpleCrudException(sprintf('The field "%s" does not exist in the table "%s"', $name, $this->name));
+            throw new SimpleCrudException(
+                sprintf('The field "%s" does not exist in the table "%s"', $name, $this->name)
+            );
         }
 
         return $this->fields[$name];
@@ -129,12 +123,8 @@ class Table implements ArrayAccess
 
     /**
      * Magic method to check if a field exists or not.
-     *
-     * @param string $name
-     *
-     * @return bool
      */
-    public function __isset($name)
+    public function __isset(string $name): bool
     {
         return isset($this->fields[$name]);
     }
@@ -234,8 +224,6 @@ class Table implements ArrayAccess
 
     /**
      * Returns the table name.
-     *
-     * @return string
      */
     public function getName(): string
     {
@@ -253,7 +241,7 @@ class Table implements ArrayAccess
     /**
      * Returns the foreign key.
      */
-    public function getJoinField(Table $table): ?Field
+    public function getJoinField(Table $table): ?FieldInterface
     {
         $field = $table->getForeignKey();
 
@@ -274,11 +262,9 @@ class Table implements ArrayAccess
     }
 
     /**
-     * Returns the SimpleCrud instance associated with this table.
-     *
-     * @return SimpleCrud
+     * Returns the Database instance associated with this table.
      */
-    public function getDatabase()
+    public function getDatabase(): Database
     {
         return $this->db;
     }
@@ -286,7 +272,7 @@ class Table implements ArrayAccess
     /**
      * Returns all fields.
      *
-     * @return Fields\Field[]
+     * @return FieldInterface[]
      */
     public function getFields()
     {
@@ -320,7 +306,7 @@ class Table implements ArrayAccess
                 throw new SimpleCrudException(sprintf('Invalid field (%s)', $key));
             }
 
-            $value = $this->fields[$key]->databaseValue($value, $data);
+            $value = $this->fields[$key]->databaseValue($value);
         }
 
         return $data;
@@ -333,7 +319,7 @@ class Table implements ArrayAccess
                 throw new SimpleCrudException(sprintf('Invalid field (%s)', $key));
             }
 
-            $value = $this->fields[$key]->rowValue($value, $data);
+            $value = $this->fields[$key]->rowValue($value);
         }
 
         return $data;

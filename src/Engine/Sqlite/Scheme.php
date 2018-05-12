@@ -4,7 +4,7 @@ declare(strict_types = 1);
 namespace SimpleCrud\Engine\Sqlite;
 
 use PDO;
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 use SimpleCrud\Engine\Common\Scheme as BaseScheme;
 use function Latitude\QueryBuilder\field;
 
@@ -12,7 +12,7 @@ class Scheme extends BaseScheme
 {
     private $db;
 
-    public function __construct(SimpleCrud $db)
+    public function __construct(Database $db)
     {
         $this->db = $db;
     }

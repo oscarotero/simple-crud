@@ -12,13 +12,7 @@ interface SchemeInterface
 
     /**
      * Return the field info of a table using an array with the following keys:
-     * - name
-     * - type
-     * - null
-     * - default
-     * - unsigned
-     * - length
-     * - values
+     * name, type, null, default, unsigned, length and values
      */
     public function getTableFields(string $table): array;
 }

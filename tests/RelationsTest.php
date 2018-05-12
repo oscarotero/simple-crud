@@ -1,8 +1,7 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use SimpleCrud\SchemeInterface;
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 use SimpleCrud\Table;
 
 class RelationsTest extends AbstractTestCase
@@ -43,7 +42,7 @@ EOT
         ]);
     }
 
-    public function testCreation(): SimpleCrud
+    public function testCreation(): Database
     {
         $db = $this->createDatabase();
 
@@ -63,7 +62,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testHasOneQuery(SimpleCrud $db)
+    public function testHasOneQuery(Database $db)
     {
         $query = $db->comment->select()
             ->relatedWith($db->post[1])
@@ -93,7 +92,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testSelfRelateQuery(SimpleCrud $db)
+    public function testSelfRelateQuery(Database $db)
     {
         $query = $db->category->select()
             ->relatedWith($db->category[1])
@@ -119,7 +118,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testHasManyQuery(SimpleCrud $db)
+    public function testHasManyQuery(Database $db)
     {
         $query = $db->post->select()
             ->relatedWith($db->comment[1])
@@ -150,7 +149,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testHasManyToManyQuery(SimpleCrud $db)
+    public function testHasManyToManyQuery(Database $db)
     {
         $query = $db->category->select()
             ->relatedWith($db->post[1])

@@ -3,7 +3,7 @@ namespace SimpleCrud\Tests;
 
 use PDO;
 use PHPUnit\Framework\TestCase;
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 use SimpleCrud\Table;
 
 class LocaleTest extends TestCase
@@ -12,7 +12,7 @@ class LocaleTest extends TestCase
 
     public function setUp()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
+        $this->db = new Database(new PDO('sqlite::memory:'));
 
         $this->db->executeTransaction(function ($db) {
             $db->execute(
@@ -30,7 +30,7 @@ EOT
     public function testRow()
     {
         $db = $this->db;
-        $db->setAttribute(SimpleCrud::ATTR_LOCALE, 'gl');
+        $db->setAttribute(Database::ATTR_LOCALE, 'gl');
 
         $post = $db->post->create();
 
@@ -38,7 +38,7 @@ EOT
 
         $this->assertSame($post->title, $post->title_gl);
 
-        $db->setAttribute(SimpleCrud::ATTR_LOCALE, 'es');
+        $db->setAttribute(Database::ATTR_LOCALE, 'es');
         $this->assertNotSame($post->title, $post->title_gl);
         $this->assertSame($post->title, $post->title_es);
 

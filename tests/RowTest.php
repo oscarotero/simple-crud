@@ -2,10 +2,9 @@
 namespace SimpleCrud\Tests;
 
 use DateTime;
-use SimpleCrud\SimpleCrud;
-use SimpleCrud\Table;
 use SimpleCrud\Row;
 use SimpleCrud\RowCollection;
+use SimpleCrud\Table;
 
 class RowTest extends AbstractTestCase
 {

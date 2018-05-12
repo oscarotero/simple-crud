@@ -1,7 +1,7 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 use function Latitude\QueryBuilder\field;
 
 class QueriesTest extends AbstractTestCase
@@ -25,11 +25,11 @@ EOT
         ]);
     }
 
-    public function testCreation(): SimpleCrud
+    public function testCreation(): Database
     {
         $db = $this->createDatabase();
 
-        $this->assertInstanceOf(SimpleCrud::class, $db);
+        $this->assertInstanceOf(Database::class, $db);
 
         return $db;
     }
@@ -53,7 +53,7 @@ EOT
      * @dataProvider dataProviderQueries
      * @depends testCreation
      */
-    public function testQueries(string $name, SimpleCrud $db)
+    public function testQueries(string $name, Database $db)
     {
         $query = $db->post->$name();
 
@@ -64,7 +64,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testSelect(SimpleCrud $db)
+    public function testSelect(Database $db)
     {
         $query = $db->post->select()
             ->one()
@@ -86,7 +86,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testSelectPage(SimpleCrud $db)
+    public function testSelectPage(Database $db)
     {
         $query = $db->post->select()
             ->one()
@@ -107,7 +107,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testInsert(SimpleCrud $db)
+    public function testInsert(Database $db)
     {
         $query = $db->post->insert([
                 'title' => 'Title',
@@ -126,7 +126,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testUpdate(SimpleCrud $db)
+    public function testUpdate(Database $db)
     {
         $query = $db->post->update([
                 'title' => 'Title',
@@ -147,7 +147,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testDelete(SimpleCrud $db)
+    public function testDelete(Database $db)
     {
         $query = $db->post->delete()
             ->where(field('id')->eq(3));
@@ -164,7 +164,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testCount(SimpleCrud $db)
+    public function testCount(Database $db)
     {
         $query = $db->post->count()
             ->where(field('id')->eq(3));
@@ -181,7 +181,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testSum(SimpleCrud $db)
+    public function testSum(Database $db)
     {
         $query = $db->post->sum('id')
             ->where(field('id')->lt(3));
@@ -198,7 +198,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testMax(SimpleCrud $db)
+    public function testMax(Database $db)
     {
         $query = $db->post->max('id')
             ->where(field('id')->lt(3));
@@ -215,7 +215,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testMin(SimpleCrud $db)
+    public function testMin(Database $db)
     {
         $query = $db->post->min('id')
             ->where(field('id')->lt(3));
@@ -232,7 +232,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testAvg(SimpleCrud $db)
+    public function testAvg(Database $db)
     {
         $query = $db->post->avg('id')
             ->where(field('id')->lt(3));

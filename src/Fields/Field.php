@@ -4,12 +4,13 @@ namespace SimpleCrud\Fields;
 
 use Latitude\QueryBuilder\Builder\CriteriaBuilder;
 use Latitude\QueryBuilder\StatementInterface;
+use SimpleCrud\FieldInterface;
 use SimpleCrud\Table;
 use function Latitude\QueryBuilder\field;
 use function Latitude\QueryBuilder\identify;
 use function Latitude\QueryBuilder\param;
 
-class Field
+class Field implements FieldInterface
 {
     protected $table;
     protected $info;
@@ -21,7 +22,7 @@ class Field
         $this->info = $info;
     }
 
-    public function databaseValue($value, array $data)
+    public function databaseValue($value)
     {
         if ($value === '' && $this->info['null']) {
             return;
@@ -30,7 +31,7 @@ class Field
         return $value;
     }
 
-    public function rowValue($value, array $data = [])
+    public function rowValue($value)
     {
         return $value;
     }
@@ -38,11 +39,6 @@ class Field
     public function getName(): string
     {
         return $this->info['name'];
-    }
-
-    public function getInfo(): array
-    {
-        return $this->info;
     }
 
     public function identify(): StatementInterface
@@ -69,10 +65,8 @@ class Field
         return isset($this->config[$name]) ? $this->config[$name] : null;
     }
 
-    public function setConfig(string $name, $value): self
+    public function setConfig(string $name, $value)
     {
         $this->config[$name] = $value;
-
-        return $this;
     }
 }

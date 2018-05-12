@@ -6,7 +6,6 @@ namespace SimpleCrud;
 use ArrayAccess;
 use Countable;
 use Iterator;
-use SimpleCrud\Engine\SchemeInterface;
 use JsonSerializable;
 use RuntimeException;
 
@@ -76,6 +75,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * Add extra data to the row
+     * @param mixed $value
      */
     public function setData(string $name, $value): self
     {
@@ -129,6 +129,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * Change a property of all rows
+     * @param mixed $value
      */
     public function __set(string $name, $value)
     {
@@ -139,6 +140,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * Check whether a value is set or not
+     * @param mixed $name
      */
     public function __isset($name)
     {
@@ -147,6 +149,8 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
+     * @param mixed $value
      */
     public function offsetSet($offset, $value)
     {
@@ -155,6 +159,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetExists($offset)
     {
@@ -163,6 +168,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetUnset($offset)
     {
@@ -171,6 +177,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetGet($offset)
     {
@@ -227,6 +234,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * Returns an array with all fields of all rows
+     * @param mixed $relations
      */
     public function toArray($relations = []): array
     {

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
 
@@ -47,12 +48,8 @@ class FieldFactory implements FieldFactoryInterface
 
     /**
      * Set the namespace for the fields classes.
-     *
-     * @param string $namespace
-     *
-     * @return self
      */
-    public function addNamespace($namespace)
+    public function addNamespace(string $namespace): self
     {
         array_unshift($this->namespaces, $namespace);
 
@@ -61,12 +58,8 @@ class FieldFactory implements FieldFactoryInterface
 
     /**
      * Map names with field types.
-     *
-     * @param array $map
-     *
-     * @return self
      */
-    public function mapNames(array $map)
+    public function mapNames(array $map): self
     {
         $this->nameMap = $map + $this->nameMap;
 
@@ -75,12 +68,8 @@ class FieldFactory implements FieldFactoryInterface
 
     /**
      * Map names with field types using regexp.
-     *
-     * @param array $map
-     *
-     * @return self
      */
-    public function mapRegex(array $map)
+    public function mapRegex(array $map): self
     {
         $this->regexMap = $map + $this->regexMap;
 
@@ -89,12 +78,8 @@ class FieldFactory implements FieldFactoryInterface
 
     /**
      * Map db field types with classes.
-     *
-     * @param array $map
-     *
-     * @return self
      */
-    public function mapTypes(array $map)
+    public function mapTypes(array $map): self
     {
         $this->typeMap = $map + $this->typeMap;
 
@@ -106,7 +91,7 @@ class FieldFactory implements FieldFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function get(Table $table, array $info)
+    public function get(Table $table, array $info): FieldInterface
     {
         $className = $this->getClassName($info['name'], $info['type']) ?: $this->defaultType;
 
@@ -123,13 +108,8 @@ class FieldFactory implements FieldFactoryInterface
 
     /**
      * Get the field class name.
-     *
-     * @param string $name
-     * @param string $type
-     *
-     * @return string|null
      */
-    protected function getClassName($name, $type)
+    protected function getClassName(string $name, string $type): ?string
     {
         if (isset($this->nameMap[$name])) {
             return $this->nameMap[$name];
@@ -144,5 +124,7 @@ class FieldFactory implements FieldFactoryInterface
         if (isset($this->typeMap[$type])) {
             return $this->typeMap[$type];
         }
+
+        return null;
     }
 }
