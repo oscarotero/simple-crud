@@ -303,7 +303,9 @@ class Table implements ArrayAccess
     {
         foreach ($data as $key => &$value) {
             if (!isset($this->fields[$key])) {
-                throw new SimpleCrudException(sprintf('Invalid field (%s)', $key));
+                throw new SimpleCrudException(
+                    sprintf('Invalid field (%s) in the table "%s"', $key, $this->getName())
+                );
             }
 
             $value = $this->fields[$key]->databaseValue($value);
@@ -316,7 +318,9 @@ class Table implements ArrayAccess
     {
         foreach ($data as $key => &$value) {
             if (!isset($this->fields[$key])) {
-                throw new SimpleCrudException(sprintf('Invalid field (%s)', $key));
+                throw new SimpleCrudException(
+                    sprintf('Invalid field (%s) in the table "%s"', $key, $this->getName())
+                );
             }
 
             $value = $this->fields[$key]->rowValue($value);

@@ -2,63 +2,50 @@
 
 namespace SimpleCrud\Tests;
 
-use PDO;
-use PHPUnit\Framework\TestCase;
 use SimpleCrud\Database;
 use SimpleCrud\Table;
 
-class SchemeTest extends TestCase
+class SchemeTest extends AbstractTestCase
 {
-    private $db;
-
-    public function setUp()
+    private function createDatabase()
     {
-        $this->db = new Database(new PDO('sqlite::memory:'));
-
-        $this->db->executeTransaction(function ($db) {
-            $db->execute(
-<<<'EOT'
+        return $this->createSqliteDatabase([
+            <<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title`       TEXT
 );
 EOT
-            );
-
-            $db->execute(
-<<<'EOT'
+            ,
+            <<<'EOT'
 CREATE TABLE "category" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `name`        TEXT
 );
 EOT
-            );
-
-            $db->execute(
-<<<'EOT'
+            ,
+            <<<'EOT'
 CREATE TABLE "comment" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `text`        TEXT,
     `post_id`     INTEGER
 );
 EOT
-            );
-
-            $db->execute(
-<<<'EOT'
+            ,
+            <<<'EOT'
 CREATE TABLE "category_post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `category_id` INTEGER NOT NULL,
     `post_id`     INTEGER NOT NULL
 );
 EOT
-            );
-        });
+        ]);
     }
 
     public function testScheme()
     {
-        $scheme = $this->db->getScheme();
+        $db = $this->createDatabase();
+        $scheme = $db->getScheme();
 
         $expected = [
             'post' => [

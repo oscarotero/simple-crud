@@ -8,6 +8,7 @@ use Latitude\QueryBuilder\CriteriaInterface;
 use RuntimeException;
 use SimpleCrud\Fields\Field;
 use SimpleCrud\Row;
+use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
 use function Latitude\QueryBuilder\criteria;
 use function Latitude\QueryBuilder\field;
@@ -34,7 +35,7 @@ trait WhereTrait
      */
     public function relatedWith($related): self
     {
-        if ($related instanceof Row) {
+        if ($related instanceof Row || $related instanceof RowCollection) {
             return $this->applyRowRelation($related);
         }
 
@@ -42,7 +43,9 @@ trait WhereTrait
             return $this->applyTableRelation($related);
         }
 
-        throw new InvalidArgumentException('Invalid argument type');
+        throw new InvalidArgumentException(
+            'Invalid argument type. Only instances of Row, Table and RowCollection are allowed'
+        );
     }
 
     private function applyTableRelation(Table $table2): self
@@ -88,7 +91,7 @@ trait WhereTrait
         );
     }
 
-    private function applyRowRelation(Row $row): self
+    private function applyRowRelation($row): self
     {
         $table1 = $this->table;
         $table2 = $row->getTable();
@@ -115,7 +118,7 @@ trait WhereTrait
             $field2 = $joinTable->getJoinField($table2);
 
             $this->query
-                ->addColumns($field2->identify())
+                //->addColumns($field2->identify())
                 ->leftJoin(
                     $joinTable->getName(),
                     criteria('%s = %s', $field1->identify(), $table1->id->identify())

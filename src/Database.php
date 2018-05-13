@@ -58,6 +58,9 @@ class Database
         return 'SimpleCrud\\Engine\\'.ucfirst($this->getEngineType()).'\\';
     }
 
+    /**
+     * Return the scheme class
+     */
     public function getScheme(): SchemeInterface
     {
         if ($this->scheme === null) {
@@ -116,13 +119,9 @@ class Database
     /**
      * Magic method to initialize the tables in lazy mode.
      *
-     * @param string $name The table name
-     *
      * @throws SimpleCrudException If the table cannot be instantiated
-     *
-     * @return Table
      */
-    public function __get($name): Table
+    public function __get(string $name): Table
     {
         if (isset($this->tables[$name])) {
             return $this->tables[$name];
@@ -139,10 +138,6 @@ class Database
 
     /**
      * Magic method to check if a table exists or not.
-     *
-     * @param string $name
-     *
-     * @return bool
      */
     public function __isset(string $name): bool
     {
@@ -156,7 +151,7 @@ class Database
      */
     public function execute(string $query, array $marks = null): PDOStatement
     {
-        $statement = $this->connection->prepare((string) $query);
+        $statement = $this->connection->prepare($query);
         $statement->execute($marks);
 
         if ($this->onExecute !== null) {
@@ -248,8 +243,6 @@ class Database
      * Saves a new attribute.
      *
      * @param mixed $value
-     *
-     * @return $this
      */
     public function setAttribute(string $name, $value): self
     {
@@ -266,8 +259,6 @@ class Database
      * Returns an attribute.
      *
      * @param string|int $name
-     *
-     * @return null|mixed
      */
     public function getAttribute($name)
     {

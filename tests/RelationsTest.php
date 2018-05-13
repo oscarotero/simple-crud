@@ -157,7 +157,7 @@ EOT
 
         $this->assertEquals([1], $query->params());
         $this->assertEquals(
-            'SELECT "category"."id", "category"."name", "category"."category_id", "category_post"."post_id" FROM "category" LEFT JOIN "category_post" ON "category_post"."category_id" = "category"."id" WHERE "category_post"."post_id" = ?',
+            'SELECT "category"."id", "category"."name", "category"."category_id" FROM "category" LEFT JOIN "category_post" ON "category_post"."category_id" = "category"."id" WHERE "category_post"."post_id" = ?',
             $query->sql()
         );
 

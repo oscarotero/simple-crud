@@ -8,6 +8,7 @@ use Countable;
 use Iterator;
 use JsonSerializable;
 use RuntimeException;
+use SimpleCrud\Engine\Common\Query\Select;
 
 /**
  * Stores a collection of rows.
