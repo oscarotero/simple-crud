@@ -137,8 +137,10 @@ class Table implements ArrayAccess
      */
     public function offsetExists($offset): bool
     {
-        if (array_key_exists($offset, $this->cache)) {
-            return !empty($this->cache[$offset]);
+        $row = $this->getCached($offset);
+
+        if (isset($row)) {
+            return !empty($row);
         }
 
         return $this->count()
@@ -155,10 +157,12 @@ class Table implements ArrayAccess
      * @param  mixed    $offset
      * @return Row|null
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): ?Row
     {
-        if (array_key_exists($offset, $this->cache)) {
-            return $this->cache[$offset];
+        $row = $this->getCached($offset);
+
+        if (isset($row)) {
+            return $row ?: null;
         }
 
         return $this->cache[$offset] = $this->select()
@@ -184,24 +188,18 @@ class Table implements ArrayAccess
         }
 
         //Update if the element is cached
-        if (isset($this->cache[$offset])) {
-            $row = $this->cache[$offset];
+        $row = $this->getCached($offset);
 
-            foreach ($value as $name => $val) {
-                $row->$name = $val;
-            }
-
-            $row->save();
-
+        if (!empty($row)) {
+            $row->edit($value)->save();
             return;
         }
 
         //Update if the element it's not cached
-        if ($this->offsetExists($offset)) {
+        if (!isset($row)) {
             $this->update()
-                ->data($value)
-                ->byId($offset)
-                ->limit(1)
+                ->set($value)
+                ->where(field('id')->eq($offset))
                 ->run();
         }
     }
@@ -214,11 +212,10 @@ class Table implements ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        unset($this->cache[$offset]);
+        $this->cache[$offset] = false;
 
         $this->delete()
-            ->byId($offset)
-            ->limit(1)
+            ->where(field('id')->eq($offset))
             ->run();
     }
 

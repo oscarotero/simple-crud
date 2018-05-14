@@ -54,6 +54,10 @@ EOT
         $this->assertSame(1, $post->id);
         $this->assertTrue(isset($db->post[1]));
         $this->assertSame($post, $db->post[1]);
+
+        $post->delete();
+        $this->assertNull($post->id);
+        $this->assertFalse(isset($db->post[1]));
     }
 
     public function testRowCollection()

@@ -44,7 +44,7 @@ EOT
         ]);
     }
 
-    public function testScheme()
+    public function testCache()
     {
         $db = $this->createDatabase();
         
@@ -57,6 +57,10 @@ EOT
 
         $post = $db->post[1];
         $category = $db->category[1];
+        $comment = $db->comment[1];
+
+        $this->assertSame($post, $comment->post);
+        
 
         $this->assertInstanceOf(Row::class, $db->comment[1]->post);
         $this->assertInstanceOf(RowCollection::class, $post->comment);
