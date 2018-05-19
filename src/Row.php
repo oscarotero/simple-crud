@@ -31,6 +31,7 @@ class Row implements JsonSerializable
         return [
             'table' => $this->table->getName(),
             'values' => $this->values,
+            'data' => $this->data,
         ];
     }
 
@@ -74,13 +75,26 @@ class Row implements JsonSerializable
 
     /**
      * Add extra data to the row
-     * @param mixed $value
+     * @param Row|RowCollection $data
      */
-    public function setData(string $name, $value): self
+    public function cache($data): self
     {
-        $this->data[$name] = $value;
+        $this->data[$data->getTable()->getName()] = $data;
 
         return $this;
+    }
+
+    /**
+     * Get extra data from the row
+     * @return mixed
+     */
+    public function getData(string $name = null)
+    {
+        if ($name === null) {
+            return $this->data;
+        }
+
+        return $this->data[$name] ?? null;
     }
 
     /**
@@ -119,12 +133,12 @@ class Row implements JsonSerializable
 
         //Relations
         if (isset($db->$name)) {
-            $result = $this->data[$name] = $this->select($db->$name)->run();
+            $result = $this->data[$name] = $this->select($db->$name)->cacheWith($this)->run();
             return $result;
         }
 
         throw new RuntimeException(
-            sprintf('Undefined property "%s"', $name)
+            sprintf('Undefined property "%s" in the table "%s"', $name, $this->table->getName())
         );
     }
 

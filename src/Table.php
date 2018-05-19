@@ -155,7 +155,6 @@ class Table implements ArrayAccess
      * @see ArrayAccess
      *
      * @param  mixed    $offset
-     * @return Row|null
      */
     public function offsetGet($offset): ?Row
     {
@@ -256,6 +255,8 @@ class Table implements ArrayAccess
         if ($joinTable && $joinTable->getJoinField($this) && $joinTable->getJoinField($table)) {
             return $joinTable;
         }
+
+        return null;
     }
 
     /**
@@ -278,8 +279,8 @@ class Table implements ArrayAccess
 
     public function create(array $data = [], $fromDatabase = false): Row
     {
-        if (isset($data['id']) && isset($this->cache[$data['id']]) && is_object($this->cache[$data['id']])) {
-            return $this->cache[$data['id']];
+        if (isset($data['id']) && ($row = $this->getCached($data['id']))) {
+            return $row;
         }
 
         if ($fromDatabase) {
@@ -291,8 +292,19 @@ class Table implements ArrayAccess
         return new Row($this, $data);
     }
 
-    public function createCollection(array $rows = []): RowCollection
+    public function createCollection(array $rows = [], $fromDatabase = false): RowCollection
     {
+        if ($fromDatabase) {
+            $rows = $this->createCollection(
+                array_map(
+                    function ($data): Row {
+                        return $this->create($data, true);
+                    },
+                    $rows
+                )
+            );
+        }
+
         return new RowCollection($this, ...$rows);
     }
 

@@ -8,6 +8,7 @@ use Countable;
 use Iterator;
 use JsonSerializable;
 use RuntimeException;
+use BadMethodCallException;
 use SimpleCrud\Engine\Common\Query\Select;
 
 /**
@@ -33,6 +34,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         return [
             'table' => $this->table->getName(),
             'rows' => $this->rows,
+            'data' => $this->data,
         ];
     }
 
@@ -78,11 +80,24 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      * Add extra data to the row
      * @param mixed $value
      */
-    public function setData(string $name, $value): self
+    public function cache($data): self
     {
-        $this->data[$name] = $value;
+        $this->data[$data->getTable()->getName()] = $data;
 
         return $this;
+    }
+
+    /**
+     * Get extra data from the row
+     * @return mixed
+     */
+    public function getData(string $name = null)
+    {
+        if ($name === null) {
+            return $this->data;
+        }
+
+        return $this->data[$name] ?? null;
     }
 
     /**
@@ -114,7 +129,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
         //Relations
         if (isset($db->$name)) {
-            $result = $this->data[$name] = $this->select($db->$name)->run();
+            $result = $this->data[$name] = $this->select($db->$name)->cacheWith($this)->run();
             return $result;
         }
 

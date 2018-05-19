@@ -30,7 +30,7 @@ trait WhereTrait
     }
 
     /**
-     * @param Row|Table
+     * @param Row|RowCollection|Table
      * @param mixed $related
      */
     public function relatedWith($related): self
