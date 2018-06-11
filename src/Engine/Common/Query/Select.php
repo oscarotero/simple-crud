@@ -15,7 +15,6 @@ abstract class Select implements QueryInterface
 {
     use QueryTrait;
     use WhereTrait;
-    use CombinatorTrait;
 
     private $one;
     private $cache;
@@ -54,33 +53,6 @@ abstract class Select implements QueryInterface
         $this->query->offset(($page * $length) - $length);
 
         return $this;
-    }
-
-    /**
-     * @param Row|RowCollection
-     * @param mixed $related
-     */
-    public function cacheWith($related): self
-    {
-        if ($related instanceof Row || $related instanceof RowCollection) {
-            if ($this->cache) {
-                throw new RuntimeException('Only one cache is allowed');
-            }
-
-            $this->cache = $related;
-
-            if ($joinTable = $this->table->getJoinTable($related->getTable())) {
-                $field = $joinTable->getJoinField($related->getTable());
-
-                $this->addColumns($field->identify());
-            }
-
-            return $this;
-        }
-
-        throw new InvalidArgumentException(
-            'Invalid argument type. Only instances of Row and RowCollection are allowed'
-        );
     }
 
     public function run()

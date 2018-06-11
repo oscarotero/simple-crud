@@ -21,8 +21,8 @@ class Database
     protected $scheme;
     protected $tables = [];
     protected $inTransaction = false;
-    protected $attributes = [];
     protected $onExecute;
+    protected $config = [];
 
     protected $queryFactory;
     protected $fieldFactory;
@@ -32,6 +32,24 @@ class Database
         $this->connection = $connection;
         $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->scheme = $scheme;
+    }
+
+    /**
+     * Returns a config value
+     */
+    public function getConfig(string $name)
+    {
+        return $this->config[$name] ?? null;
+    }
+
+    /**
+     * Set a config value
+     */
+    public function setConfig(string $name, $value): self
+    {
+        $this->config[$name] = $value;
+
+        return $this;
     }
 
     /**
@@ -237,35 +255,5 @@ class Database
     public function inTransaction()
     {
         return ($this->inTransaction === true) && ($this->connection->inTransaction() === true);
-    }
-
-    /**
-     * Saves a new attribute.
-     *
-     * @param mixed $value
-     */
-    public function setAttribute(string $name, $value): self
-    {
-        if (is_int($name)) {
-            $this->connection->setAttribute($name, $value);
-        } else {
-            $this->attributes[$name] = $value;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Returns an attribute.
-     *
-     * @param string|int $name
-     */
-    public function getAttribute($name)
-    {
-        if (is_int($name)) {
-            return $this->connection->getAttribute($name);
-        }
-
-        return isset($this->attributes[$name]) ? $this->attributes[$name] : null;
     }
 }

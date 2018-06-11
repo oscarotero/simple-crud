@@ -69,29 +69,34 @@ class Table implements ArrayAccess
     /**
      * Clear the current cache.
      */
-    public function clearCache()
+    public function clearCache(): self
     {
         $this->cache = [];
+
+        return $this;
+    }
+
+    /**
+     * Returns whether the id is cached or not
+     */
+    public function isCached($id): bool
+    {
+        return array_key_exists($id, $this->cache);
     }
 
     /**
      * Returns a row from the cache.
-     * If the row is not cached, returns null
-     * If the row was cached but removed, returns false
-     *
-     * @param  mixed          $id
-     * @return Row|false|null
      */
-    public function getCached($id)
+    public function getCached($id): ?Row
     {
-        $row = $this->cache[$id] ?? null;
-
-        if (!$row) {
-            return $row;
+        if (!$this->isCached($id)) {
+            return null;
         }
 
-        if (!$row->id) {
-            return $this->cache[$id] = false;
+        $row = $this->cache[$id];
+
+        if ($row && !$row->id) {
+            return $this->cache[$id] = null;
         }
 
         return $row;
@@ -137,10 +142,8 @@ class Table implements ArrayAccess
      */
     public function offsetExists($offset): bool
     {
-        $row = $this->getCached($offset);
-
-        if (isset($row)) {
-            return !empty($row);
+        if ($this->isCached($offset)) {
+            return $this->getCached($offset) !== null;
         }
 
         return $this->count()
@@ -158,10 +161,8 @@ class Table implements ArrayAccess
      */
     public function offsetGet($offset): ?Row
     {
-        $row = $this->getCached($offset);
-
-        if (isset($row)) {
-            return $row ?: null;
+        if ($this->isCached($offset)) {
+            return $this->getCached($offset);
         }
 
         return $this->cache[$offset] = $this->select()
@@ -211,7 +212,7 @@ class Table implements ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        $this->cache[$offset] = false;
+        $this->cache[$offset] = null;
 
         $this->delete()
             ->where(field('id')->eq($offset))

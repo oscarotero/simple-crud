@@ -66,17 +66,19 @@ trait CombinatorTrait
         return self::combineHasManyToManyRowCollectionWithRowCollection($this->table, $result, $relations);
     }
 
+    //remove?
     private static function combineHasOneRowWithRow(
         Table $table,
         array $comment,
         Row $post
     ) {
         $comment = $table->create($comment, true);
-        $comment->cache($post);
+        $comment->link($post, false);
 
         return $comment;
     }
 
+    //remove?
     private static function combineHasOneRowWithRowCollection(
         Table $table,
         array $comment,
@@ -92,10 +94,8 @@ trait CombinatorTrait
     ) {
         $comments = $table->createCollection($comments, true);
 
-        $post->cache($comments);
-
         foreach ($comments as $comment) {
-            $comment->cache($post);
+            $comment->link($post);
         }
 
         return $comments;
@@ -108,27 +108,24 @@ trait CombinatorTrait
     ) {
         $comments = $table->createCollection($comments, true);
 
-        $posts->cache($comments);
-        $comments->cache($posts);
+        //$posts->cache($comments);
+        //$comments->cache($posts);
 
         $foreignKey = $posts->getTable()->getForeignKey();
-        $map = [];
 
         foreach ($comments as $comment) {
             $id = $comment->$foreignKey;
 
-            $comment->cache($posts[$id]);
-
-            if (!isset($map[$id])) {
-                $map[$id] = [];
-            }
-
-            $map[$id][] = $comment;
+            $comment->link($posts[$id]);
         }
 
-        foreach ($map as $id => $value) {
-            $posts[$id]->cache($comments->getTable()->createCollection($value));
+        foreach ($posts as $post) {
+            $post->defineLink($table);
         }
+
+        //foreach ($map as $id => $value) {
+        //    $posts[$id]->cache($comments->getTable()->createCollection($value));
+        //}
 
         return $comments;
     }

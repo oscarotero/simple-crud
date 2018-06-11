@@ -6,6 +6,7 @@ namespace SimpleCrud;
 use BadMethodCallException;
 use JsonSerializable;
 use RuntimeException;
+use InvalidArgumentException;
 use SimpleCrud\Engine\Common\Query\Select;
 use function Latitude\QueryBuilder\field;
 
@@ -16,8 +17,8 @@ class Row implements JsonSerializable
 {
     private $table;
     private $values = [];
-    private $data = [];
     private $changed;
+    private $relations = [];
 
     public function __construct(Table $table, array $values)
     {
@@ -31,7 +32,7 @@ class Row implements JsonSerializable
         return [
             'table' => $this->table->getName(),
             'values' => $this->values,
-            'data' => $this->data,
+            'relations' => $this->relations,
         ];
     }
 
@@ -74,44 +75,6 @@ class Row implements JsonSerializable
     }
 
     /**
-     * Add extra data to the row
-     * @param Row|RowCollection $data
-     */
-    public function cache($data): self
-    {
-        $this->data[$data->getTable()->getName()] = $data;
-
-        return $this;
-    }
-
-    /**
-     * Get extra data from the row
-     * @return mixed
-     */
-    public function getData(string $name = null)
-    {
-        if ($name === null) {
-            return $this->data;
-        }
-
-        return $this->data[$name] ?? null;
-    }
-
-    /**
-     * Removes a value or all extra data
-     */
-    public function removeData(string $name = null): self
-    {
-        if ($name === null) {
-            $this->data = [];
-        } else {
-            unset($this->data[$name]);
-        }
-
-        return $this;
-    }
-
-    /**
      * Returns the value of:
      * - a value field
      * - a related table
@@ -123,18 +86,15 @@ class Row implements JsonSerializable
             return $this->values[$valueName];
         }
 
-        //It's data
-        if (array_key_exists($name, $this->data)) {
-            return $this->data[$name];
+        //Its a relation
+        if (array_key_exists($name, $this->relations)) {
+            return $this->relations[$name];
         }
 
-        //It's a table
         $db = $this->table->getDatabase();
 
-        //Relations
         if (isset($db->$name)) {
-            $result = $this->data[$name] = $this->select($db->$name)->cacheWith($this)->run();
-            return $result;
+            return $this->relations[$name] = $this->select($db->$name)->run();
         }
 
         throw new RuntimeException(
@@ -171,7 +131,7 @@ class Row implements JsonSerializable
     {
         $valueName = $this->getValueName($name);
 
-        return ($valueName && isset($this->values[$valueName])) || isset($this->data[$name]);
+        return ($valueName && isset($this->values[$valueName])) || isset($this->relations[$name]);
     }
 
     /**
@@ -179,7 +139,7 @@ class Row implements JsonSerializable
      */
     public function __unset(string $name)
     {
-        unset($this->data[$name]);
+        unset($this->relations[$name]);
 
         $this->__set($name, null);
     }

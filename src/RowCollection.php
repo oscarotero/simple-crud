@@ -18,7 +18,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 {
     private $table = [];
     private $rows = [];
-    private $data = [];
+    private $relations = [];
 
     public function __construct(Table $table, Row ...$rows)
     {
@@ -33,8 +33,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     {
         return [
             'table' => $this->table->getName(),
-            'rows' => $this->rows,
-            'data' => $this->data,
+            'rows' => $this->rows
         ];
     }
 
@@ -77,70 +76,35 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     }
 
     /**
-     * Add extra data to the row
-     * @param mixed $value
-     */
-    public function cache($data): self
-    {
-        $this->data[$data->getTable()->getName()] = $data;
-
-        return $this;
-    }
-
-    /**
-     * Get extra data from the row
-     * @return mixed
-     */
-    public function getData(string $name = null)
-    {
-        if ($name === null) {
-            return $this->data;
-        }
-
-        return $this->data[$name] ?? null;
-    }
-
-    /**
-     * Removes a value or all extra data
-     */
-    public function removeData(string $name = null): self
-    {
-        if ($name === null) {
-            $this->data = [];
-        } else {
-            unset($this->data[$name]);
-        }
-
-        return $this;
-    }
-
-    /**
      * Return the value of all rows
      */
     public function __get(string $name)
     {
-        //It's data
-        if (array_key_exists($name, $this->data)) {
-            return $this->data[$name];
-        }
+        //It's a field
+        if (isset($this->table->{$name})) {
+            $result = [];
 
-        //It's a table
-        $db = $this->table->getDatabase();
+            foreach ($this->rows as $id => $row) {
+                $result[$id] = $row->$name;
+            }
 
-        //Relations
-        if (isset($db->$name)) {
-            $result = $this->data[$name] = $this->select($db->$name)->cacheWith($this)->run();
             return $result;
         }
 
-        //It's a field
-        $result = [];
-
-        foreach ($this->rows as $id => $row) {
-            $result[$id] = $row->$name;
+        //Its a relation
+        if (array_key_exists($name, $this->relations)) {
+            return $this->relations[$name];
         }
 
-        return $result;
+        $db = $this->table->getDatabase();
+
+        if (isset($db->$name)) {
+            return $this->relations[$name] = $this->select($db->$name)->run();
+        }
+
+        throw new RuntimeException(
+            sprintf('Undefined property "%s" in the table "%s"', $name, $this->table->getName())
+        );
     }
 
     /**
@@ -160,7 +124,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      */
     public function __isset($name)
     {
-        return isset($this->data[$name]) || isset($this->table->{$name});
+        return isset($this->table->{$name});
     }
 
     /**
