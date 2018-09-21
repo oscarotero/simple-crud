@@ -223,7 +223,7 @@ EOT
 
         $post->unrelate($comment1);
         $this->assertCount(1, $post->comment);
-        $this->assertInstanceOf('SimpleCrud\\NullValue', $comment1->post);
+        $this->assertNull($comment1->post);
 
         $post->unrelate($category1);
         $this->assertCount(0, $post->category_post);

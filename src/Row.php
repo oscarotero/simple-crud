@@ -72,7 +72,7 @@ class Row extends AbstractRow
 
         //It's a relation
         if (array_key_exists($name, $this->relations)) {
-            $return = $this->relations[$name] ?: new NullValue();
+            $return = $this->relations[$name] ?: null;
             return $return;
         }
 
@@ -91,7 +91,7 @@ class Row extends AbstractRow
         $scheme = $this->getTable()->getScheme();
 
         if (isset($scheme['relations'][$name])) {
-            $return = call_user_func([$this, $name])->run() ?: new NullValue();
+            $return = call_user_func([$this, $name])->run() ?: null;
             $this->relations[$name] = $return;
             return $return;
         }
@@ -392,7 +392,7 @@ class Row extends AbstractRow
 
             if ($table->getName() !== $relationTable->getName()) {
                 $cache = $row->getCache();
-                $cache[$table->getName()] = new NullValue();
+                $cache[$table->getName()] = null;
                 $row->setCache($cache);
             }
 
@@ -438,7 +438,7 @@ class Row extends AbstractRow
 
         if ($relation[0] === Scheme::HAS_ONE) {
             $this->{$relation[1]} = null;
-            $this->relations[$relationTable->getName()] = new NullValue();
+            $this->relations[$relationTable->getName()] = null;
 
             return $this->save();
         }
