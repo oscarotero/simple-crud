@@ -53,7 +53,7 @@ EOT
      * @dataProvider dataProviderQueries
      * @depends testCreation
      */
-    public function testQueries(string $name, Database $db)
+    public function _testQueries(string $name, Database $db)
     {
         $query = $db->post->$name();
 
@@ -68,16 +68,35 @@ EOT
     {
         $query = $db->post->select()
             ->one()
-            ->where(field('title')->isNotNull())
-            ->andWhere(field('id')->in(1, 2))
-            ->andWhere($db->post->body->criteria()->eq('content'))
+            ->where('title IS NOT NULL')
+            ->where('id IN ', [1, 2])
+            ->where('body = ', 'content')
             ->offset(3)
             ->orderBy('title');
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num`, `post`.`point` FROM `post` WHERE `title` IS NOT NULL AND `id` IN (?, ?) AND `post`.`body` = ? ORDER BY `title` LIMIT 1 OFFSET 3', $q->sql());
-        $this->assertEquals([1, 2, 'content'], $q->params());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    post.id,
+    post.title,
+    post.body,
+    post.num,
+    post.point
+FROM
+    post
+WHERE
+    title IS NOT NULL
+    AND id IN (:__1__, :__2__)
+    AND body = :__3__
+ORDER BY
+    title
+LIMIT 1 OFFSET 3
+SQL
+            , $sql);
+
+        $this->assertEquals([1, 2, 'content'], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -90,15 +109,32 @@ EOT
     {
         $query = $db->post->select()
             ->one()
-            ->where(field('title')->isNotNull())
-            ->andWhere(field('id')->in(1, 2))
+            ->where('title IS NOT NULL')
+            ->where('id IN ', [1, 2])
             ->page(2, 5)
             ->orderBy('title');
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num`, `post`.`point` FROM `post` WHERE `title` IS NOT NULL AND `id` IN (?, ?) ORDER BY `title` LIMIT 5 OFFSET 5', $q->sql());
-        $this->assertEquals([1, 2], $q->params());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    post.id,
+    post.title,
+    post.body,
+    post.num,
+    post.point
+FROM
+    post
+WHERE
+    title IS NOT NULL
+    AND id IN (:__1__, :__2__)
+ORDER BY
+    title
+LIMIT 5 OFFSET 5
+SQL
+            , $sql);
+        $this->assertEquals([1, 2], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -114,10 +150,23 @@ EOT
                 'body' => 'Body',
                 'point' => [222, 333],
             ]);
-        $q = $query->compile();
+        
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('INSERT INTO `post` (`title`, `body`, `point`) VALUES (?, ?, POINT(?, ?))', $q->sql());
-        $this->assertEquals(['Title', 'Body', 222, 333], $q->params());
+        $this->assertEquals(<<<'SQL'
+INSERT INTO post (
+    `title`,
+    `body`,
+    `point`
+) VALUES (
+    :title,
+    :body,
+    POINT(222, 333)
+)
+SQL
+        , $sql);
+        $this->assertEquals(['Title', 'Body'], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -126,7 +175,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testUpdate(Database $db)
+    public function _testUpdate(Database $db)
     {
         $query = $db->post->update([
                 'title' => 'Title',
@@ -147,7 +196,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testDelete(Database $db)
+    public function _testDelete(Database $db)
     {
         $query = $db->post->delete()
             ->where(field('id')->eq(3));
@@ -164,7 +213,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testCount(Database $db)
+    public function _testCount(Database $db)
     {
         $query = $db->post->count()
             ->where(field('id')->eq(3));
@@ -181,7 +230,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testSum(Database $db)
+    public function _testSum(Database $db)
     {
         $query = $db->post->sum('id')
             ->where(field('id')->lt(3));
@@ -198,7 +247,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testMax(Database $db)
+    public function _testMax(Database $db)
     {
         $query = $db->post->max('id')
             ->where(field('id')->lt(3));
@@ -215,7 +264,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testMin(Database $db)
+    public function _testMin(Database $db)
     {
         $query = $db->post->min('id')
             ->where(field('id')->lt(3));
@@ -232,7 +281,7 @@ EOT
     /**
      * @depends testCreation
      */
-    public function testAvg(Database $db)
+    public function _testAvg(Database $db)
     {
         $query = $db->post->avg('id')
             ->where(field('id')->lt(3));

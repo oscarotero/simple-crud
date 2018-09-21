@@ -12,23 +12,22 @@ abstract class Insert implements QueryInterface
 
     public function __construct(Table $table, array $data = null)
     {
-        $this->init($table);
+        $this->table = $table;
 
-        $this->query = $this->builder
-            ->insert($table->getName());
+        $this->query = $table->getDatabase()
+            ->insert()
+            ->into($table->getName());
 
         if ($data) {
-            $this->map($data);
+            $this->columns($data);
         }
     }
 
-    public function map(array $data): self
+    public function columns(array $data): self
     {
-        foreach ($data as $fieldName => &$value) {
-            $value = $this->table->{$fieldName}->param($value);
+        foreach ($data as $fieldName => $value) {
+            $this->table->{$fieldName}->insert($this->query, $value);
         }
-
-        $this->query->map($data);
 
         return $this;
     }

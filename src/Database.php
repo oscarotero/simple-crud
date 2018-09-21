@@ -3,6 +3,13 @@ declare(strict_types = 1);
 
 namespace SimpleCrud;
 
+use Atlas\Pdo\Connection;
+use Atlas\Query\Insert;
+use Atlas\Query\Update;
+use Atlas\Query\Delete;
+use Atlas\Query\Select;
+use Atlas\Query\Bind;
+
 use Exception;
 use InvalidArgumentException;
 use Latitude\QueryBuilder\Query;
@@ -27,10 +34,9 @@ class Database
     protected $queryFactory;
     protected $fieldFactory;
 
-    public function __construct(PDO $connection, SchemeInterface $scheme = null)
+    public function __construct(PDO $pdo, SchemeInterface $scheme = null)
     {
-        $this->connection = $connection;
-        $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->connection = new Connection($pdo);
         $this->scheme = $scheme;
     }
 
@@ -39,7 +45,7 @@ class Database
      */
     public function getEngineType(): string
     {
-        $engine = $this->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $engine = $this->connection->getDriverName();
 
         switch ($engine) {
             case self::ENGINE_MYSQL:
@@ -72,13 +78,31 @@ class Database
     }
 
     /**
-     * Define a callback executed for each query executed.
+     * Returns the connection instance.
      */
-    public function onExecute(callable $callback = null): self
+    public function getConnection(): Connection
     {
-        $this->onExecute = $callback;
+        return $this->connection;
+    }
 
-        return $this;
+    public function select(): Select
+    {
+        return new Select($this->connection, new Bind());
+    }
+
+    public function update(): Update
+    {
+        return new Update($this->connection, new Bind());
+    }
+
+    public function delete(): Delete
+    {
+        return new Delete($this->connection, new Bind());
+    }
+
+    public function insert(): Insert
+    {
+        return new Insert($this->connection, new Bind());
     }
 
     /**
@@ -153,10 +177,6 @@ class Database
     {
         $statement = $this->connection->prepare($query);
         $statement->execute($marks);
-
-        if ($this->onExecute !== null) {
-            call_user_func($this->onExecute, $this->connection, $statement, $marks);
-        }
 
         return $statement;
     }

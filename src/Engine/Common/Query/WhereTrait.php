@@ -15,6 +15,16 @@ use function Latitude\QueryBuilder\field;
 
 trait WhereTrait
 {
+    public function whereEquals($name, $value = null)
+    {
+        if (is_array($name)) {
+            $this->query->whereEquals($name);
+        } else {
+            $this->query->whereEquals([$name => $value]);
+        }
+
+        return $this;
+    }
     /**
      * @param CriteriaInterface|string $expression
      */
