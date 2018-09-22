@@ -144,7 +144,7 @@ class Table implements ArrayAccess
         }
 
         return $this->count()
-            ->where(field('id')->eq($offset))
+            ->where('id = ', $offset)
             ->limit(1)
             ->run() === 1;
     }
@@ -166,7 +166,7 @@ class Table implements ArrayAccess
 
         return $this->cache[$offset] = $this->select()
             ->one()
-            ->where(field('id')->eq($offset))
+            ->where('id = ', $offset)
             ->run();
     }
 
@@ -197,8 +197,8 @@ class Table implements ArrayAccess
         //Update if the element it's not cached
         if (!isset($row)) {
             $this->update()
-                ->set($value)
-                ->where(field('id')->eq($offset))
+                ->columns($value)
+                ->where('id = ', $offset)
                 ->run();
         }
     }
@@ -214,7 +214,7 @@ class Table implements ArrayAccess
         $this->cache[$offset] = false;
 
         $this->delete()
-            ->where(field('id')->eq($offset))
+            ->where('id = ', $offset)
             ->run();
     }
 

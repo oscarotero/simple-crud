@@ -13,9 +13,8 @@ abstract class Delete implements QueryInterface
 
     public function __construct(Table $table)
     {
-        $this->init($table);
-
-        $this->query = $this->builder
-            ->delete($table->getName());
+    	$this->query = $table->getDatabase()
+            ->delete()
+            ->from($table->getName());
     }
 }

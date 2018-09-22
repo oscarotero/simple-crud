@@ -13,23 +13,22 @@ abstract class Update implements QueryInterface
 
     public function __construct(Table $table, array $data = null)
     {
-        $this->init($table);
+        $this->table = $table;
 
-        $this->query = $this->builder
-            ->update($table->getName());
+        $this->query = $table->getDatabase()
+            ->update()
+            ->table($table->getName());
 
         if ($data) {
-            $this->set($data);
+            $this->columns($data);
         }
     }
 
-    public function set(array $data): self
+    public function columns(array $data): self
     {
-        foreach ($data as $fieldName => &$value) {
-            $value = $this->table->{$fieldName}->param($value);
+        foreach ($data as $fieldName => $value) {
+            $this->table->{$fieldName}->update($this->query, $value);
         }
-
-        $this->query->set($data);
 
         return $this;
     }

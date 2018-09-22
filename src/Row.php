@@ -225,7 +225,7 @@ class Row implements JsonSerializable
                 $this->id = $this->table->insert($values)->run();
             } else {
                 $this->table->update($values)
-                    ->where(field('id')->eq($this->id))
+                    ->where('id = ', $this->id)
                     ->run();
             }
 
@@ -242,7 +242,7 @@ class Row implements JsonSerializable
     {
         if (!empty($this->id)) {
             $this->table->delete()
-                ->where(field('id')->eq($this->id))
+                ->where('id = ', $this->id)
                 ->run();
 
             $this->id = null;

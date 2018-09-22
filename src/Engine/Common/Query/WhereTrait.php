@@ -64,9 +64,7 @@ trait WhereTrait
 
         //Has one
         if ($field = $table1->getJoinField($table2)) {
-            $this->query->andWhere($field->criteria()->isNotNull());
-
-            return $this;
+            return $this->where("{$field->getFullName()} IS NOT NULL");
         }
 
         //Has many
@@ -108,7 +106,7 @@ trait WhereTrait
 
         //Has one
         if ($field = $table1->getJoinField($table2)) {
-            return $this->whereIdIs($field, $row->id);
+            return $this->where("{$field->getFullName()} = ", $row->id);
         }
 
         //Has many

@@ -12,7 +12,7 @@ class QueriesTest extends AbstractTestCase
             'DROP DATABASE IF EXISTS `simple_crud`',
             'CREATE DATABASE `simple_crud`',
             'USE `simple_crud`',
-            <<<'EOT'
+            <<<'SQL'
 CREATE TABLE `post` (
     `id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
     `title` varchar(100) DEFAULT '',
@@ -21,7 +21,7 @@ CREATE TABLE `post` (
     `point` point DEFAULT NULL,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-EOT
+SQL
         ]);
     }
 
@@ -53,7 +53,7 @@ EOT
      * @dataProvider dataProviderQueries
      * @depends testCreation
      */
-    public function _testQueries(string $name, Database $db)
+    public function testQueries(string $name, Database $db)
     {
         $query = $db->post->$name();
 
@@ -175,19 +175,30 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testUpdate(Database $db)
+    public function testUpdate(Database $db)
     {
         $query = $db->post->update([
                 'title' => 'Title',
                 'body' => 'Body',
                 'point' => [23, 45],
             ])
-            ->where(field('id')->eq(3));
+            ->where('id = ', 3);
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('UPDATE `post` SET `title` = ?, `body` = ?, `point` = POINT(?, ?) WHERE `id` = ?', $q->sql());
-        $this->assertEquals(['Title', 'Body', 23, 45, 3], $q->params());
+        $this->assertEquals(<<<'SQL'
+UPDATE post
+SET
+    `title` = :title,
+    `body` = :body,
+    `point` = POINT(23, 45)
+WHERE
+    id = :__1__
+SQL
+        , $sql);
+
+        $this->assertEquals(['Title', 'Body', 3], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -196,15 +207,22 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testDelete(Database $db)
+    public function testDelete(Database $db)
     {
         $query = $db->post->delete()
-            ->where(field('id')->eq(3));
+            ->where('id = ', 3);
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('DELETE FROM `post` WHERE `id` = ?', $q->sql());
-        $this->assertEquals([3], $q->params());
+        $this->assertEquals(<<<'SQL'
+DELETE FROM post
+WHERE
+    id = :__1__
+SQL
+        , $sql);
+
+        $this->assertEquals([3], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -213,15 +231,25 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testCount(Database $db)
+    public function testCount(Database $db)
     {
         $query = $db->post->count()
-            ->where(field('id')->eq(3));
+            ->where('id = ', 3);
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('SELECT COUNT(`id`) FROM `post` WHERE `id` = ?', $q->sql());
-        $this->assertEquals([3], $q->params());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    COUNT(id)
+FROM
+    post
+WHERE
+    id = :__1__
+SQL
+        , $sql);
+
+        $this->assertEquals([3], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -230,15 +258,25 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testSum(Database $db)
+    public function testSum(Database $db)
     {
         $query = $db->post->sum('id')
-            ->where(field('id')->lt(3));
+            ->where('id = ', 3);
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('SELECT SUM(`id`) FROM `post` WHERE `id` < ?', $q->sql());
-        $this->assertEquals([3], $q->params());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    SUM(id)
+FROM
+    post
+WHERE
+    id = :__1__
+SQL
+        , $sql);
+
+        $this->assertEquals([3], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -247,15 +285,25 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testMax(Database $db)
+    public function testMax(Database $db)
     {
         $query = $db->post->max('id')
-            ->where(field('id')->lt(3));
+            ->where('id = ', 3);
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('SELECT MAX(`id`) FROM `post` WHERE `id` < ?', $q->sql());
-        $this->assertEquals([3], $q->params());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    MAX(id)
+FROM
+    post
+WHERE
+    id = :__1__
+SQL
+        , $sql);
+
+        $this->assertEquals([3], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -264,15 +312,25 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testMin(Database $db)
+    public function testMin(Database $db)
     {
         $query = $db->post->min('id')
-            ->where(field('id')->lt(3));
+            ->where('id = ', 3);
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('SELECT MIN(`id`) FROM `post` WHERE `id` < ?', $q->sql());
-        $this->assertEquals([3], $q->params());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    MIN(id)
+FROM
+    post
+WHERE
+    id = :__1__
+SQL
+        , $sql);
+
+        $this->assertEquals([3], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -281,15 +339,25 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testAvg(Database $db)
+    public function testAvg(Database $db)
     {
         $query = $db->post->avg('id')
-            ->where(field('id')->lt(3));
+            ->where('id = ', 3);
 
-        $q = $query->compile();
+        $sql = (string) $query;
+        $params = $query->getValues();
 
-        $this->assertEquals('SELECT AVG(`id`) FROM `post` WHERE `id` < ?', $q->sql());
-        $this->assertEquals([3], $q->params());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    AVG(id)
+FROM
+    post
+WHERE
+    id = :__1__
+SQL
+        , $sql);
+
+        $this->assertEquals([3], $params);
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);

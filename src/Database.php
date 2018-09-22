@@ -12,8 +12,6 @@ use Atlas\Query\Bind;
 
 use Exception;
 use InvalidArgumentException;
-use Latitude\QueryBuilder\Query;
-use Latitude\QueryBuilder\QueryFactory;
 use PDO;
 use PDOStatement;
 use RuntimeException;
@@ -103,19 +101,6 @@ class Database
     public function insert(): Insert
     {
         return new Insert($this->connection, new Bind());
-    }
-
-    /**
-     * Returns the QueryFactory instance used to create the queries.
-     */
-    public function query(): QueryFactory
-    {
-        if ($this->queryFactory === null) {
-            $builder = $this->getEngineNamespace().'QueryFactoryBuilder';
-            $this->queryFactory = $builder::buildQueryFactory($this);
-        }
-
-        return $this->queryFactory;
     }
 
     /**
