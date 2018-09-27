@@ -2,7 +2,7 @@
 
 namespace SimpleCrud\Fields;
 
-class Serializable extends Field
+final class Serializable extends Field
 {
     protected $config = [
         'allowed_classes' => false,

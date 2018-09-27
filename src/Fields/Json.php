@@ -2,7 +2,7 @@
 
 namespace SimpleCrud\Fields;
 
-class Json extends Field
+final class Json extends Field
 {
     protected $config = [
         'assoc' => true,

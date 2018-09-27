@@ -2,7 +2,7 @@
 
 namespace SimpleCrud\Fields;
 
-class Boolean extends Field
+final class Boolean extends Field
 {
     public function databaseValue($value, array $data = [])
     {

@@ -2,7 +2,7 @@
 
 namespace SimpleCrud\Fields;
 
-class Integer extends Field
+final class Integer extends Field
 {
     public function rowValue($value, array $data = [])
     {

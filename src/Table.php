@@ -4,8 +4,8 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use ArrayAccess;
-use SimpleCrud\Engine\QueryInterface;
-use function Latitude\QueryBuilder\field;
+use SimpleCrud\Fields\FieldInterface;
+use SimpleCrud\Query\QueryInterface;
 
 /**
  * Manages a database table.
@@ -44,6 +44,11 @@ class Table implements ArrayAccess
         ];
     }
 
+    public function __toString()
+    {
+        return "`{$this->name}`";
+    }
+
     /**
      * Get the devault values used in new rows
      */
@@ -78,6 +83,7 @@ class Table implements ArrayAccess
 
     /**
      * Returns whether the id is cached or not
+     * @param mixed $id
      */
     public function isCached($id): bool
     {
@@ -86,6 +92,7 @@ class Table implements ArrayAccess
 
     /**
      * Returns a row from the cache.
+     * @param mixed $id
      */
     public function getCached($id): ?Row
     {
@@ -107,7 +114,7 @@ class Table implements ArrayAccess
      */
     public function __call(string $name, array $arguments): QueryInterface
     {
-        $class = $this->getDatabase()->getEngineNamespace().'Query\\'.ucfirst($name);
+        $class = sprintf('SimpleCrud\\Query\\%s', ucfirst($name));
 
         return $class::create($this, $arguments);
     }
@@ -157,7 +164,7 @@ class Table implements ArrayAccess
      *
      * @see ArrayAccess
      *
-     * @param  mixed    $offset
+     * @param mixed $offset
      */
     public function offsetGet($offset): ?Row
     {
@@ -314,7 +321,7 @@ class Table implements ArrayAccess
         foreach ($data as $key => &$value) {
             if (!isset($this->fields[$key])) {
                 throw new SimpleCrudException(
-                    sprintf('Invalid field (%s) in the table "%s"', $key, $this->getName())
+                    sprintf('Invalid field (%s) in the table %s', $key, $this)
                 );
             }
 
@@ -329,7 +336,7 @@ class Table implements ArrayAccess
         foreach ($data as $key => &$value) {
             if (!isset($this->fields[$key])) {
                 throw new SimpleCrudException(
-                    sprintf('Invalid field (%s) in the table "%s"', $key, $this->getName())
+                    sprintf('Invalid field (%s) in the table %s', $key, $this)
                 );
             }
 

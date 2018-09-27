@@ -2,7 +2,7 @@
 
 namespace SimpleCrud\Fields;
 
-class Datetime extends Field
+final class Datetime extends Field
 {
     protected $format = 'Y-m-d H:i:s';
 

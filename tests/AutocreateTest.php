@@ -2,12 +2,10 @@
 
 namespace SimpleCrud\Tests;
 
-use Latitude\QueryBuilder\QueryFactory;
-use PDO;
 use SimpleCrud\Database;
 use SimpleCrud\FieldFactory;
 use SimpleCrud\Fields\Field;
-use SimpleCrud\SchemeInterface;
+use SimpleCrud\Scheme\SchemeInterface;
 use SimpleCrud\Table;
 
 class AutocreateTest extends AbstractTestCase
@@ -35,13 +33,7 @@ EOT
         $db = $this->createDatabase();
 
         $this->assertInstanceOf(FieldFactory::class, $db->getFieldFactory());
-        $this->assertInstanceOf(QueryFactory::class, $db->query());
         $this->assertInstanceOf(SchemeInterface::class, $db->getScheme());
-
-        $db->setAttribute('bar', 'foo');
-
-        $this->assertEquals('sqlite', $db->getAttribute(PDO::ATTR_DRIVER_NAME));
-        $this->assertEquals('foo', $db->getAttribute('bar'));
 
         return $db;
     }

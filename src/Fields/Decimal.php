@@ -2,7 +2,7 @@
 
 namespace SimpleCrud\Fields;
 
-class Decimal extends Field
+final class Decimal extends Field
 {
     public function rowValue($value, array $data = [])
     {

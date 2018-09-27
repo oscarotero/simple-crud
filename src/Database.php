@@ -4,33 +4,32 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use Atlas\Pdo\Connection;
-use Atlas\Query\Insert;
-use Atlas\Query\Update;
-use Atlas\Query\Delete;
-use Atlas\Query\Select;
 use Atlas\Query\Bind;
-
+use Atlas\Query\Delete;
+use Atlas\Query\Insert;
+use Atlas\Query\Select;
+use Atlas\Query\Update;
 use Exception;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
 use RuntimeException;
+use SimpleCrud\Scheme\SchemeInterface;
 
-class Database
+final class Database
 {
     const ENGINE_MYSQL = 'mysql';
     const ENGINE_SQLITE = 'sqlite';
-    const ATTR_LOCALE = 'simplecrud.language';
+    const CONFIG_LOCALE = 'locale';
 
-    protected $connection;
-    protected $scheme;
-    protected $tables = [];
-    protected $inTransaction = false;
-    protected $onExecute;
-    protected $config = [];
+    private $connection;
+    private $scheme;
+    private $tables = [];
+    private $inTransaction = false;
+    private $onExecute;
+    private $config = [];
 
-    protected $queryFactory;
-    protected $fieldFactory;
+    private $fieldFactory;
 
     public function __construct(PDO $pdo, SchemeInterface $scheme = null)
     {
@@ -48,6 +47,7 @@ class Database
 
     /**
      * Set a config value
+     * @param mixed $value
      */
     public function setConfig(string $name, $value): self
     {
@@ -73,21 +73,23 @@ class Database
     }
 
     /**
-     * Get the namespace for the engine used
-     */
-    public function getEngineNamespace(): string
-    {
-        return 'SimpleCrud\\Engine\\'.ucfirst($this->getEngineType()).'\\';
-    }
-
-    /**
      * Return the scheme class
      */
     public function getScheme(): SchemeInterface
     {
         if ($this->scheme === null) {
-            $scheme = $this->getEngineNamespace().'Scheme';
-            $this->scheme = new $scheme($this);
+            switch ($this->getEngineType()) {
+                case 'mysql':
+                    $this->scheme = new Scheme\Mysql($this);
+                    break;
+                case 'sqlite':
+                    $this->scheme = new Scheme\Sqlite($this);
+                    break;
+                default:
+                    throw new RuntimeException(
+                        sprintf('Invalid engine type "%s"', $this->getEngineType())
+                    );
+            }
         }
 
         return $this->scheme;

@@ -6,9 +6,7 @@ namespace SimpleCrud;
 use BadMethodCallException;
 use JsonSerializable;
 use RuntimeException;
-use InvalidArgumentException;
-use SimpleCrud\Engine\Common\Query\Select;
-use function Latitude\QueryBuilder\field;
+use SimpleCrud\Query\Select;
 
 /**
  * Stores the data of an table row.
@@ -30,7 +28,7 @@ class Row implements JsonSerializable
     public function __debugInfo(): array
     {
         return [
-            'table' => $this->table->getName(),
+            'table' => (string) $this->table,
             'values' => $this->values,
             'relations' => $this->relations,
         ];
@@ -98,7 +96,7 @@ class Row implements JsonSerializable
         }
 
         throw new RuntimeException(
-            sprintf('Undefined property "%s" in the table "%s"', $name, $this->table->getName())
+            sprintf('Undefined property "%s" in the table %s', $name, $this->table)
         );
     }
 
@@ -246,7 +244,7 @@ class Row implements JsonSerializable
             }
 
             throw new RuntimeException(
-                sprintf('The tables %s and %s are not related', $table1->getName(), $table2->getName())
+                sprintf('The tables %s and %s are not related', $table1, $table2)
             );
         }
 
@@ -279,15 +277,15 @@ class Row implements JsonSerializable
             //Has many to many
             if ($joinTable = $table1->getJoinTable($table2)) {
                 $joinTable->delete()
-                    ->where($joinTable->getJoinField($table1)->criteria()->eq($this->id))
-                    ->where($joinTable->getJoinField($table2)->criteria()->eq($row->id))
+                    ->where("{$joinTable->getJoinField($table1)} = ", $this->id)
+                    ->where("{$joinTable->getJoinField($table2)} = ", $row->id)
                     ->run();
 
                 continue;
             }
 
             throw new RuntimeException(
-                sprintf('The tables %s and %s are not related', $table1->getName(), $table2->getName())
+                sprintf('The tables %s and %s are not related', $table1, $table2)
             );
         }
 
@@ -321,15 +319,15 @@ class Row implements JsonSerializable
             //Has many to many
             if ($joinTable = $table1->getJoinTable($table2)) {
                 $joinTable->delete()
-                    ->where($joinTable->getJoinField($table1)->criteria()->eq($this->id))
-                    ->where($joinTable->getJoinField($table2)->criteria()->isNotNull())
+                    ->where("{$joinTable->getJoinField($table1)} = ", $this->id)
+                    ->where("{$joinTable->getJoinField($table2)} IS NOT NULL")
                     ->run();
 
                 continue;
             }
 
             throw new RuntimeException(
-                sprintf('The tables %s and %s are not related', $table1->getName(), $table2->getName())
+                sprintf('The tables %s and %s are not related', $table1, $table2)
             );
         }
 
@@ -359,7 +357,7 @@ class Row implements JsonSerializable
         }
 
         //It's a localizable field
-        $language = $this->table->getDatabase()->getAttribute(Database::ATTR_LOCALE);
+        $language = $this->table->getDatabase()->getConfig(Database::CONFIG_LOCALE);
 
         if (!is_null($language)) {
             $name .= "_{$language}";

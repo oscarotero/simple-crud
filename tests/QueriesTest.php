@@ -2,7 +2,6 @@
 namespace SimpleCrud\Tests;
 
 use SimpleCrud\Database;
-use function Latitude\QueryBuilder\field;
 
 class QueriesTest extends AbstractTestCase
 {
@@ -57,8 +56,8 @@ SQL
     {
         $query = $db->post->$name();
 
-        $this->assertInstanceOf('SimpleCrud\\Engine\\Mysql\\Query\\'.ucfirst($name), $query);
-        $this->assertInstanceOf('SimpleCrud\\Engine\\QueryInterface', $query);
+        $this->assertInstanceOf('SimpleCrud\\Query\\'.ucfirst($name), $query);
+        $this->assertInstanceOf('SimpleCrud\\Query\\QueryInterface', $query);
     }
 
     /**
@@ -79,13 +78,13 @@ SQL
 
         $this->assertEquals(<<<'SQL'
 SELECT
-    post.id,
-    post.title,
-    post.body,
-    post.num,
-    post.point
+    `post`.`id`,
+    `post`.`title`,
+    `post`.`body`,
+    `post`.`num`,
+    `post`.`point`
 FROM
-    post
+    `post`
 WHERE
     title IS NOT NULL
     AND id IN (:__1__, :__2__)
@@ -119,13 +118,13 @@ SQL
 
         $this->assertEquals(<<<'SQL'
 SELECT
-    post.id,
-    post.title,
-    post.body,
-    post.num,
-    post.point
+    `post`.`id`,
+    `post`.`title`,
+    `post`.`body`,
+    `post`.`num`,
+    `post`.`point`
 FROM
-    post
+    `post`
 WHERE
     title IS NOT NULL
     AND id IN (:__1__, :__2__)
@@ -150,12 +149,12 @@ SQL
                 'body' => 'Body',
                 'point' => [222, 333],
             ]);
-        
+
         $sql = (string) $query;
         $params = $query->getValues();
 
         $this->assertEquals(<<<'SQL'
-INSERT INTO post (
+INSERT INTO `post` (
     `title`,
     `body`,
     `point`
@@ -188,7 +187,7 @@ SQL
         $params = $query->getValues();
 
         $this->assertEquals(<<<'SQL'
-UPDATE post
+UPDATE `post`
 SET
     `title` = :title,
     `body` = :body,
@@ -216,7 +215,7 @@ SQL
         $params = $query->getValues();
 
         $this->assertEquals(<<<'SQL'
-DELETE FROM post
+DELETE FROM `post`
 WHERE
     id = :__1__
 SQL
@@ -243,7 +242,7 @@ SQL
 SELECT
     COUNT(id)
 FROM
-    post
+    `post`
 WHERE
     id = :__1__
 SQL
@@ -270,7 +269,7 @@ SQL
 SELECT
     SUM(id)
 FROM
-    post
+    `post`
 WHERE
     id = :__1__
 SQL
@@ -297,7 +296,7 @@ SQL
 SELECT
     MAX(id)
 FROM
-    post
+    `post`
 WHERE
     id = :__1__
 SQL
@@ -324,7 +323,7 @@ SQL
 SELECT
     MIN(id)
 FROM
-    post
+    `post`
 WHERE
     id = :__1__
 SQL
@@ -351,7 +350,7 @@ SQL
 SELECT
     AVG(id)
 FROM
-    post
+    `post`
 WHERE
     id = :__1__
 SQL

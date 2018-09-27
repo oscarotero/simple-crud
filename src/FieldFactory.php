@@ -3,21 +3,23 @@ declare(strict_types = 1);
 
 namespace SimpleCrud;
 
+use SimpleCrud\Fields\FieldInterface;
+
 /**
  * Class to create instances of fields.
  */
-class FieldFactory implements FieldFactoryInterface
+final class FieldFactory implements FieldFactoryInterface
 {
-    protected $namespaces = ['SimpleCrud\\Fields\\'];
-    protected $defaultType = 'Field';
+    private $namespaces = ['SimpleCrud\\Fields\\'];
+    private $defaultType = 'Field';
 
-    protected $nameMap = [
+    private $nameMap = [
         'id' => 'Integer',
         'active' => 'Boolean',
         'pubdate' => 'Datetime',
     ];
 
-    protected $regexMap = [
+    private $regexMap = [
         //relation fields (post_id)
         '/_id$/' => 'Integer',
 
@@ -28,7 +30,7 @@ class FieldFactory implements FieldFactoryInterface
         '/[a-z]At$/' => 'Datetime',
     ];
 
-    protected $typeMap = [
+    private $typeMap = [
         'bigint' => 'Integer',
         'boolean' => 'Boolean',
         'date' => 'Date',
@@ -109,7 +111,7 @@ class FieldFactory implements FieldFactoryInterface
     /**
      * Get the field class name.
      */
-    protected function getClassName(string $name, string $type): ?string
+    private function getClassName(string $name, string $type): ?string
     {
         if (isset($this->nameMap[$name])) {
             return $this->nameMap[$name];

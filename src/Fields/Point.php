@@ -5,25 +5,20 @@ namespace SimpleCrud\Fields;
 use Atlas\Query\Insert;
 use Atlas\Query\Update;
 
-use Latitude\QueryBuilder\StatementInterface;
-use function Latitude\QueryBuilder\fn;
-use function Latitude\QueryBuilder\param;
-
-class Point extends Field
+final class Point extends Field
 {
     /**
      * {@inheritdoc}
      */
     public function getSelectExpression($as = null)
     {
-        $tableName = $this->table->getName();
-        $fieldName = $this->name;
+        $fieldName = $this->info['name'];
 
         if ($as) {
-            return "asText(`{$tableName}`.`{$fieldName}`) as `{$as}`";
+            return "asText({$this}) as `{$as}`";
         }
 
-        return "asText(`{$tableName}`.`{$fieldName}`) as `{$fieldName}`";
+        return "asText({$this}) as `{$fieldName}`";
     }
 
     /**
@@ -58,7 +53,7 @@ class Point extends Field
             $value = null;
         }
 
-        $query->set($this->getName(), $value);
+        $query->set($this->info['name'], $value);
     }
 
     public function update(Update $query, $value)
@@ -69,7 +64,7 @@ class Point extends Field
             $value = null;
         }
 
-        $query->set($this->getName(), $value);
+        $query->set($this->info['name'], $value);
     }
 
     /**

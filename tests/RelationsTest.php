@@ -2,7 +2,6 @@
 namespace SimpleCrud\Tests;
 
 use SimpleCrud\Database;
-use SimpleCrud\Table;
 
 class RelationsTest extends AbstractTestCase
 {
@@ -70,13 +69,13 @@ EOT
         $this->assertEquals([1], $query->getValues());
         $this->assertEquals(<<<'SQL'
 SELECT
-    comment.id,
-    comment.text,
-    comment.post_id
+    `comment`.`id`,
+    `comment`.`text`,
+    `comment`.`post_id`
 FROM
-    comment
+    `comment`
 WHERE
-    comment.post_id = :__1__
+    `comment`.`post_id` = :__1__
 SQL
             , (string) $query
         );
@@ -91,13 +90,13 @@ SQL
         $this->assertEmpty($query->getValues());
         $this->assertEquals(<<<'SQL'
 SELECT
-    comment.id,
-    comment.text,
-    comment.post_id
+    `comment`.`id`,
+    `comment`.`text`,
+    `comment`.`post_id`
 FROM
-    comment
+    `comment`
 WHERE
-    comment.post_id IS NOT NULL
+    `comment`.`post_id` IS NOT NULL
 SQL
             , (string) $query
         );
@@ -114,13 +113,13 @@ SQL
         $this->assertEquals([1], $query->getValues());
         $this->assertEquals(<<<'SQL'
 SELECT
-    category.id,
-    category.name,
-    category.category_id
+    `category`.`id`,
+    `category`.`name`,
+    `category`.`category_id`
 FROM
-    category
+    `category`
 WHERE
-    category.category_id = :__1__
+    `category`.`category_id` = :__1__
 SQL
             , (string) $query
         );
@@ -131,13 +130,13 @@ SQL
         $this->assertEmpty($query->getValues());
         $this->assertEquals(<<<'SQL'
 SELECT
-    category.id,
-    category.name,
-    category.category_id
+    `category`.`id`,
+    `category`.`name`,
+    `category`.`category_id`
 FROM
-    category
+    `category`
 WHERE
-    category.category_id IS NOT NULL
+    `category`.`category_id` IS NOT NULL
 SQL
             , (string) $query
         );
@@ -151,17 +150,18 @@ SQL
         $query = $db->post->select()
             ->relatedWith($db->comment[1])
             ->one();
-var_dump((string) $query);
+
         $this->assertEquals([1], $query->getValues());
         $this->assertEquals(<<<'SQL'
 SELECT
-    category.id,
-    category.name,
-    category.category_id
+    `post`.`id`,
+    `post`.`title`
 FROM
-    category
+    `post`
+        LEFT JOIN `comment` ON `comment`.`post_id` = `post`.`id`
 WHERE
-    category.category_id IS NOT NULL
+    `comment`.`id` = :__1__
+LIMIT 1
 SQL
             , (string) $query
         );
@@ -171,19 +171,18 @@ SQL
         $this->assertEquals((string) $query, (string) $query2);
 
         $query = $db->post->select()
-            ->relatedWith($db->comment)
-            ->compile();
+            ->relatedWith($db->comment);
 
         $this->assertEmpty($query->getValues());
         $this->assertEquals(<<<'SQL'
 SELECT
-    category.id,
-    category.name,
-    category.category_id
+    `post`.`id`,
+    `post`.`title`
 FROM
-    category
+    `post`
+        LEFT JOIN `comment` ON `comment`.`post_id` = `post`.`id`
 WHERE
-    category.category_id IS NOT NULL
+    `comment`.`post_id` IS NOT NULL
 SQL
             , (string) $query
         );
@@ -192,34 +191,51 @@ SQL
     /**
      * @depends testCreation
      */
-    public function _testHasManyToManyQuery(Database $db)
+    public function testHasManyToManyQuery(Database $db)
     {
         $query = $db->category->select()
-            ->relatedWith($db->post[1])
-            ->compile();
+            ->relatedWith($db->post[1]);
 
-        $this->assertEquals([1], $query->params());
-        $this->assertEquals(
-            'SELECT "category"."id", "category"."name", "category"."category_id" FROM "category" LEFT JOIN "category_post" ON "category_post"."category_id" = "category"."id" WHERE "category_post"."post_id" = ?',
-            $query->sql()
+        $this->assertEquals([1], $query->getValues());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    `category`.`id`,
+    `category`.`name`,
+    `category`.`category_id`
+FROM
+    `category`
+        LEFT JOIN `category_post` ON `category_post`.`category_id` = `category`.`id`
+WHERE
+    `category_post`.`post_id` = :__1__
+SQL
+            , (string) $query
         );
 
-        $query2 = $db->post[1]->category()->compile();
-        $this->assertEquals($query->params(), $query2->params());
-        $this->assertEquals($query->sql(), $query2->sql());
+        $query2 = $db->post[1]->category();
+
+        $this->assertEquals($query->getValues(), $query2->getValues());
+        $this->assertEquals((string) $query, (string) $query2);
 
         $query = $db->category->select()
-            ->relatedWith($db->post)
-            ->compile();
+            ->relatedWith($db->post);
 
-        $this->assertEmpty($query->params());
-        $this->assertEquals(
-            'SELECT "category"."id", "category"."name", "category"."category_id" FROM "category" LEFT JOIN "category_post" ON "category_post"."category_id" = "category"."id" WHERE "category_post"."post_id" IS NOT NULL',
-            $query->sql()
+        $this->assertEmpty($query->getValues());
+        $this->assertEquals(<<<'SQL'
+SELECT
+    `category`.`id`,
+    `category`.`name`,
+    `category`.`category_id`
+FROM
+    `category`
+        LEFT JOIN `category_post` ON `category_post`.`category_id` = `category`.`id`
+WHERE
+    `category_post`.`post_id` IS NOT NULL
+SQL
+            , (string) $query
         );
     }
 
-    public function _testRelateOne()
+    public function testRelateOne()
     {
         $db = $this->createDatabase();
 
@@ -271,7 +287,7 @@ SQL
         $this->assertNull($result);
     }
 
-    public function _testRelateMany()
+    public function testRelateMany()
     {
         $db = $this->createDatabase();
 
@@ -325,7 +341,7 @@ SQL
         $this->assertCount(0, $result);
     }
 
-    public function _testRelateManyToMany()
+    public function testRelateManyToMany()
     {
         $db = $this->createDatabase();
 

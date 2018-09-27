@@ -4,12 +4,11 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use ArrayAccess;
+use BadMethodCallException;
 use Countable;
 use Iterator;
 use JsonSerializable;
 use RuntimeException;
-use BadMethodCallException;
-use SimpleCrud\Engine\Common\Query\Select;
 
 /**
  * Stores a collection of rows.
@@ -32,8 +31,8 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     public function __debugInfo(): array
     {
         return [
-            'table' => $this->table->getName(),
-            'rows' => $this->rows
+            'table' => (string) $this->table,
+            'rows' => $this->rows,
         ];
     }
 
@@ -103,7 +102,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         }
 
         throw new RuntimeException(
-            sprintf('Undefined property "%s" in the table "%s"', $name, $this->table->getName())
+            sprintf('Undefined property "%s" in the table "%s"', $name, $this->table)
         );
     }
 

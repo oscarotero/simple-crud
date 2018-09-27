@@ -21,7 +21,7 @@ EOT
     public function testMultilanguage()
     {
         $db = $this->createDatabase();
-        $db->setAttribute(Database::ATTR_LOCALE, 'gl');
+        $db->setConfig(Database::CONFIG_LOCALE, 'gl');
 
         $post = $db->post->create();
 
@@ -29,7 +29,7 @@ EOT
 
         $this->assertSame($post->title, $post->title_gl);
 
-        $db->setAttribute(Database::ATTR_LOCALE, 'es');
+        $db->setConfig(Database::CONFIG_LOCALE, 'es');
 
         $this->assertNotSame($post->title, $post->title_gl);
         $this->assertSame($post->title, $post->title_es);

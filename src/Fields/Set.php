@@ -2,7 +2,7 @@
 
 namespace SimpleCrud\Fields;
 
-class Set extends Field
+final class Set extends Field
 {
     public function databaseValue($value, array $data = [])
     {

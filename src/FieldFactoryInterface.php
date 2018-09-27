@@ -3,6 +3,8 @@ declare(strict_types = 1);
 
 namespace SimpleCrud;
 
+use SimpleCrud\Fields\FieldInterface;
+
 /**
  * Interface used by the FieldFactory class.
  */

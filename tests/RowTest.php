@@ -4,7 +4,6 @@ namespace SimpleCrud\Tests;
 use DateTime;
 use SimpleCrud\Row;
 use SimpleCrud\RowCollection;
-use SimpleCrud\Table;
 
 class RowTest extends AbstractTestCase
 {

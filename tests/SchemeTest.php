@@ -2,9 +2,6 @@
 
 namespace SimpleCrud\Tests;
 
-use SimpleCrud\Database;
-use SimpleCrud\Table;
-
 class SchemeTest extends AbstractTestCase
 {
     private function createDatabase()

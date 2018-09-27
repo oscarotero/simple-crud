@@ -1,10 +1,7 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use DateTime;
 use SimpleCrud\Row;
-use SimpleCrud\RowCollection;
-use SimpleCrud\Table;
 
 class TableTest extends AbstractTestCase
 {
@@ -33,7 +30,6 @@ EOT
         $this->assertEquals('post', $db->post->getName());
         $this->assertEquals('post_id', $db->post->getForeignKey());
         $this->assertSame($db, $db->post->getDatabase());
-
     }
 
     public function testArrayAccess()

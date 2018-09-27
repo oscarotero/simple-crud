@@ -4,14 +4,7 @@ namespace SimpleCrud\Fields;
 
 use Atlas\Query\Insert;
 use Atlas\Query\Update;
-
-use Latitude\QueryBuilder\Builder\CriteriaBuilder;
-use Latitude\QueryBuilder\StatementInterface;
-use SimpleCrud\FieldInterface;
 use SimpleCrud\Table;
-use function Latitude\QueryBuilder\field;
-use function Latitude\QueryBuilder\identify;
-use function Latitude\QueryBuilder\param;
 
 class Field implements FieldInterface
 {
@@ -46,22 +39,17 @@ class Field implements FieldInterface
 
     public function insert(Insert $query, $value)
     {
-        $query->column($this->getName(), $value);
+        $query->column($this->info['name'], $value);
     }
 
     public function update(Update $query, $value)
     {
-        $query->column($this->getName(), $value);
+        $query->column($this->info['name'], $value);
     }
 
-    public function getFullname(): string
+    public function __toString()
     {
-        return sprintf('%s.%s', $this->table->getName(), $this->getName());
-    }
-
-    public function criteria(): CriteriaBuilder
-    {
-        return field(sprintf('%s.%s', $this->table->getName(), $this->getName()));
+        return sprintf('%s.`%s`', $this->table, $this->info['name']);
     }
 
     public function getConfig(string $name)
