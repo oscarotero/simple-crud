@@ -19,16 +19,14 @@ class Scheme extends BaseScheme
 
     protected function loadTables(): array
     {
-        $query = $this->db->query()
-            ->select('name')
+        return $this->db->select()
+            ->columns('name')
             ->from('sqlite_master')
-            ->where(field('type')->in('table', 'view'))
-            ->andWhere(field('name')->notEq('sqlite_sequence'))
-            ->compile();
-
-        return $this->db
-            ->execute($query->sql(), $query->params())
-            ->fetchAll(PDO::FETCH_COLUMN, 0);
+            ->whereEquals([
+                'type' => ['table', 'view'],
+            ])
+            ->andWhere('name != "sqlite_sequence"')
+            ->fetchColumn();
     }
 
     protected function loadTableFields(string $table): array

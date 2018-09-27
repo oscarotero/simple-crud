@@ -21,18 +21,19 @@ abstract class Select implements QueryInterface
 
     public function __construct(Table $table)
     {
-        $this->init($table);
+        $this->table = $table;
 
         $fields = array_map(
             function ($field) {
-                return $field->identify();
+                return $field->getFullname();
             },
             array_values($table->getFields())
         );
 
-        $this->query = $this->builder
-            ->select(...$fields)
-            ->from($table->getName());
+        $this->query = $table->getDatabase()
+            ->select()
+            ->from($table->getName())
+            ->columns(...$fields);
     }
 
     public function one(): self

@@ -2,6 +2,9 @@
 
 namespace SimpleCrud\Fields;
 
+use Atlas\Query\Insert;
+use Atlas\Query\Update;
+
 use Latitude\QueryBuilder\StatementInterface;
 use function Latitude\QueryBuilder\fn;
 use function Latitude\QueryBuilder\param;
@@ -47,17 +50,26 @@ class Point extends Field
         }
     }
 
-    public function param($value): StatementInterface
+    public function insert(Insert $query, $value)
     {
-        if ($value instanceof StatementInterface) {
-            return $value;
-        }
-
         if (self::isValid($value)) {
-            return fn('POINT', param($value[0]), param($value[1]));
+            $value = sprintf('POINT(%s, %s)', $value[0], $value[1]);
+        } else {
+            $value = null;
         }
 
-        return param(null);
+        $query->set($this->getName(), $value);
+    }
+
+    public function update(Update $query, $value)
+    {
+        if (self::isValid($value)) {
+            $value = sprintf('POINT(%s, %s)', $value[0], $value[1]);
+        } else {
+            $value = null;
+        }
+
+        $query->set($this->getName(), $value);
     }
 
     /**

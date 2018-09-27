@@ -20,7 +20,9 @@
 	"require": {
 		"php": ">=7.1",
 		"latitude/latitude": "^3.1",
-		"hoa/ruler": "2.17.05.16"
+		"hoa/ruler": "2.17.05.16",
+		"atlas/pdo": "^1.1",
+		"atlas/query": "^1.2"
 	},
 	"autoload": {
 		"psr-4": {

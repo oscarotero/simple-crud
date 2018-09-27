@@ -25,6 +25,17 @@ trait QueryTrait
         $this->builder = $table->getDatabase()->query();
     }
 
+    public function __toString()
+    {
+        return $this->query->getStatement();
+    }
+
+    public function getValues(): array
+    {
+        $values = $this->query->getBindValues();
+        return array_column($values, 0);
+    }
+
     public function compile(): Query
     {
         return $this->query->compile();
@@ -43,8 +54,6 @@ trait QueryTrait
 
     public function __invoke(): PDOStatement
     {
-        $query = $this->compile();
-
-        return $this->table->getDatabase()->execute($query->sql(), $query->params());
+        return $this->query->perform();
     }
 }

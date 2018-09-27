@@ -16,12 +16,13 @@ trait AggregationTrait
 
     public function __construct(Table $table, string $field = 'id')
     {
-        $this->init($table);
+        $this->table = $table;
         $this->field = $field;
 
-        $this->query = $this->builder
-            ->select(fn(self::AGGREGATION_FUNCTION, $field))
-            ->from($table->getName());
+        $this->query = $table->getDatabase()
+            ->select()
+            ->from($table->getName())
+            ->columns(sprintf('%s(%s)', self::AGGREGATION_FUNCTION, $field));
     }
 
     public function run()
