@@ -92,7 +92,8 @@ class Row implements JsonSerializable
         $db = $this->table->getDatabase();
 
         if (isset($db->$name)) {
-            return $this->relations[$name] = $this->select($db->$name)->run();
+            $this->relations[$name] = $this->select($db->$name)->run();
+            return $this->relations[$name];
         }
 
         throw new RuntimeException(
