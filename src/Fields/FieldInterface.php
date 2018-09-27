@@ -17,7 +17,7 @@ interface FieldInterface
     public function getName(): string;
 
     /**
-     * Returns the field full name (ex: tableName.fieldName)
+     * Returns the field full name (ex: `tableName`.`fieldName`)
      */
     public function __toString();
 
@@ -34,16 +34,10 @@ interface FieldInterface
     public function update(Update $query, $value);
 
     /**
-     * Format and returns the value ready to be saved in the database
+     * Format and returns the value ready to use
      * @param mixed $value
      */
-    public function databaseValue($value);
-
-    /**
-     * Format and returns the value ready to the Row instance
-     * @param mixed $value
-     */
-    public function rowValue($value);
+    public function format($value);
 
     /**
      * Return a configuration value

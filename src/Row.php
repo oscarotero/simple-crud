@@ -178,12 +178,10 @@ class Row implements JsonSerializable
     public function save(): self
     {
         if ($this->changed) {
-            $values = $this->table->databaseValues($this->values);
-
             if (empty($this->id)) {
-                $this->id = $this->table->insert($values)->run();
+                $this->id = $this->table->insert($this->values)->run();
             } else {
-                $this->table->update($values)
+                $this->table->update($this->values)
                     ->where('id = ', $this->id)
                     ->run();
             }

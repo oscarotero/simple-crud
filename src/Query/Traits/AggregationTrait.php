@@ -32,6 +32,6 @@ trait AggregationTrait
         $result = $statement->fetch();
         $field = $this->table->{$this->field};
 
-        return $field->rowValue($result[0]);
+        return $field->format($result[0]);
     }
 }

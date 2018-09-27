@@ -8,13 +8,13 @@ final class Serializable extends Field
         'allowed_classes' => false,
     ];
 
-    public function databaseValue($value, array $data = [])
-    {
-        return serialize($value);
-    }
-
-    public function rowValue($value, array $data = [])
+    public function format($value)
     {
         return @unserialize($value, $this->config) ?: [];
+    }
+
+    protected function formatToDatabase($value, array $data = [])
+    {
+        return serialize($value);
     }
 }

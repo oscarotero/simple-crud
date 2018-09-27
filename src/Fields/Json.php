@@ -8,17 +8,17 @@ final class Json extends Field
         'assoc' => true,
     ];
 
-    public function databaseValue($value, array $data = [])
+    public function format($value)
+    {
+        return empty($value) ? [] : json_decode($value, $this->config['assoc']);
+    }
+
+    protected function formatToDatabase($value)
     {
         if (!is_string($value)) {
             return json_encode($value);
         }
 
         return $value;
-    }
-
-    public function rowValue($vale, array $data = [])
-    {
-        return empty($value) ? [] : json_decode($value, $this->config['assoc']);
     }
 }

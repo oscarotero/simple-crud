@@ -29,10 +29,7 @@ final class Point extends Field
         return "PointFromText($mark)";
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function rowValue($value, array $data = [])
+    public function format($value): ?array
     {
         //POINT(X Y)
         if ($value !== null) {

@@ -58,17 +58,29 @@ class Table implements ArrayAccess
             return $this->defaults;
         }
 
+        foreach ($overrides as $name => &$value) {
+            if (!isset($this->fields[$name])) {
+                throw new SimpleCrudException(
+                    sprintf('The field "%s" does not exist in the table %s', $name, $this)
+                );
+            }
+
+            $value = $this->fields[$name]->format($value);
+        }
+
         return array_intersect_key($overrides, $this->defaults) + $this->defaults;
     }
 
     /**
      * Store a row in the cache.
      */
-    public function cache(Row $row): self
+    public function cache(Row $row): Row
     {
-        $this->cache[$row->id] = $row;
+        if ($row->id) {
+            $this->cache[$row->id] = $row;
+        }
 
-        return $this;
+        return $row;
     }
 
     /**
@@ -285,19 +297,13 @@ class Table implements ArrayAccess
         return $this->fields;
     }
 
-    public function create(array $data = [], $fromDatabase = false): Row
+    public function create(array $data = []): Row
     {
         if (isset($data['id']) && ($row = $this->getCached($data['id']))) {
             return $row;
         }
 
-        if ($fromDatabase) {
-            $row = new Row($this, $this->rowValues($data));
-            $this->cache($row);
-            return $row;
-        }
-
-        return new Row($this, $data);
+        return $this->cache(new Row($this, $data));
     }
 
     public function createCollection(array $rows = [], $fromDatabase = false): RowCollection
@@ -314,35 +320,5 @@ class Table implements ArrayAccess
         }
 
         return new RowCollection($this, ...$rows);
-    }
-
-    public function databaseValues(array $data): array
-    {
-        foreach ($data as $key => &$value) {
-            if (!isset($this->fields[$key])) {
-                throw new SimpleCrudException(
-                    sprintf('Invalid field (%s) in the table %s', $key, $this)
-                );
-            }
-
-            $value = $this->fields[$key]->databaseValue($value);
-        }
-
-        return $data;
-    }
-
-    public function rowValues(array $data): array
-    {
-        foreach ($data as $key => &$value) {
-            if (!isset($this->fields[$key])) {
-                throw new SimpleCrudException(
-                    sprintf('Invalid field (%s) in the table %s', $key, $this)
-                );
-            }
-
-            $value = $this->fields[$key]->rowValue($value);
-        }
-
-        return $data;
     }
 }

@@ -37,6 +37,6 @@ final class Insert implements QueryInterface
 
         $id = $this->table->getDatabase()->lastInsertId();
 
-        return $this->table->id->rowValue($id);
+        return $this->table->id->format($id);
     }
 }

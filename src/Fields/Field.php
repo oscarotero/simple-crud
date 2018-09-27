@@ -18,38 +18,33 @@ class Field implements FieldInterface
         $this->info = $info;
     }
 
-    public function databaseValue($value)
+    public function getName(): string
+    {
+        return $this->info['name'];
+    }
+
+    public function __toString()
+    {
+        return sprintf('%s.`%s`', $this->table, $this->info['name']);
+    }
+
+    public function insert(Insert $query, $value)
+    {
+        $query->column($this->info['name'], $this->formatToDatabase($value));
+    }
+
+    public function update(Update $query, $value)
+    {
+        $query->column($this->info['name'], $this->formatToDatabase($value));
+    }
+
+    public function format($value)
     {
         if ($value === '' && $this->info['null']) {
             return;
         }
 
         return $value;
-    }
-
-    public function rowValue($value)
-    {
-        return $value;
-    }
-
-    public function getName(): string
-    {
-        return $this->info['name'];
-    }
-
-    public function insert(Insert $query, $value)
-    {
-        $query->column($this->info['name'], $value);
-    }
-
-    public function update(Update $query, $value)
-    {
-        $query->column($this->info['name'], $value);
-    }
-
-    public function __toString()
-    {
-        return sprintf('%s.`%s`', $this->table, $this->info['name']);
     }
 
     public function getConfig(string $name)
@@ -60,5 +55,10 @@ class Field implements FieldInterface
     public function setConfig(string $name, $value)
     {
         $this->config[$name] = $value;
+    }
+
+    protected function formatToDatabase($value)
+    {
+        return $this->format($value);
     }
 }

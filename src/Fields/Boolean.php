@@ -2,15 +2,23 @@
 
 namespace SimpleCrud\Fields;
 
+use Atlas\Query\Insert;
+use Atlas\Query\Update;
+
 final class Boolean extends Field
 {
-    public function databaseValue($value, array $data = [])
+    public function insert(Insert $query, $value)
     {
-        return (int) filter_var($value, FILTER_VALIDATE_BOOLEAN);
+        $query->column($this->info['name'], (int) $this->format($value));
     }
 
-    public function rowValue($value, array $data = [])
+    public function update(Update $query, $value)
     {
-        return (bool) $data;
+        $query->column($this->info['name'], (int) $this->format($value));
+    }
+
+    public function format($value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }

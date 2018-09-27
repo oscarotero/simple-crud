@@ -2,27 +2,23 @@
 
 namespace SimpleCrud\Fields;
 
-final class Datetime extends Field
+class Datetime extends Field
 {
     protected $format = 'Y-m-d H:i:s';
 
-    public function databaseValue($value, array $data = [])
+    public function format($value): ?\Datetime
     {
-        if (empty($value)) {
-            return;
-        }
-
-        if (is_string($value)) {
-            return date($this->format, strtotime($value));
-        }
-
         if ($value instanceof \Datetime) {
-            return $value->format($this->format);
+            return $value;
         }
+
+        return $value ? new \Datetime($value) : null;
     }
 
-    public function rowValue($value, array $data = [])
+    protected function formatToDatabase($value): ?string
     {
-        return $value ? new \Datetime($value) : null;
+        $value = $this->format($value);
+
+        return empty($value) ? null : $value->format($this->format);
     }
 }

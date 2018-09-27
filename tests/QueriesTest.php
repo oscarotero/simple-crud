@@ -73,9 +73,6 @@ SQL
             ->offset(3)
             ->orderBy('title');
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 SELECT
     `post`.`id`,
@@ -93,9 +90,9 @@ ORDER BY
     title
 LIMIT 1 OFFSET 3
 SQL
-            , $sql);
+            , (string) $query);
 
-        $this->assertEquals([1, 2, 'content'], $params);
+        $this->assertEquals([1, 2, 'content'], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -113,9 +110,6 @@ SQL
             ->page(2, 5)
             ->orderBy('title');
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 SELECT
     `post`.`id`,
@@ -132,8 +126,8 @@ ORDER BY
     title
 LIMIT 5 OFFSET 5
 SQL
-            , $sql);
-        $this->assertEquals([1, 2], $params);
+            , (string) $query);
+        $this->assertEquals([1, 2], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -150,9 +144,6 @@ SQL
                 'point' => [222, 333],
             ]);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 INSERT INTO `post` (
     `title`,
@@ -164,8 +155,8 @@ INSERT INTO `post` (
     POINT(222, 333)
 )
 SQL
-        , $sql);
-        $this->assertEquals(['Title', 'Body'], $params);
+        , (string) $query);
+        $this->assertEquals(['Title', 'Body'], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -183,9 +174,6 @@ SQL
             ])
             ->where('id = ', 3);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 UPDATE `post`
 SET
@@ -195,9 +183,9 @@ SET
 WHERE
     id = :__1__
 SQL
-        , $sql);
+        , (string) $query);
 
-        $this->assertEquals(['Title', 'Body', 3], $params);
+        $this->assertEquals(['Title', 'Body', 3], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -211,17 +199,14 @@ SQL
         $query = $db->post->delete()
             ->where('id = ', 3);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 DELETE FROM `post`
 WHERE
     id = :__1__
 SQL
-        , $sql);
+        , (string) $query);
 
-        $this->assertEquals([3], $params);
+        $this->assertEquals([3], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -235,9 +220,6 @@ SQL
         $query = $db->post->count()
             ->where('id = ', 3);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 SELECT
     COUNT(id)
@@ -246,9 +228,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , $sql);
+        , (string) $query);
 
-        $this->assertEquals([3], $params);
+        $this->assertEquals([3], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -262,9 +244,6 @@ SQL
         $query = $db->post->sum('id')
             ->where('id = ', 3);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 SELECT
     SUM(id)
@@ -273,9 +252,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , $sql);
+        , (string) $query);
 
-        $this->assertEquals([3], $params);
+        $this->assertEquals([3], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -289,9 +268,6 @@ SQL
         $query = $db->post->max('id')
             ->where('id = ', 3);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 SELECT
     MAX(id)
@@ -300,9 +276,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , $sql);
+        , (string) $query);
 
-        $this->assertEquals([3], $params);
+        $this->assertEquals([3], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -316,9 +292,6 @@ SQL
         $query = $db->post->min('id')
             ->where('id = ', 3);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 SELECT
     MIN(id)
@@ -327,9 +300,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , $sql);
+        , (string) $query);
 
-        $this->assertEquals([3], $params);
+        $this->assertEquals([3], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
@@ -343,9 +316,6 @@ SQL
         $query = $db->post->avg('id')
             ->where('id = ', 3);
 
-        $sql = (string) $query;
-        $params = $query->getValues();
-
         $this->assertEquals(<<<'SQL'
 SELECT
     AVG(id)
@@ -354,9 +324,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , $sql);
+        , (string) $query);
 
-        $this->assertEquals([3], $params);
+        $this->assertEquals([3], $query->getValues());
 
         $result = $query();
         $this->assertInstanceOf('PDOStatement', $result);
