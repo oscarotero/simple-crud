@@ -18,6 +18,7 @@ CREATE TABLE `post` (
     `body`  text,
     `num`   decimal(10,0) DEFAULT NULL,
     `point` point DEFAULT NULL,
+    `size`  enum('x-small', 'small', 'medium', 'large', 'x-large'),
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 SQL
@@ -79,7 +80,8 @@ SELECT
     `post`.`title`,
     `post`.`body`,
     `post`.`num`,
-    `post`.`point`
+    `post`.`point`,
+    `post`.`size`
 FROM
     `post`
 WHERE
@@ -116,7 +118,8 @@ SELECT
     `post`.`title`,
     `post`.`body`,
     `post`.`num`,
-    `post`.`point`
+    `post`.`point`,
+    `post`.`size`
 FROM
     `post`
 WHERE

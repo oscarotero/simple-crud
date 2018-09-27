@@ -147,17 +147,9 @@ class Row implements JsonSerializable
      * Returns an array with all fields of the row
      * @param mixed $relations
      */
-    public function toArray($relations = []): array
+    public function toArray(): array
     {
-        $values = $this->values;
-
-        foreach ($relations as $name) {
-            if ($row = $this->$name) {
-                $values[$name] = $row->toArray();
-            }
-        }
-
-        return $values;
+        return $this->values;
     }
 
     /**

@@ -68,7 +68,7 @@ class Table implements ArrayAccess
             $value = $this->fields[$name]->format($value);
         }
 
-        return array_intersect_key($overrides, $this->defaults) + $this->defaults;
+        return $overrides + $this->defaults;
     }
 
     /**

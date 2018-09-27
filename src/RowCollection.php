@@ -213,17 +213,12 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * Returns an array with all fields of all rows
-     * @param mixed $relations
      */
-    public function toArray($relations = []): array
+    public function toArray(): array
     {
-        $rows = [];
-
-        foreach ($this->rows as $id => $row) {
-            $rows[$id] = $row->toArray($relations);
-        }
-
-        return $rows;
+        return array_map(function ($row) {
+            return $row;
+        }, $this->rows);
     }
 
     /**
