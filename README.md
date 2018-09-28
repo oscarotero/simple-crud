@@ -27,12 +27,12 @@ $ composer require simple-crud/simple-crud
 
 SimpleCrud has the following classes:
 
-* **SimpleCrud:** Manage the database connection.
+* **Database:** Manage the database connection.
 * **Query:** Creates the database queries. Currently there are adapters for mysql and sqlite
 * **Table:** Manages a database table
+* **Field:** Manages a database field. Used to format and validate values
 * **Row:** Stores/modifies a row
 * **RowCollection:** Is a collection of rows
-* **Field:** Used to modify the values from/to the database according to its format
 
 ## Usage example
 

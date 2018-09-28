@@ -197,25 +197,24 @@ class Table implements ArrayAccess
      * @param mixed $offset
      * @param mixed $value
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): Row
     {
         //Insert on missing offset
         if ($offset === null) {
             $value['id'] = null;
 
-            return $this->insert($value)->run();
+            return $this->create($value)->save();
         }
 
-        //Update if the element is cached
+        //Update if the element is cached and exists
         $row = $this->getCached($offset);
 
-        if (!empty($row)) {
-            $row->edit($value)->save();
-            return;
+        if ($row) {
+            return $row->edit($value)->save();
         }
 
         //Update if the element it's not cached
-        if (!isset($row)) {
+        if (!$this->isCached($row)) {
             $this->update()
                 ->columns($value)
                 ->where('id = ', $offset)

@@ -40,6 +40,7 @@ EOT
         $db->post[] = ['title' => 'First post', 'isActive' => 1];
 
         $this->assertTrue(isset($db->post[1]));
+        $this->assertSame(1, $db->post->count()->run());
 
         //Select
         $post = $db->post[1];
@@ -55,5 +56,6 @@ EOT
         unset($db->post[1]);
 
         $this->assertFalse(isset($db->post[1]));
+        $this->assertSame(0, $db->post->count()->run());
     }
 }
