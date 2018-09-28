@@ -126,7 +126,7 @@ $db->post[] = [
 
 ### Rows
 
-A `Row` object represents a database row and it is used to read and modify the data:
+A `Row` object represents a database row and is used to read and modify the data:
 
 ```php
 //get a row
@@ -152,7 +152,7 @@ $newPost->save();
 
 ### Queries
 
-A `Query` object represents a database query. Use magic methods to create query instances. For example `$db->post->select()` returns a new instance of a `Select` query. Other examples: `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
+A `Query` object represents a database query. Use magic methods to create query instances. For example `$db->post->select()` returns a new instance of a `Select` query in the tabe `post`. Other examples: `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
 
 ```php
 //Create an UPDATE query with the table post
@@ -160,8 +160,8 @@ $updateQuery = $db->post->update();
 
 //Add data, conditions, limit, etc
 $updateQuery
-    ->data(['title' => 'New title'])
-    ->where('id = :id', [':id' => 23])
+    ->columns(['title' => 'New title'])
+    ->where('id = ', 23)
     ->limit(1);
 
 //get the query as string
@@ -169,6 +169,12 @@ echo $updateQuery; //UPDATE `post` ...
 
 //execute the query and returns a PDOStatement with the result
 $statement = $updateQuery();
+
+//Instead use the function "columns", you can pass the new data on create the query:
+$updateQuery = $db->post
+    ->update(['title' => 'New title'])
+    ->where('id = ', 23)
+    ->limit(1);
 ```
 
 The method `run()` executes the query but instead returns the `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
@@ -176,8 +182,7 @@ The method `run()` executes the query but instead returns the `PDOStatement`, it
 ```php
 //insert a new post
 $id = $db->post
-    ->insert()
-    ->data([
+    ->insert([
         'title' => 'My first post',
         'text' => 'This is the text of the post'
     ])
@@ -186,7 +191,7 @@ $id = $db->post
 //Delete a post
 $db->post
     ->delete()
-    ->byId(23) //shortcut of where('id = :id', [':id' => 23])
+    ->where('id = ', 23)
     ->run();
 
 //Count all posts
@@ -196,8 +201,7 @@ $total = $db->post
 
 //Sum the ids of all posts
 $total = $db->post
-    ->sum()
-    ->field('id')
+    ->sum('id')
     ->run();
 ```
 
@@ -206,8 +210,8 @@ $total = $db->post
 ```php
 $posts = $db->post
     ->select()
-    ->where('id > :id', [':id' => 10])
-    ->orderBy('id ASC')
+    ->where('id > ', 10)
+    ->orderBy('id', 'ASC')
     ->limit(100)
     ->run();
 
@@ -222,7 +226,7 @@ If you only need the first row, use the modifier `one()`:
 $post = $db->post
     ->select()
     ->one()
-    ->by('id', 23)
+    ->where('id = ', 23)
     ->run();
 
 echo $post->title;
