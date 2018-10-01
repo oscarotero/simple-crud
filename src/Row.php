@@ -16,7 +16,7 @@ class Row implements JsonSerializable
     private $table;
     private $values = [];
     private $changed;
-    private $relations = [];
+    private $links = [];
 
     public function __construct(Table $table, array $values)
     {
@@ -30,7 +30,8 @@ class Row implements JsonSerializable
         return [
             'table' => (string) $this->table,
             'values' => $this->values,
-            'relations' => $this->relations,
+            'changed' => $this->changed,
+            'links' => $this->links,
         ];
     }
 
@@ -46,6 +47,17 @@ class Row implements JsonSerializable
         throw new BadMethodCallException(
             sprintf('Invalid method call %s', $name)
         );
+    }
+
+    /**
+     * @param Row|RowCollection $row
+     */
+    public function link($row): self
+    {
+        $table = $row->getTable()->getName();
+        $this->links[$table] = $row;
+
+        return $this;
     }
 
     /**
@@ -84,16 +96,16 @@ class Row implements JsonSerializable
             return $this->values[$valueName];
         }
 
-        //Its a relation
-        if (array_key_exists($name, $this->relations)) {
-            return $this->relations[$name];
+        //Its a linked relation
+        if (array_key_exists($name, $this->links)) {
+            return $this->links[$name];
         }
 
         $db = $this->table->getDatabase();
 
         if (isset($db->$name)) {
-            $this->relations[$name] = $this->select($db->$name)->run();
-            return $this->relations[$name];
+            $this->links[$name] = $this->select($db->$name)->run();
+            return $this->links[$name];
         }
 
         throw new RuntimeException(
@@ -130,7 +142,7 @@ class Row implements JsonSerializable
     {
         $valueName = $this->getValueName($name);
 
-        return ($valueName && isset($this->values[$valueName])) || isset($this->relations[$name]);
+        return ($valueName && isset($this->values[$valueName])) || isset($this->links[$name]);
     }
 
     /**
@@ -138,14 +150,13 @@ class Row implements JsonSerializable
      */
     public function __unset(string $name)
     {
-        unset($this->relations[$name]);
+        unset($this->links[$name]);
 
         $this->__set($name, null);
     }
 
     /**
      * Returns an array with all fields of the row
-     * @param mixed $relations
      */
     public function toArray(): array
     {

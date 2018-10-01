@@ -138,7 +138,7 @@ class Table implements ArrayAccess
     {
         if (!isset($this->fields[$name])) {
             throw new SimpleCrudException(
-                sprintf('The field "%s" does not exist in the table "%s"', $name, $this->name)
+                sprintf('The field `%s` does not exist in the table %s', $name, $this)
             );
         }
 

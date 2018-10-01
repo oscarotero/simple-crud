@@ -1,6 +1,7 @@
 <?php
 namespace SimpleCrud\Tests;
 
+use PDO;
 use SimpleCrud\Row;
 use SimpleCrud\RowCollection;
 
@@ -71,9 +72,130 @@ EOT
 
         $posts = $db->post->select()->run();
 
+        $this->assertSame($db->post, $posts->getTable());
         $this->assertInstanceOf(RowCollection::class, $posts);
         $this->assertInstanceOf(Row::class, $posts[1]);
         $this->assertSame($db->post[1], $posts[1]);
         $this->assertCount(3, $posts);
+
+        $titles = $posts->title;
+
+        $this->assertInternalType('array', $titles);
+        $this->assertCount(3, $titles);
+        $this->assertSame($posts[3]->title, $titles[3]);
+
+        $posts->title = 'Same title';
+
+        $this->assertSame('Same title', $db->post[1]->title);
+        $this->assertSame('Same title', $posts[2]->title);
+
+        $this->assertTrue(isset($posts->title));
+        $this->assertTrue(isset($posts[1]));
+        $this->assertFalse(isset($posts->foo));
+        $this->assertFalse(isset($posts[4]));
+
+        $array = [
+            1 => ['id' => 1, 'title' => 'Same title'],
+            2 => ['id' => 2, 'title' => 'Same title'],
+            3 => ['id' => 3, 'title' => 'Same title'],
+        ];
+
+        $this->assertEquals($array, $posts->toArray());
+
+        $this->assertSame(
+            'First post',
+            $db->execute('SELECT title FROM post WHERE id = 1')->fetch(PDO::FETCH_COLUMN)
+        );
+
+        $posts->save();
+
+        $this->assertSame(
+            'Same title',
+            $db->execute('SELECT title FROM post WHERE id = 1')->fetch(PDO::FETCH_COLUMN)
+        );
+
+        $posts->delete();
+
+        $this->assertEquals(
+            0,
+            $db->execute('SELECT COUNT(*) FROM post')->fetch(PDO::FETCH_COLUMN)
+        );
+    }
+
+    public function testRowCollectionHasOneRelations()
+    {
+        $db = $this->createSeededDatabase();
+
+        $posts = $db->post->select()->run();
+        $comments = $posts->comment;
+
+        $this->assertCount(3, $posts);
+        $this->assertCount(3, $comments);
+
+        $post_1 = $posts[1]->__debugInfo();
+        $post_2 = $posts[2]->__debugInfo();
+        $post_3 = $posts[3]->__debugInfo();
+
+        $comment_1 = $comments[1]->__debugInfo();
+        $comment_2 = $comments[2]->__debugInfo();
+        $comment_3 = $comments[3]->__debugInfo();
+
+        $this->assertCount(1, $post_1['links']['comment']);
+        $this->assertCount(2, $post_2['links']['comment']);
+        $this->assertCount(0, $post_3['links']['comment']);
+
+        $this->assertSame($db->post[1], $comment_1['links']['post']);
+        $this->assertSame($db->post[2], $comment_2['links']['post']);
+        $this->assertSame($db->post[2], $comment_3['links']['post']);
+    }
+
+    public function testRowCollectionHasManyRelations()
+    {
+        $db = $this->createSeededDatabase();
+
+        $comments = $db->comment->select()->run();
+        $posts = $comments->post;
+
+        $this->assertCount(2, $posts);
+        $this->assertCount(3, $comments);
+
+        $post_1 = $posts[1]->__debugInfo();
+        $post_2 = $posts[2]->__debugInfo();
+
+        $comment_1 = $comments[1]->__debugInfo();
+        $comment_2 = $comments[2]->__debugInfo();
+        $comment_3 = $comments[3]->__debugInfo();
+
+        $this->assertCount(1, $post_1['links']['comment']);
+        $this->assertCount(2, $post_2['links']['comment']);
+
+        $this->assertSame($db->post[1], $comment_1['links']['post']);
+        $this->assertSame($db->post[2], $comment_2['links']['post']);
+        $this->assertSame($db->post[2], $comment_3['links']['post']);
+    }
+
+    public function testRowCollectionHasManyToManyRelations()
+    {
+        $db = $this->createSeededDatabase();
+
+        $categories = $db->category->select()->run();
+        $posts = $categories->post;
+
+        $this->assertCount(2, $posts);
+        $this->assertCount(3, $categories);
+
+        $post_1 = $posts[1]->__debugInfo();
+        $post_2 = $posts[2]->__debugInfo();
+
+        $category_1 = $categories[1]->__debugInfo();
+        $category_2 = $categories[2]->__debugInfo();
+        $category_3 = $categories[3]->__debugInfo();
+
+        // $this->assertCount(1, $post_1['links']['comment']);
+        // $this->assertCount(2, $post_2['links']['comment']);
+
+        // $this->assertSame($db->post[1], $comment_1['links']['post']);
+        // $this->assertSame($db->post[2], $comment_2['links']['post']);
+        // $this->assertSame($db->post[2], $comment_3['links']['post']);
     }
 }

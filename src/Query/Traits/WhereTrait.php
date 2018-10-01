@@ -16,7 +16,7 @@ trait WhereTrait
         if (is_array($name)) {
             $this->query->whereEquals($name);
         } else {
-            $this->query->whereEquals([$name => $value]);
+            $this->query->whereEquals([(string) $name => $value]);
         }
 
         return $this;
@@ -91,7 +91,7 @@ trait WhereTrait
 
         //Has one
         if ($field = $table1->getJoinField($table2)) {
-            return $this->where("{$field} = ", $row->id);
+            return $this->whereEquals($field, $row->id);
         }
 
         //Has many
@@ -103,7 +103,7 @@ trait WhereTrait
                     sprintf('%s = %s', $field, $table1->id)
                 );
 
-            return $this->where("{$table2->id} = ", $row->id);
+            return $this->whereEquals($table2->id, $row->id);
         }
 
         //Has many to many
@@ -118,7 +118,7 @@ trait WhereTrait
                     sprintf('%s = %s', $field1, $table1->id)
                 );
 
-            return $this->where("{$field2} = ", $row->id);
+            return $this->whereEquals($field2, $row->id);
         }
 
         throw new RuntimeException(

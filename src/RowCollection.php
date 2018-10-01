@@ -9,13 +9,14 @@ use Countable;
 use Iterator;
 use JsonSerializable;
 use RuntimeException;
+use SimpleCrud\Query\Select;
 
 /**
  * Stores a collection of rows.
  */
 class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializable
 {
-    private $table = [];
+    private $table;
     private $rows = [];
     private $relations = [];
 
@@ -98,12 +99,59 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         $db = $this->table->getDatabase();
 
         if (isset($db->$name)) {
-            return $this->relations[$name] = $this->select($db->$name)->run();
+            $result = $this->select($db->$name)->run();
+            $this->linkOneToMany($result);
+            return $this->relations[$name] = $result;
         }
 
         throw new RuntimeException(
             sprintf('Undefined property "%s" in the table "%s"', $name, $this->table)
         );
+    }
+
+    /**
+     * this: posts
+     * rows: comments
+     */
+    private function linkOneToMany(RowCollection $comments)
+    {
+        $table = $comments->getTable();
+
+        //Has many (inversed of Has one)
+        if ($this->table->getJoinField($table)) {
+            return $comments->linkOneToMany($this);
+        }
+
+        //Has many to many
+        if (!$table->getJoinField($this->table)) {
+            return $this->linkManyToMany($comments);
+        }
+
+        $relations = [];
+        $foreignKey = $this->table->getForeignKey();
+
+        foreach ($comments as $comment) {
+            $id = $comment->{$foreignKey};
+            $comment->link($this[$id]);
+
+            if (!isset($relations[$id])) {
+                $relations[$id] = [];
+            }
+
+            $relations[$id][] = $comment;
+        }
+
+        foreach ($this as $id => $row) {
+            $row->link($table->createCollection($relations[$id] ?? []));
+        }
+    }
+
+    /**
+     * this:posts
+     * rows: categories
+     */
+    private function linkManyToMany(RowCollection $categories)
+    {
     }
 
     /**
@@ -217,7 +265,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     public function toArray(): array
     {
         return array_map(function ($row) {
-            return $row;
+            return $row->toArray();
         }, $this->rows);
     }
 
@@ -242,7 +290,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
         if (count($ids)) {
             $this->table->delete()
-                ->where(field('id')->in(...$id))
+                ->where('id IN ', $ids)
                 ->run();
 
             $this->id = null;
