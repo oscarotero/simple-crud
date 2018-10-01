@@ -66,15 +66,19 @@ SQL
      */
     public function testSelect(Database $db)
     {
-        $query = $db->post->select()
+        $statement = $db->post->select()
             ->one()
             ->where('title IS NOT NULL')
             ->where('id IN ', [1, 2])
             ->where('body = ', 'content')
             ->offset(3)
-            ->orderBy('title');
+            ->orderBy('title')
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [1, 2, 'content'],
+<<<'SQL'
 SELECT
     `post`.`id`,
     `post`.`title`,
@@ -92,12 +96,9 @@ ORDER BY
     title
 LIMIT 1 OFFSET 3
 SQL
-            , (string) $query);
+        );
 
-        $this->assertEquals([1, 2, 'content'], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -105,14 +106,18 @@ SQL
      */
     public function testSelectPage(Database $db)
     {
-        $query = $db->post->select()
+        $statement = $db->post->select()
             ->one()
             ->where('title IS NOT NULL')
             ->where('id IN ', [1, 2])
             ->page(2, 5)
-            ->orderBy('title');
+            ->orderBy('title')
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [1, 2],
+<<<'SQL'
 SELECT
     `post`.`id`,
     `post`.`title`,
@@ -129,11 +134,9 @@ ORDER BY
     title
 LIMIT 5 OFFSET 5
 SQL
-            , (string) $query);
-        $this->assertEquals([1, 2], $query->getValues());
+        );
 
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -141,13 +144,17 @@ SQL
      */
     public function testInsert(Database $db)
     {
-        $query = $db->post->insert([
+        $statement = $db->post->insert([
                 'title' => 'Title',
                 'body' => 'Body',
                 'point' => [222, 333],
-            ]);
+            ])
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            ['Title', 'Body'],
+<<<'SQL'
 INSERT INTO `post` (
     `title`,
     `body`,
@@ -158,11 +165,9 @@ INSERT INTO `post` (
     POINT(222, 333)
 )
 SQL
-        , (string) $query);
-        $this->assertEquals(['Title', 'Body'], $query->getValues());
+        );
 
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -170,14 +175,18 @@ SQL
      */
     public function testUpdate(Database $db)
     {
-        $query = $db->post->update([
+        $statement = $db->post->update([
                 'title' => 'Title',
                 'body' => 'Body',
                 'point' => [23, 45],
             ])
-            ->where('id = ', 3);
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            ['Title', 'Body', 3],
+<<<'SQL'
 UPDATE `post`
 SET
     `title` = :title,
@@ -186,12 +195,9 @@ SET
 WHERE
     id = :__1__
 SQL
-        , (string) $query);
+        );
 
-        $this->assertEquals(['Title', 'Body', 3], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -199,20 +205,21 @@ SQL
      */
     public function testDelete(Database $db)
     {
-        $query = $db->post->delete()
-            ->where('id = ', 3);
+        $statement = $db->post->delete()
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
 DELETE FROM `post`
 WHERE
     id = :__1__
 SQL
-        , (string) $query);
+        );
 
-        $this->assertEquals([3], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -220,10 +227,14 @@ SQL
      */
     public function testCount(Database $db)
     {
-        $query = $db->post->count()
-            ->where('id = ', 3);
+        $statement = $db->post->count()
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
 SELECT
     COUNT(id)
 FROM
@@ -231,12 +242,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , (string) $query);
+        );
 
-        $this->assertEquals([3], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -244,10 +252,14 @@ SQL
      */
     public function testSum(Database $db)
     {
-        $query = $db->post->sum('id')
-            ->where('id = ', 3);
+        $statement = $db->post->sum('id')
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
 SELECT
     SUM(id)
 FROM
@@ -255,12 +267,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , (string) $query);
+        );
 
-        $this->assertEquals([3], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -268,10 +277,14 @@ SQL
      */
     public function testMax(Database $db)
     {
-        $query = $db->post->max('id')
-            ->where('id = ', 3);
+        $statement = $db->post->max('id')
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
 SELECT
     MAX(id)
 FROM
@@ -279,12 +292,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , (string) $query);
+        );
 
-        $this->assertEquals([3], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -292,10 +302,14 @@ SQL
      */
     public function testMin(Database $db)
     {
-        $query = $db->post->min('id')
-            ->where('id = ', 3);
+        $statement = $db->post->min('id')
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
 SELECT
     MIN(id)
 FROM
@@ -303,12 +317,9 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , (string) $query);
+        );
 
-        $this->assertEquals([3], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
     /**
@@ -316,10 +327,14 @@ SQL
      */
     public function testAvg(Database $db)
     {
-        $query = $db->post->avg('id')
-            ->where('id = ', 3);
+        $statement = $db->post->avg('id')
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $this->assertEquals(<<<'SQL'
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
 SELECT
     AVG(id)
 FROM
@@ -327,11 +342,8 @@ FROM
 WHERE
     id = :__1__
 SQL
-        , (string) $query);
+        );
 
-        $this->assertEquals([3], $query->getValues());
-
-        $result = $query();
-        $this->assertInstanceOf('PDOStatement', $result);
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 }

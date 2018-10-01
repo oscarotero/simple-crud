@@ -61,7 +61,7 @@ EOT
 
         $db->category_post[] = ['category_id' => 1, 'post_id' => 1];
         $db->category_post[] = ['category_id' => 2, 'post_id' => 1];
-        $db->category_post[] = ['category_id' => 3, 'post_id' => 2];
+        $db->category_post[] = ['category_id' => 3, 'post_id' => 3];
 
         return $db;
     }
@@ -179,23 +179,37 @@ EOT
         $db = $this->createSeededDatabase();
 
         $categories = $db->category->select()->run();
+        $category_post = $db->category_post->select()->run();
         $posts = $categories->post;
 
         $this->assertCount(2, $posts);
         $this->assertCount(3, $categories);
+        $this->assertCount(3, $category_post);
 
         $post_1 = $posts[1]->__debugInfo();
-        $post_2 = $posts[2]->__debugInfo();
+        $post_3 = $posts[3]->__debugInfo();
 
         $category_1 = $categories[1]->__debugInfo();
         $category_2 = $categories[2]->__debugInfo();
         $category_3 = $categories[3]->__debugInfo();
 
-        // $this->assertCount(1, $post_1['links']['comment']);
-        // $this->assertCount(2, $post_2['links']['comment']);
+        $category_post_1 = $category_post[1]->__debugInfo();
+        $category_post_2 = $category_post[2]->__debugInfo();
+        $category_post_3 = $category_post[3]->__debugInfo();
 
-        // $this->assertSame($db->post[1], $comment_1['links']['post']);
-        // $this->assertSame($db->post[2], $comment_2['links']['post']);
-        // $this->assertSame($db->post[2], $comment_3['links']['post']);
+        $this->assertCount(2, $post_1['links']['category']);
+        $this->assertCount(1, $post_3['links']['category']);
+
+        $this->assertCount(1, $category_1['links']['post']);
+        $this->assertCount(1, $category_2['links']['post']);
+        $this->assertCount(1, $category_3['links']['post']);
+
+        $this->assertSame($posts[1], $category_post_1['links']['post']);
+        $this->assertSame($posts[1], $category_post_2['links']['post']);
+        $this->assertSame($posts[3], $category_post_3['links']['post']);
+
+        $this->assertSame($categories[1], $category_post_1['links']['category']);
+        $this->assertSame($categories[2], $category_post_2['links']['category']);
+        $this->assertSame($categories[3], $category_post_3['links']['category']);
     }
 }

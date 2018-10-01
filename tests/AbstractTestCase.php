@@ -18,6 +18,8 @@ abstract class AbstractTestCase extends TestCase
             }
         });
 
+        $db->getConnection()->logQueries(true);
+
         return $db;
     }
 
@@ -31,6 +33,17 @@ abstract class AbstractTestCase extends TestCase
             }
         });
 
+        $db->getConnection()->logQueries(true);
+
         return $db;
+    }
+
+    protected function assertQuery(Database $db, array $values, string $statement)
+    {
+        $queries = $db->getConnection()->getQueries();
+        $query = array_pop($queries);
+
+        $this->assertSame($statement, $query['statement']);
+        $this->assertEquals($values, array_values($query['values']));
     }
 }

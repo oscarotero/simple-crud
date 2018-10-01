@@ -99,8 +99,23 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         $db = $this->table->getDatabase();
 
         if (isset($db->$name)) {
-            $result = $this->select($db->$name)->run();
-            $this->linkOneToMany($result);
+            $table = $db->$name;
+            $joinTable = $this->table->getJoinTable($table);
+
+            //Many-to-many
+            if ($joinTable) {
+                $joinRows = $this->select($joinTable)->run();
+                $joinRows->linkTo($this);
+                $this->relations[$joinTable->getName()] = $joinRows;
+
+                $result = $joinRows->select($table)->run();
+                $joinRows->linkTo($result);
+                $this->linkThrough($result, $joinRows);
+            } else {
+                $result = $this->select($table)->run();
+                $this->linkTo($result);
+            }
+
             return $this->relations[$name] = $result;
         }
 
@@ -109,36 +124,27 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         );
     }
 
-    /**
-     * this: posts
-     * rows: comments
-     */
-    private function linkOneToMany(RowCollection $comments)
+    private function linkTo(RowCollection $rows)
     {
-        $table = $comments->getTable();
+        $table = $rows->getTable();
 
         //Has many (inversed of Has one)
         if ($this->table->getJoinField($table)) {
-            return $comments->linkOneToMany($this);
-        }
-
-        //Has many to many
-        if (!$table->getJoinField($this->table)) {
-            return $this->linkManyToMany($comments);
+            return $rows->linkTo($this);
         }
 
         $relations = [];
         $foreignKey = $this->table->getForeignKey();
 
-        foreach ($comments as $comment) {
-            $id = $comment->{$foreignKey};
-            $comment->link($this[$id]);
+        foreach ($rows as $row) {
+            $id = $row->{$foreignKey};
+            $row->link($this[$id]);
 
             if (!isset($relations[$id])) {
                 $relations[$id] = [];
             }
 
-            $relations[$id][] = $comment;
+            $relations[$id][] = $row;
         }
 
         foreach ($this as $id => $row) {
@@ -146,12 +152,38 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         }
     }
 
-    /**
-     * this:posts
-     * rows: categories
-     */
-    private function linkManyToMany(RowCollection $categories)
+    private function linkThrough(RowCollection $rows, RowCollection $relations)
     {
+        $table = $rows->getTable();
+        $this_fk = $this->table->getForeignKey();
+        $rows_fk = $table->getForeignKey();
+        $this_in_rows = [];
+        $rows_in_this = [];
+
+        foreach ($relations as $relation) {
+            $this_id = $relation->{$this_fk};
+            $rows_id = $relation->{$rows_fk};
+
+            if (!isset($rows_in_this[$this_id])) {
+                $rows_in_this[$this_id] = [];
+            }
+
+            $rows_in_this[$this_id][] = $rows[$rows_id];
+
+            if (!isset($this_in_rows[$rows_id])) {
+                $this_in_rows[$rows_id] = [];
+            }
+
+            $this_in_rows[$rows_id][] = $this[$this_id];
+        }
+
+        foreach ($this as $id => $category) {
+            $category->link($table->createCollection($rows_in_this[$id] ?? []));
+        }
+
+        foreach ($rows as $id => $row) {
+            $row->link($this->table->createCollection($this_in_rows[$id] ?? []));
+        }
     }
 
     /**
