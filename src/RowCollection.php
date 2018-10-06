@@ -105,18 +105,17 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             //Many-to-many
             if ($joinTable) {
                 $joinRows = $this->select($joinTable)->run();
-                $joinRows->linkTo($this);
-                $this->relations[$joinTable->getName()] = $joinRows;
+                $joinRows->link($this);
 
                 $result = $joinRows->select($table)->run();
-                $joinRows->linkTo($result);
-                $this->linkThrough($result, $joinRows);
+                $joinRows->link($result);
+                $this->link($result, $joinRows);
             } else {
                 $result = $this->select($table)->run();
-                $this->linkTo($result);
+                $this->link($result);
             }
 
-            return $this->relations[$name] = $result;
+            return $result;
         }
 
         throw new RuntimeException(
@@ -124,13 +123,17 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         );
     }
 
-    private function linkTo(RowCollection $rows)
+    private function link(RowCollection $rows, RowCollection $relations = null)
     {
+        if ($relations) {
+            return $this->linkThrough($rows, $relations);
+        }
+
         $table = $rows->getTable();
 
         //Has many (inversed of Has one)
         if ($this->table->getJoinField($table)) {
-            return $rows->linkTo($this);
+            return $rows->link($this);
         }
 
         $relations = [];
@@ -150,11 +153,14 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         foreach ($this as $id => $row) {
             $row->link($table->createCollection($relations[$id] ?? []));
         }
+
+        $this->relations[$table->getName()] = $result;
     }
 
     private function linkThrough(RowCollection $rows, RowCollection $relations)
     {
         $table = $rows->getTable();
+        $relTable = $relations->getTable();
         $this_fk = $this->table->getForeignKey();
         $rows_fk = $table->getForeignKey();
         $this_in_rows = [];
@@ -177,13 +183,16 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             $this_in_rows[$rows_id][] = $this[$this_id];
         }
 
-        foreach ($this as $id => $category) {
-            $category->link($table->createCollection($rows_in_this[$id] ?? []));
+        foreach ($this as $id => $row) {
+            $row->link($table->createCollection($rows_in_this[$id] ?? []));
         }
 
         foreach ($rows as $id => $row) {
             $row->link($this->table->createCollection($this_in_rows[$id] ?? []));
         }
+
+        $this->relations[$table->getName()] = $rows;
+        $this->relations[$relTable->getName()] = $relations;
     }
 
     /**

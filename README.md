@@ -129,7 +129,7 @@ $db->post[] = [
 A `Row` object represents a database row and is used to read and modify the data:
 
 ```php
-//get a row
+//get a row by id
 $post = $db->post[34];
 
 //Get/modify fields values
@@ -177,7 +177,7 @@ $updateQuery = $db->post
     ->limit(1);
 ```
 
-The method `run()` executes the query but instead returns the `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
+The method `run()` executes the query but instead a `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
 
 ```php
 //insert a new post
@@ -287,7 +287,7 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
-You may want a filtered result of the related rows instead getting all of them. To do this, just use a method with the same name of the related table and you get the of the `Select` query that you can modify:
+You may want a filtered result of the related rows instead getting all of them. To do this, just use a method with the same name of the related table and you get the `Select` query that you can modify:
 
 ```php
 $category = $db->category[34];
@@ -297,7 +297,7 @@ $posts = $category->post;
 
 //Magic method: Returns the query before run it
 $posts = $category->post()
-    ->where('pubdate > :date', [':date' => date('Y-m-d')])
+    ->where('pubdate > ', date('Y-m-d'))
     ->limit(10)
     ->run();
 ```
@@ -319,6 +319,10 @@ $posts->category;
 foreach ($posts as $post) {
     echo $post->category;
 }
+
+$post->category()
+    ->where('pubdate > ', date('Y-m-d'))
+    ->run();
 ```
 
 ### Relate and unrelate data

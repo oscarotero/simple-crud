@@ -12,7 +12,6 @@ final class Select implements QueryInterface
     use Traits\WhereTrait;
 
     private $one;
-    private $cache;
 
     public function __construct(Table $table)
     {
@@ -55,16 +54,6 @@ final class Select implements QueryInterface
     {
         $statement = $this->__invoke();
         $statement->setFetchMode(PDO::FETCH_ASSOC);
-
-        if ($this->cache) {
-            if ($this->one) {
-                $data = $statement->fetch();
-
-                return $data ? $this->combine($data, $this->cache) : null;
-            }
-
-            return $this->combine($statement->fetchAll(), $this->cache);
-        }
 
         if ($this->one) {
             $data = $statement->fetch();
