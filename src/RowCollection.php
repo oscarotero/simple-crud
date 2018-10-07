@@ -18,7 +18,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 {
     private $table;
     private $rows = [];
-    private $relations = [];
+    private $data = [];
 
     public function __construct(Table $table, Row ...$rows)
     {
@@ -49,6 +49,13 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         throw new BadMethodCallException(
             sprintf('Invalid method call %s', $name)
         );
+    }
+
+    public function setData(array $data): self
+    {
+        $this->data = $data + $this->data;
+
+        return $this;
     }
 
     /**
@@ -91,9 +98,9 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             return $result;
         }
 
-        //Its a relation
-        if (array_key_exists($name, $this->relations)) {
-            return $this->relations[$name];
+        //It's a custom data
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
         }
 
         $db = $this->table->getDatabase();
@@ -105,10 +112,8 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             //Many-to-many
             if ($joinTable) {
                 $joinRows = $this->select($joinTable)->run();
-                $joinRows->link($this);
-
                 $result = $joinRows->select($table)->run();
-                $joinRows->link($result);
+
                 $this->link($result, $joinRows);
             } else {
                 $result = $this->select($table)->run();
@@ -123,7 +128,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         );
     }
 
-    private function link(RowCollection $rows, RowCollection $relations = null)
+    public function link(RowCollection $rows, RowCollection $relations = null)
     {
         if ($relations) {
             return $this->linkThrough($rows, $relations);
@@ -154,7 +159,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             $row->link($table->createCollection($relations[$id] ?? []));
         }
 
-        $this->relations[$table->getName()] = $result;
+        $this->data[$table->getName()] = $rows;
     }
 
     private function linkThrough(RowCollection $rows, RowCollection $relations)
@@ -191,8 +196,10 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             $row->link($this->table->createCollection($this_in_rows[$id] ?? []));
         }
 
-        $this->relations[$table->getName()] = $rows;
-        $this->relations[$relTable->getName()] = $relations;
+        $this->data[$table->getName()] = $rows;
+
+        $rows->link($relations);
+        $this->link($relations);
     }
 
     /**

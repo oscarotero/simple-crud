@@ -16,7 +16,7 @@ class Row implements JsonSerializable
     private $table;
     private $values = [];
     private $changed;
-    private $links = [];
+    private $data = [];
 
     public function __construct(Table $table, array $values)
     {
@@ -31,7 +31,7 @@ class Row implements JsonSerializable
             'table' => (string) $this->table,
             'values' => $this->values,
             'changed' => $this->changed,
-            'links' => $this->links,
+            'data' => $this->data,
         ];
     }
 
@@ -49,15 +49,21 @@ class Row implements JsonSerializable
         );
     }
 
+    public function setData(array $data): self
+    {
+        $this->data = $data + $this->data;
+
+        return $this;
+    }
+
     /**
      * @param Row|RowCollection $row
      */
     public function link($row): self
     {
         $table = $row->getTable()->getName();
-        $this->links[$table] = $row;
 
-        return $this;
+        return $this->setData([$table => $row]);
     }
 
     /**
@@ -96,16 +102,19 @@ class Row implements JsonSerializable
             return $this->values[$valueName];
         }
 
-        //Its a linked relation
-        if (array_key_exists($name, $this->links)) {
-            return $this->links[$name];
+        //It's custom data
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
         }
 
         $db = $this->table->getDatabase();
 
         if (isset($db->$name)) {
-            $this->links[$name] = $this->select($db->$name)->run();
-            return $this->links[$name];
+            $this->setData([
+                $name => $this->select($db->$name)->run()
+            ]);
+
+            return $this->data[$name];
         }
 
         throw new RuntimeException(
@@ -142,7 +151,7 @@ class Row implements JsonSerializable
     {
         $valueName = $this->getValueName($name);
 
-        return ($valueName && isset($this->values[$valueName])) || isset($this->links[$name]);
+        return ($valueName && isset($this->values[$valueName])) || isset($this->data[$name]);
     }
 
     /**
@@ -150,7 +159,7 @@ class Row implements JsonSerializable
      */
     public function __unset(string $name)
     {
-        unset($this->links[$name]);
+        unset($this->data[$name]);
 
         $this->__set($name, null);
     }

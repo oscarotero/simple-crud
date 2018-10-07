@@ -28,7 +28,7 @@ $ composer require simple-crud/simple-crud
 SimpleCrud has the following classes:
 
 * **Database:** Manage the database connection.
-* **Query:** Creates the database queries. Currently there are adapters for mysql and sqlite
+* **Query:** Creates the database queries. SimpleCrud has tested only with MySQL and SQLite but because uses [Atlas.Query](https://github.com/atlasphp/Atlas.Query) internally, in theory Postgres and Microsoft SQL should be supported too.
 * **Table:** Manages a database table
 * **Field:** Manages a database field. Used to format and validate values
 * **Row:** Stores/modifies a row
@@ -152,7 +152,7 @@ $newPost->save();
 
 ### Queries
 
-A `Query` object represents a database query. Use magic methods to create query instances. For example `$db->post->select()` returns a new instance of a `Select` query in the tabe `post`. Other examples: `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
+A `Query` object represents a database query. SimpleCrud uses magic methods to create queries. For example `$db->post->select()` returns a new instance of a `Select` query in the tabe `post`. Other examples: `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
 
 ```php
 //Create an UPDATE query with the table post
@@ -170,14 +170,13 @@ echo $updateQuery; //UPDATE `post` ...
 //execute the query and returns a PDOStatement with the result
 $statement = $updateQuery();
 
-//Instead use the function "columns", you can pass the new data on create the query:
-$updateQuery = $db->post
-    ->update(['title' => 'New title'])
+//Note that you can pass the new data on create the query instead use columns()
+$updateQuery = $db->post->update(['title' => 'New title'])
     ->where('id = ', 23)
     ->limit(1);
 ```
 
-The method `run()` executes the query but instead a `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
+There's the method `run()` that executes the query but instead a `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
 
 ```php
 //insert a new post
@@ -205,7 +204,7 @@ $total = $db->post
     ->run();
 ```
 
-`select()` returns an instance of `RowCollection` with the result:
+`select()->run()` returns an instance of `RowCollection` with the result:
 
 ```php
 $posts = $db->post
@@ -260,7 +259,7 @@ Name | Options
 
 ### Lazy loads
 
-Both `Row` and `RowCollection` can load automatically other related data. Just use a property named like a related table. For example:
+Both `Row` and `RowCollection` can load automatically other related rows. Just use a property named as related table. For example:
 
 ```php
 //Get the category id=34
@@ -287,7 +286,7 @@ $titles = $db->post[34]->tag->post->title;
 //And finally, the titles of all these posts
 ```
 
-You may want a filtered result of the related rows instead getting all of them. To do this, just use a method with the same name of the related table and you get the `Select` query that you can modify:
+Use magic methods to get a `Select` query returning related rows:
 
 ```php
 $category = $db->category[34];
@@ -319,11 +318,55 @@ $posts->category;
 foreach ($posts as $post) {
     echo $post->category;
 }
-
-$post->category()
-    ->where('pubdate > ', date('Y-m-d'))
-    ->run();
 ```
+
+You can perform the select by yourself to include modifiers:
+
+```php
+//Get some posts
+$posts = $db->post
+    ->select()
+    ->run();
+
+//Select the categories but ordered alphabetically descendent
+$categories = $posts->category()
+    ->orderBy('name', 'DESC')
+    ->run();
+
+//Link the categories with each post
+$posts->link($categories);
+
+//now you can iterate with the posts
+foreach ($posts as $post) {
+    echo $post->category;
+}
+```
+
+For many-to-many relations, you need to do one more step:
+
+```php
+//Get some posts
+$posts = $db->post
+    ->select()
+    ->run();
+
+//Select the post_tag relations
+$tagRelations = $posts->post_tag()->run();
+
+//And now the tags of these relations
+$tags = $tagRelations->tag()
+    ->orderBy('name', 'DESC')
+    ->run();
+
+//Link the tags with posts using the relations
+$posts->link($tags, $tagRelations);
+
+//now you can iterate with the posts
+foreach ($posts as $post) {
+    echo $post->tag;
+}
+```
+
 
 ### Relate and unrelate data
 
@@ -345,36 +388,6 @@ $post->unrelate($comment);
 //Unrelate all comments of the post
 $post->unrelateAll($db->comment);
 ```
-
-### Custom methods
-
-Sometimes, it's usefult to have more methods in the rows, for example to get the value in a specific format, or to make some calculations. So, you can register new methods with `setRowMethod()` and `setRowCollectionMethod()`:
-
-```php
-//Register a method to the post rows
-$db->post->setRowMethod('getUppercaseTitle', function () {
-    return strtoupper($this->title);
-});
-
-echo $db->post[1]->getUppercaseTitle(); //FIRST POST TITLE
-```
-
-Note that the custom methods must be instances of `Closure` and the `$this` variable is the current row.
-
-### Default queries modifiers
-
-Let's say we want to select always the posts with the condition `isActived = 1`. To avoid the need to add this "where" modifier again and again, you may want to define it as default, so it's applied always:
-
-```php
-$db->post->addQueryModifier('select', function ($query) {
-    $query->where('isActived = 1');
-});
-
-$post = $db->post[34]; //Returns the post 34 only if it's actived.
-```
-
-You can define default modifiers for all queries: not only select, but also update, delete, etc.
-
 
 ### Pagination
 

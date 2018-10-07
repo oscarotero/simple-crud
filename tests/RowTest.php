@@ -58,24 +58,4 @@ EOT
         $this->assertNull($post->id);
         $this->assertFalse(isset($db->post[1]));
     }
-
-    public function testRowCollection()
-    {
-        $db = $this->createDatabase();
-
-        $db->post[] = ['title' => 'First post'];
-        $db->post[] = ['title' => 'Second post'];
-
-        $posts = $db->post->select()->run();
-
-        $this->assertInstanceOf(RowCollection::class, $posts);
-        $this->assertInstanceOf(Row::class, $posts[1]);
-        $this->assertInstanceOf(Row::class, $posts[2]);
-
-        $this->assertCount(2, $posts);
-        $this->assertSame($posts[1], $db->post[1]);
-        $this->assertSame($posts[2], $db->post[2]);
-
-        $this->assertEquals([1 => 'First post', 2 => 'Second post'], $posts->title);
-    }
 }

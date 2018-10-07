@@ -140,13 +140,13 @@ EOT
         $comment_2 = $comments[2]->__debugInfo();
         $comment_3 = $comments[3]->__debugInfo();
 
-        $this->assertCount(1, $post_1['links']['comment']);
-        $this->assertCount(2, $post_2['links']['comment']);
-        $this->assertCount(0, $post_3['links']['comment']);
+        $this->assertCount(1, $post_1['data']['comment']);
+        $this->assertCount(2, $post_2['data']['comment']);
+        $this->assertCount(0, $post_3['data']['comment']);
 
-        $this->assertSame($db->post[1], $comment_1['links']['post']);
-        $this->assertSame($db->post[2], $comment_2['links']['post']);
-        $this->assertSame($db->post[2], $comment_3['links']['post']);
+        $this->assertSame($db->post[1], $comment_1['data']['post']);
+        $this->assertSame($db->post[2], $comment_2['data']['post']);
+        $this->assertSame($db->post[2], $comment_3['data']['post']);
     }
 
     public function testRowCollectionHasManyRelations()
@@ -166,12 +166,12 @@ EOT
         $comment_2 = $comments[2]->__debugInfo();
         $comment_3 = $comments[3]->__debugInfo();
 
-        $this->assertCount(1, $post_1['links']['comment']);
-        $this->assertCount(2, $post_2['links']['comment']);
+        $this->assertCount(1, $post_1['data']['comment']);
+        $this->assertCount(2, $post_2['data']['comment']);
 
-        $this->assertSame($db->post[1], $comment_1['links']['post']);
-        $this->assertSame($db->post[2], $comment_2['links']['post']);
-        $this->assertSame($db->post[2], $comment_3['links']['post']);
+        $this->assertSame($db->post[1], $comment_1['data']['post']);
+        $this->assertSame($db->post[2], $comment_2['data']['post']);
+        $this->assertSame($db->post[2], $comment_3['data']['post']);
     }
 
     public function testRowCollectionHasManyToManyRelations()
@@ -197,19 +197,19 @@ EOT
         $category_post_2 = $category_post[2]->__debugInfo();
         $category_post_3 = $category_post[3]->__debugInfo();
 
-        $this->assertCount(2, $post_1['links']['category']);
-        $this->assertCount(1, $post_3['links']['category']);
+        $this->assertCount(2, $post_1['data']['category']);
+        $this->assertCount(1, $post_3['data']['category']);
 
-        $this->assertCount(1, $category_1['links']['post']);
-        $this->assertCount(1, $category_2['links']['post']);
-        $this->assertCount(1, $category_3['links']['post']);
+        $this->assertCount(1, $category_1['data']['post']);
+        $this->assertCount(1, $category_2['data']['post']);
+        $this->assertCount(1, $category_3['data']['post']);
 
-        $this->assertSame($posts[1], $category_post_1['links']['post']);
-        $this->assertSame($posts[1], $category_post_2['links']['post']);
-        $this->assertSame($posts[3], $category_post_3['links']['post']);
+        $this->assertSame($posts[1], $category_post_1['data']['post']);
+        $this->assertSame($posts[1], $category_post_2['data']['post']);
+        $this->assertSame($posts[3], $category_post_3['data']['post']);
 
-        $this->assertSame($categories[1], $category_post_1['links']['category']);
-        $this->assertSame($categories[2], $category_post_2['links']['category']);
-        $this->assertSame($categories[3], $category_post_3['links']['category']);
+        $this->assertSame($categories[1], $category_post_1['data']['category']);
+        $this->assertSame($categories[2], $category_post_2['data']['category']);
+        $this->assertSame($categories[3], $category_post_3['data']['category']);
     }
 }
