@@ -7,5 +7,7 @@ final class Sum implements QueryInterface
 {
     const AGGREGATION_FUNCTION = 'SUM';
 
-    use Traits\AggregationTrait;
+    use Traits\Aggregation;
+    use Traits\HasWhere;
+    use Traits\HasLimit;
 }

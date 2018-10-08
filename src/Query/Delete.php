@@ -7,8 +7,9 @@ use SimpleCrud\Table;
 
 final class Delete implements QueryInterface
 {
-    use Traits\CommonsTrait;
-    use Traits\WhereTrait;
+    use Traits\Common;
+    use Traits\HasWhere;
+    use Traits\HasLimit;
 
     public function __construct(Table $table)
     {

@@ -7,7 +7,7 @@ use PDOStatement;
 use SimpleCrud\Query\QueryInterface;
 use SimpleCrud\Table;
 
-trait CommonsTrait
+trait Common
 {
     private $table;
     private $builder;
@@ -33,12 +33,6 @@ trait CommonsTrait
     {
         $values = $this->query->getBindValues();
         return array_column($values, 0);
-    }
-
-    public function __call(string $name, array $arguments): self
-    {
-        $this->query->$name(...$arguments);
-        return $this;
     }
 
     public function run()

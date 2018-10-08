@@ -7,5 +7,7 @@ final class Count implements QueryInterface
 {
     const AGGREGATION_FUNCTION = 'COUNT';
 
-    use Traits\AggregationTrait;
+    use Traits\Aggregation;
+    use Traits\HasWhere;
+    use Traits\HasLimit;
 }

@@ -7,7 +7,7 @@ use SimpleCrud\Table;
 
 final class Insert implements QueryInterface
 {
-    use Traits\CommonsTrait;
+    use Traits\Common;
 
     public function __construct(Table $table, array $data = null)
     {

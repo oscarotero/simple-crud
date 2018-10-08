@@ -8,8 +8,11 @@ use SimpleCrud\Table;
 
 final class Select implements QueryInterface
 {
-    use Traits\CommonsTrait;
-    use Traits\WhereTrait;
+    use Traits\Common;
+    use Traits\HasWhere;
+    use Traits\HasOrderBy;
+    use Traits\HasGroupBy;
+    use Traits\HasLimit;
 
     private $one;
 
@@ -34,18 +37,6 @@ final class Select implements QueryInterface
     {
         $this->one = true;
         $this->query->limit(1);
-
-        return $this;
-    }
-
-    public function page(int $page, int $length): self
-    {
-        if ($page < 1) {
-            $page = 1;
-        }
-
-        $this->query->limit($length);
-        $this->query->offset(($page * $length) - $length);
 
         return $this;
     }

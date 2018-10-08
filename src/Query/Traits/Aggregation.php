@@ -6,10 +6,9 @@ namespace SimpleCrud\Query\Traits;
 use PDO;
 use SimpleCrud\Table;
 
-trait AggregationTrait
+trait Aggregation
 {
-    use CommonsTrait;
-    use WhereTrait;
+    use Common;
 
     private $field;
 

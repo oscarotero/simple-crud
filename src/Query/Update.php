@@ -7,8 +7,8 @@ use SimpleCrud\Table;
 
 final class Update implements QueryInterface
 {
-    use Traits\CommonsTrait;
-    use Traits\WhereTrait;
+    use Traits\Common;
+    use Traits\HasWhere;
 
     public function __construct(Table $table, array $data = null)
     {

@@ -9,8 +9,22 @@ use SimpleCrud\Row;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
 
-trait WhereTrait
+trait HasWhere
 {
+    public function where(string $condition, ...$values)
+    {
+        $this->query->where($condition, ...$values);
+
+        return $this;
+    }
+
+    public function orWhere(string $condition, ...$values)
+    {
+        $this->query->orWhere($condition, ...$values);
+
+        return $this;
+    }
+
     public function whereEquals($name, $value = null)
     {
         if (is_array($name)) {

@@ -7,5 +7,7 @@ final class Avg implements QueryInterface
 {
     const AGGREGATION_FUNCTION = 'AVG';
 
-    use Traits\AggregationTrait;
+    use Traits\Aggregation;
+    use Traits\HasWhere;
+    use Traits\HasLimit;
 }
