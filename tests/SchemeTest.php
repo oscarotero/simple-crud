@@ -2,6 +2,8 @@
 
 namespace SimpleCrud\Tests;
 
+use SimpleCrud\Scheme\Cache;
+
 class SchemeTest extends AbstractTestCase
 {
     private function createDatabase()
@@ -149,6 +151,16 @@ EOT
 
         foreach ($expected as $table => $fields) {
             $this->assertEquals($fields, $scheme->getTableFields($table));
+        }
+
+        $array = Cache::schemeToArray($scheme);
+        $this->assertEquals($expected, $array);
+
+        $cacheScheme = new Cache($array);
+        $this->assertEquals(array_keys($expected), $cacheScheme->getTables());
+
+        foreach ($expected as $table => $fields) {
+            $this->assertEquals($fields, $cacheScheme->getTableFields($table));
         }
     }
 }

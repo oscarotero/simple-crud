@@ -111,7 +111,7 @@ class Row implements JsonSerializable
 
         if (isset($db->$name)) {
             $this->setData([
-                $name => $this->select($db->$name)->run()
+                $name => $this->select($db->$name)->run(),
             ]);
 
             return $this->data[$name];

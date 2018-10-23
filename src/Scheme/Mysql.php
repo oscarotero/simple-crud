@@ -4,27 +4,19 @@ declare(strict_types = 1);
 namespace SimpleCrud\Scheme;
 
 use PDO;
-use SimpleCrud\Database;
 
 final class Mysql implements SchemeInterface
 {
     use Traits\CommonsTrait;
 
-    private $db;
-
-    public function __construct(Database $db)
-    {
-        $this->db = $db;
-    }
-
     protected function loadTables(): array
     {
-        return $this->db->execute('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
+        return $this->pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     protected function loadTableFields(string $table): array
     {
-        $result = $this->db->execute("DESCRIBE `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
+        $result = $this->pdo->query("DESCRIBE `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
 
         return array_map(
             function ($field) {

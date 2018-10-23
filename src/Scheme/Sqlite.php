@@ -4,34 +4,21 @@ declare(strict_types = 1);
 namespace SimpleCrud\Scheme;
 
 use PDO;
-use SimpleCrud\Database;
 
 final class Sqlite implements SchemeInterface
 {
     use Traits\CommonsTrait;
 
-    private $db;
-
-    public function __construct(Database $db)
-    {
-        $this->db = $db;
-    }
-
     protected function loadTables(): array
     {
-        return $this->db->select()
-            ->columns('name')
-            ->from('sqlite_master')
-            ->whereEquals([
-                'type' => ['table', 'view'],
-            ])
-            ->andWhere('name != "sqlite_sequence"')
-            ->fetchColumn();
+        return $this->pdo->query(
+            "select name from sqlite_master where type in ('table', 'view') and name != 'sqlite_sequence'"
+        )->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 
     protected function loadTableFields(string $table): array
     {
-        $result = $this->db->execute("pragma table_info(`{$table}`)")->fetchAll(PDO::FETCH_ASSOC);
+        $result = $this->pdo->query("pragma table_info(`{$table}`)")->fetchAll(PDO::FETCH_ASSOC);
 
         return array_map(
             function ($field) {

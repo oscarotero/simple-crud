@@ -3,7 +3,6 @@ namespace SimpleCrud\Tests;
 
 use DateTime;
 use SimpleCrud\Row;
-use SimpleCrud\RowCollection;
 
 class RowTest extends AbstractTestCase
 {

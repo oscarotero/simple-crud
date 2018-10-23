@@ -13,13 +13,11 @@ use Exception;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
-use RuntimeException;
+use SimpleCrud\Scheme\Scheme;
 use SimpleCrud\Scheme\SchemeInterface;
 
 final class Database
 {
-    const ENGINE_MYSQL = 'mysql';
-    const ENGINE_SQLITE = 'sqlite';
     const CONFIG_LOCALE = 'locale';
 
     private $connection;
@@ -34,7 +32,7 @@ final class Database
     public function __construct(PDO $pdo, SchemeInterface $scheme = null)
     {
         $this->connection = new Connection($pdo);
-        $this->scheme = $scheme;
+        $this->scheme = $scheme ?: new Scheme($pdo);
     }
 
     /**
@@ -57,41 +55,10 @@ final class Database
     }
 
     /**
-     * Get the engine type
-     */
-    public function getEngineType(): string
-    {
-        $engine = $this->connection->getDriverName();
-
-        switch ($engine) {
-            case self::ENGINE_MYSQL:
-            case self::ENGINE_SQLITE:
-                return $engine;
-            default:
-                throw new RuntimeException("Invalid engine type {$engine}");
-        }
-    }
-
-    /**
      * Return the scheme class
      */
     public function getScheme(): SchemeInterface
     {
-        if ($this->scheme === null) {
-            switch ($this->getEngineType()) {
-                case 'mysql':
-                    $this->scheme = new Scheme\Mysql($this);
-                    break;
-                case 'sqlite':
-                    $this->scheme = new Scheme\Sqlite($this);
-                    break;
-                default:
-                    throw new RuntimeException(
-                        sprintf('Invalid engine type "%s"', $this->getEngineType())
-                    );
-            }
-        }
-
         return $this->scheme;
     }
 

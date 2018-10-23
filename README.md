@@ -86,11 +86,19 @@ SimpleCrud load the database scheme and detects automatically all relationships 
 **Note:** In production environment, you may want to cache the scheme in order to improve the performance. You can do it in this way:
 
 ```php
-if (!$cache->has('db_scheme')) {
-    $cache->save($db->getScheme());
+use SimpleCrud\Scheme\Cache;
+use SimpleCrud\Scheme\Scheme;
+
+if ($cache->has('db_scheme')) {
+    $array = $cache->get('db_scheme');
+    $scheme = new Cache($array);
 } else {
-    $db->setScheme($cache->get('db_scheme'));
+    $scheme = new Scheme($pdo);
+    $array = Cache::schemeToArray($scheme);
+    $cache->save('db_scheme', $array);
 }
+
+$db = new SimpleCrud($pdo, $scheme);
 ```
 
 ## Using the library
