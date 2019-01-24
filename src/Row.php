@@ -21,7 +21,7 @@ class Row extends AbstractRow
         parent::__construct($table);
 
         foreach ($table->getScheme()['fields'] as $name => $field) {
-            $this->values[$name] = null;
+            $this->values[$name] = $field['default'];
         }
     }
 
