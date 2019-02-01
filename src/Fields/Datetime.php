@@ -34,4 +34,12 @@ class Datetime extends Field
     {
         return $data ? new \Datetime($data) : null;
     }
+
+    /**
+     * Return the default value
+     */
+    public function getDefaultValue()
+    {
+        return null;
+    }
 }

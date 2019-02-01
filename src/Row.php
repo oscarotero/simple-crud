@@ -20,8 +20,8 @@ class Row extends AbstractRow
     {
         parent::__construct($table);
 
-        foreach ($table->getScheme()['fields'] as $name => $field) {
-            $this->values[$name] = $field['default'];
+        foreach ($table->getFields() as $name => $field) {
+            $this->values[$name] = $field->getDefaultValue();
         }
     }
 

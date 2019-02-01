@@ -116,4 +116,12 @@ class Field
 
         return $this;
     }
+
+    /**
+     * Return the default value
+     */
+    public function getDefaultValue()
+    {
+        return $this->dataFromDatabase($this->getConfig('default'));
+    }
 }
