@@ -31,14 +31,14 @@ class Table implements ArrayAccess
         $this->db = $db;
         $this->name = $name;
 
-        $this->setRow(new Row($this));
-        $this->setRowCollection(new RowCollection($this));
-
         $fieldFactory = $db->getFieldFactory();
-
+        
         foreach (array_keys($this->getScheme()['fields']) as $name) {
             $this->fields[$name] = $fieldFactory->get($this, $name);
         }
+
+        $this->setRow(new Row($this));
+        $this->setRowCollection(new RowCollection($this));
 
         $this->init();
     }
