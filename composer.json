@@ -18,7 +18,7 @@
 		"issues": "https://github.com/oscarotero/simple-crud/issues"
 	},
 	"require": {
-		"php": ">=7.1",
+		"php": ">=7.2",
 		"atlas/pdo": "^1.1",
 		"atlas/query": "^1.2"
 	},
@@ -33,7 +33,7 @@
 		}
 	},
 	"require-dev": {
-		"phpunit/phpunit": "^6.0",
+		"phpunit/phpunit": "^8.0",
 		"friendsofphp/php-cs-fixer": "^2.11"
 	},
     "scripts": {

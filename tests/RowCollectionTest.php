@@ -80,7 +80,7 @@ EOT
 
         $titles = $posts->title;
 
-        $this->assertInternalType('array', $titles);
+        $this->assertIsArray($titles);
         $this->assertCount(3, $titles);
         $this->assertSame($posts[3]->title, $titles[3]);
 
