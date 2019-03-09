@@ -119,8 +119,8 @@ class Select extends Query
 
         if ($this->page !== null) {
             $current = $this->page;
-            // $next = $result->count() < $this->limit ? null : $current + 1;
-            $next = ($current * $this->limit) < $total ? $current + 1 : null;
+            $next = $result->count() < $this->limit ? null : $current + 1;
+            // $next = ($current * $this->limit) < $total ? $current + 1 : null;
             $prev = $current > 1 ? $current - 1 : null;
 
             $result->setMethod('getPage', function () use ($current) {
