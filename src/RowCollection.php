@@ -110,7 +110,11 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             $joinTable = $this->table->getJoinTable($table);
 
             //Many-to-many
-            if ($joinTable) {
+            if (!$this->count()) {
+                $result = $table->createCollection();
+
+                $this->link($table, $result);
+            } elseif ($joinTable) {
                 $joinRows = $this->select($joinTable)->run();
                 $result = $joinRows->select($table)->run();
 

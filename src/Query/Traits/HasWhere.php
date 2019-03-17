@@ -107,7 +107,7 @@ trait HasWhere
 
         //Has one
         if ($field = $table1->getJoinField($table2)) {
-            return $this->whereEquals($field, $row->id);
+            return $this->whereEquals($field, $row->id ?: null);
         }
 
         //Has many
@@ -119,7 +119,7 @@ trait HasWhere
                     sprintf('%s = %s', $field, $table1->id)
                 );
 
-            return $this->whereEquals($table2->id, $row->id);
+            return $this->whereEquals($table2->id, $row->id ?: null);
         }
 
         //Has many to many
@@ -134,7 +134,7 @@ trait HasWhere
                     sprintf('%s = %s', $field1, $table1->id)
                 );
 
-            return $this->whereEquals($field2, $row->id);
+            return $this->whereEquals($field2, $row->id ?: null);
         }
 
         throw new RuntimeException(
