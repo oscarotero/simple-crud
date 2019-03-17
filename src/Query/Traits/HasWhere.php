@@ -11,6 +11,8 @@ use SimpleCrud\Table;
 
 trait HasWhere
 {
+    use HasJoin;
+
     public function where(string $condition, ...$values)
     {
         $this->query->where($condition, ...$values);
