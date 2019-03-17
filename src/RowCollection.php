@@ -114,10 +114,10 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
                 $joinRows = $this->select($joinTable)->run();
                 $result = $joinRows->select($table)->run();
 
-                $this->link($result, $joinRows);
+                $this->link($table, $result, $joinRows);
             } else {
                 $result = $this->select($table)->run();
-                $this->link($result);
+                $this->link($table, $result);
             }
 
             return $result;
@@ -128,17 +128,15 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         );
     }
 
-    public function link(RowCollection $rows, RowCollection $relations = null)
+    public function link(Table $table, RowCollection $rows, RowCollection $relations = null)
     {
         if ($relations) {
             return $this->linkThrough($rows, $relations);
         }
 
-        $table = $rows->getTable();
-
         //Has many (inversed of Has one)
         if ($this->table->getJoinField($table)) {
-            return $rows->link($this);
+            return $rows->link($this->table, $this);
         }
 
         $relations = [];
@@ -146,7 +144,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
         foreach ($rows as $row) {
             $id = $row->{$foreignKey};
-            $row->link($this[$id]);
+            $row->link($this->table, $this[$id]);
 
             if (!isset($relations[$id])) {
                 $relations[$id] = [];
@@ -156,7 +154,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         }
 
         foreach ($this as $id => $row) {
-            $row->link($table->createCollection($relations[$id] ?? []));
+            $row->link($table, $table->createCollection($relations[$id] ?? []));
         }
 
         $this->data[$table->getName()] = $rows;
@@ -189,17 +187,17 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
         }
 
         foreach ($this as $id => $row) {
-            $row->link($table->createCollection($rows_in_this[$id] ?? []));
+            $row->link($table, $table->createCollection($rows_in_this[$id] ?? []));
         }
 
         foreach ($rows as $id => $row) {
-            $row->link($this->table->createCollection($this_in_rows[$id] ?? []));
+            $row->link($this->table, $this->table->createCollection($this_in_rows[$id] ?? []));
         }
 
         $this->data[$table->getName()] = $rows;
 
-        $rows->link($relations);
-        $this->link($relations);
+        $rows->link($relTable, $relations);
+        $this->link($relTable, $relations);
     }
 
     /**

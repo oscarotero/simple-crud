@@ -5,9 +5,10 @@ namespace SimpleCrud\Query\Traits;
 
 trait HasOrderBy
 {
-    public function orderBy(string ...$expr): self
+    public function orderBy(string $field, $direction = ''): self
     {
-        $this->query->orderBy(...$expr);
+        $expr = trim(sprintf('%s %s', $field, $direction));
+        $this->query->orderBy($expr);
 
         return $this;
     }

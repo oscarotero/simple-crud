@@ -57,13 +57,11 @@ class Row implements JsonSerializable
     }
 
     /**
-     * @param Row|RowCollection $row
+     * @param Row|RowCollection|null $row
      */
-    public function link($row): self
+    public function link(Table $table, $row = null): self
     {
-        $table = $row->getTable()->getName();
-
-        return $this->setData([$table => $row]);
+        return $this->setData([$table->getName() => $row]);
     }
 
     /**
