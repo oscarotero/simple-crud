@@ -11,7 +11,12 @@ use SimpleCrud\Table;
 
 trait HasJoin
 {
-    public function join(Table $table2, string $condition = null, ...$values)
+    public function leftJoin(Table $table, string $condition = null, ...$values)
+    {
+        return $this->join('LEFT', $table, $condition, ...$values);
+    }
+
+    public function join(string $type, Table $table2, string $condition = null, ...$values)
     {
         $table1 = $this->table;
 
@@ -19,7 +24,7 @@ trait HasJoin
         if ($field = $table1->getJoinField($table2)) {
             $this->query
                 ->join(
-                    'LEFT',
+                    $type,
                     (string) $table2,
                     sprintf('%s = %s', $field, $table2->id)
                 );
@@ -28,7 +33,7 @@ trait HasJoin
         } elseif ($field = $table->getJoinField($table1)) {
             $this->query
                 ->join(
-                    'LEFT',
+                    $type,
                     (string) $table2,
                     sprintf('%s = %s', $field, $table1->id)
                 );
@@ -40,12 +45,12 @@ trait HasJoin
 
             $this->query
                 ->join(
-                    'LEFT',
+                    $type,
                     (string) $joinTable,
                     sprintf('%s = %s', $field1, $table1->id)
                 )
                 ->join(
-                    'LEFT',
+                    $type,
                     (string) $table2,
                     sprintf('%s = %s', $field2, $table2->id)
                 );
