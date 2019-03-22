@@ -18,12 +18,4 @@ trait HasLimit
 
         return $this;
     }
-
-    public function page(int $page, int $perPage = 10): self
-    {
-        $this->query->page($page);
-        $this->query->perPage($perPage);
-
-        return $this;
-    }
 }

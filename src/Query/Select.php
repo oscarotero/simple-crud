@@ -13,6 +13,7 @@ final class Select implements QueryInterface
     use Traits\HasOrderBy;
     use Traits\HasGroupBy;
     use Traits\HasLimit;
+    use Traits\HasPagination;
 
     private $one;
 
