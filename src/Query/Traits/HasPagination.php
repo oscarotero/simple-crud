@@ -34,12 +34,13 @@ trait HasPagination
 
         $page = $this->page;
         $count = $statement->fetch();
+        $count = intval($count[0]);
 
         return [
             'total' => $count,
             'page' => $page,
             'previous' => $page > 1 ? $page - 1 : null,
-            'next' => $count > ($page * $perPage) ? $page + 1 : null,
+            'next' => $count > ($page * $this->perPage) ? $page + 1 : null,
         ];
     }
 }
