@@ -20,6 +20,9 @@ class Table implements ArrayAccess
     private $fields = [];
     private $defaults = [];
 
+    protected const ROW_CLASS = Row::class;
+    protected const ROWCOLLECTION_CLASS = RowCollection::class;
+
     final public function __construct(Database $db, string $name)
     {
         $this->db = $db;
@@ -302,7 +305,8 @@ class Table implements ArrayAccess
             return $row;
         }
 
-        return $this->cache(new Row($this, $data));
+        $class = self::ROW_CLASS;
+        return $this->cache(new $class($this, $data));
     }
 
     public function createCollection(array $rows = [], $fromDatabase = false): RowCollection
@@ -318,6 +322,7 @@ class Table implements ArrayAccess
             );
         }
 
-        return new RowCollection($this, ...$rows);
+        $class = self::ROWCOLLECTION_CLASS;
+        return new $class($this, ...$rows);
     }
 }

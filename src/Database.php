@@ -23,6 +23,7 @@ final class Database
     private $connection;
     private $scheme;
     private $tables = [];
+    private $tablesClasses = [];
     private $inTransaction = false;
     private $onExecute;
     private $config = [];
@@ -33,6 +34,17 @@ final class Database
     {
         $this->connection = new Connection($pdo);
         $this->scheme = $scheme ?: new Scheme($pdo);
+    }
+
+    /**
+     * Configure custom classes for some tables
+     * [table => classname]
+     */
+    public function setTablesClasses(array $classes): self
+    {
+        $this->tablesClasses = $classes;
+
+        return $this;
     }
 
     /**
@@ -129,7 +141,9 @@ final class Database
             );
         }
 
-        return $this->tables[$name] = new Table($this, $name);
+        $class = $this->tablesClasses[$name] ?? Table::class;
+
+        return $this->tables[$name] = new $class($this, $name);
     }
 
     /**

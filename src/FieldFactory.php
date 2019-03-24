@@ -4,88 +4,80 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use SimpleCrud\Fields\FieldInterface;
+use SimpleCrud\Fields\Field;
+use SimpleCrud\Fields\Integer;
+use SimpleCrud\Fields\Boolean;
+use SimpleCrud\Fields\Datetime;
+use SimpleCrud\Fields\Date;
+use SimpleCrud\Fields\Decimal;
+use SimpleCrud\Fields\Set;
+use SimpleCrud\Fields\Point;
+use SimpleCrud\Fields\Json;
 
 /**
  * Class to create instances of fields.
  */
 final class FieldFactory implements FieldFactoryInterface
 {
-    private $namespaces = ['SimpleCrud\\Fields\\'];
-    private $defaultType = 'Field';
-
-    private $nameMap = [
-        'id' => 'Integer',
-        'active' => 'Boolean',
-        'pubdate' => 'Datetime',
+    private $defaultType = Field::class;
+    private $fields = [
+        Integer::class => [
+            'names' => ['id'],
+            'regex' => ['/_id$/'],
+            'types' => ['bigint', 'int', 'mediumint', 'smallint', 'tinyint', 'year'],
+        ],
+        Boolean::class => [
+            'names' => ['active'],
+            'regex' => ['/^(is|has)[A-Z]/'],
+            'types' => ['boolean'],
+        ],
+        Datetime::class => [
+            'names' => ['pubdate'],
+            'regex' => ['/[a-z]At$/'],
+            'types' => ['datetime']
+        ],
+        Date::class => [
+            'names' => [],
+            'regex' => [],
+            'types' => ['date']
+        ],
+        Decimal::class => [
+            'names' => [],
+            'regex' => [],
+            'types' => ['decimal', 'float', 'real']
+        ],
+        Set::class => [
+            'names' => [],
+            'regex' => [],
+            'types' => ['set']
+        ],
+        Point::class => [
+            'names' => [],
+            'regex' => [],
+            'types' => ['point']
+        ],
+        Json::class => [
+            'names' => [],
+            'regex' => [],
+            'types' => ['json']
+        ],
     ];
 
-    private $regexMap = [
-        //relation fields (post_id)
-        '/_id$/' => 'Integer',
-
-        //flags (isActive, inHome)
-        '/^(is|has)[A-Z]/' => 'Boolean',
-
-        //time related (createdAt, publishedAt)
-        '/[a-z]At$/' => 'Datetime',
-    ];
-
-    private $typeMap = [
-        'bigint' => 'Integer',
-        'boolean' => 'Boolean',
-        'date' => 'Date',
-        'datetime' => 'Datetime',
-        'decimal' => 'Decimal',
-        'float' => 'Decimal',
-        'real' => 'Decimal', //sqlite
-        'int' => 'Integer',
-        'mediumint' => 'Integer',
-        'set' => 'Set',
-        'point' => 'Point',
-        'smallint' => 'Integer',
-        'tinyint' => 'Integer',
-        'year' => 'Integer',
-        'json' => 'Json',
-    ];
-
-    /**
-     * Set the namespace for the fields classes.
-     */
-    public function addNamespace(string $namespace): self
+    public function defineField(string $className, array $definition): self
     {
-        array_unshift($this->namespaces, $namespace);
+        if (isset($this->fields[$className])) {
+            $this->fields[$className] = $definition;
+            return $this;
+        }
+
+        $this->fields = [$className => $values] + $this->fields;
 
         return $this;
     }
 
-    /**
-     * Map names with field types.
-     */
-    public function mapNames(array $map): self
+    public function getFieldDefinition(string $className): ?array
     {
-        $this->nameMap = $map + $this->nameMap;
-
-        return $this;
-    }
-
-    /**
-     * Map names with field types using regexp.
-     */
-    public function mapRegex(array $map): self
-    {
-        $this->regexMap = $map + $this->regexMap;
-
-        return $this;
-    }
-
-    /**
-     * Map db field types with classes.
-     */
-    public function mapTypes(array $map): self
-    {
-        $this->typeMap = $map + $this->typeMap;
-
-        return $this;
+        return $this->fields[$className] ?? null;
     }
 
     /**
@@ -95,14 +87,10 @@ final class FieldFactory implements FieldFactoryInterface
      */
     public function get(Table $table, array $info): FieldInterface
     {
-        $className = $this->getClassName($info['name'], $info['type']) ?: $this->defaultType;
+        $className = $this->getClassName($info['name'], $info['type']);
 
-        foreach ($this->namespaces as $namespace) {
-            $class = $namespace.$className;
-
-            if (class_exists($class)) {
-                return new $class($table, $info);
-            }
+        if (class_exists($className)) {
+            return new $className($table, $info);
         }
 
         throw new SimpleCrudException("No field class found for '{$className}'");
@@ -113,20 +101,22 @@ final class FieldFactory implements FieldFactoryInterface
      */
     private function getClassName(string $name, string $type): ?string
     {
-        if (isset($this->nameMap[$name])) {
-            return $this->nameMap[$name];
-        }
+        foreach ($this->fields as $className => $definition) {
+            if (in_array($name, $definition['names'])) {
+                return $className;
+            }
 
-        foreach ($this->regexMap as $regex => $class) {
-            if (preg_match($regex, $name)) {
-                return $class;
+            foreach ($definition['regex'] as $regex) {
+                if (preg_match($regex, $name)) {
+                    return $className;
+                }
+            }
+
+            if (in_array($type, $definition['types'])) {
+                return $className;
             }
         }
 
-        if (isset($this->typeMap[$type])) {
-            return $this->typeMap[$type];
-        }
-
-        return null;
+        return $this->defaultType;
     }
 }
