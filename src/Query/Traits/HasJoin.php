@@ -3,10 +3,7 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Query\Traits;
 
-use InvalidArgumentException;
 use RuntimeException;
-use SimpleCrud\Row;
-use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
 
 trait HasJoin
@@ -28,7 +25,7 @@ trait HasJoin
                     (string) $table2,
                     sprintf('%s = %s', $field, $table2->id)
                 );
-                
+
         //Has many
         } elseif ($field = $table->getJoinField($table1)) {
             $this->query
@@ -54,7 +51,6 @@ trait HasJoin
                     (string) $table2,
                     sprintf('%s = %s', $field2, $table2->id)
                 );
-
         } else {
             throw new RuntimeException(
                 sprintf('The tables %s and %s are not related', $table1, $table2)

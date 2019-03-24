@@ -3,16 +3,16 @@ declare(strict_types = 1);
 
 namespace SimpleCrud;
 
-use SimpleCrud\Fields\FieldInterface;
-use SimpleCrud\Fields\Field;
-use SimpleCrud\Fields\Integer;
 use SimpleCrud\Fields\Boolean;
-use SimpleCrud\Fields\Datetime;
 use SimpleCrud\Fields\Date;
+use SimpleCrud\Fields\Datetime;
 use SimpleCrud\Fields\Decimal;
-use SimpleCrud\Fields\Set;
-use SimpleCrud\Fields\Point;
+use SimpleCrud\Fields\Field;
+use SimpleCrud\Fields\FieldInterface;
+use SimpleCrud\Fields\Integer;
 use SimpleCrud\Fields\Json;
+use SimpleCrud\Fields\Point;
+use SimpleCrud\Fields\Set;
 
 /**
  * Class to create instances of fields.
@@ -34,32 +34,32 @@ final class FieldFactory implements FieldFactoryInterface
         Datetime::class => [
             'names' => ['pubdate'],
             'regex' => ['/[a-z]At$/'],
-            'types' => ['datetime']
+            'types' => ['datetime'],
         ],
         Date::class => [
             'names' => [],
             'regex' => [],
-            'types' => ['date']
+            'types' => ['date'],
         ],
         Decimal::class => [
             'names' => [],
             'regex' => [],
-            'types' => ['decimal', 'float', 'real']
+            'types' => ['decimal', 'float', 'real'],
         ],
         Set::class => [
             'names' => [],
             'regex' => [],
-            'types' => ['set']
+            'types' => ['set'],
         ],
         Point::class => [
             'names' => [],
             'regex' => [],
-            'types' => ['point']
+            'types' => ['point'],
         ],
         Json::class => [
             'names' => [],
             'regex' => [],
-            'types' => ['json']
+            'types' => ['json'],
         ],
     ];
 
