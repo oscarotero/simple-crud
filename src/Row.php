@@ -15,14 +15,13 @@ class Row implements JsonSerializable
 {
     private $table;
     private $values = [];
-    private $changed;
+    private $changes = [];
     private $data = [];
 
     public function __construct(Table $table, array $values)
     {
         $this->table = $table;
         $this->values = $table->getDefaults($values);
-        $this->changed = empty($this->values['id']);
     }
 
     public function __debugInfo(): array
@@ -30,7 +29,7 @@ class Row implements JsonSerializable
         return [
             'table' => (string) $this->table,
             'values' => $this->values,
-            'changed' => $this->changed,
+            'changes' => $this->changes,
             'data' => $this->data,
         ];
     }
@@ -95,9 +94,14 @@ class Row implements JsonSerializable
      */
     public function &__get(string $name)
     {
+        if ($name === 'id') {
+            return $this->values['id'];
+        }
+
         //It's a value
         if ($valueName = $this->getValueName($name)) {
-            return $this->values[$valueName];
+            $value = $this->getValue($valueName);
+            return $value;
         }
 
         //It's custom data
@@ -128,13 +132,25 @@ class Row implements JsonSerializable
      */
     public function __set(string $name, $value)
     {
-        //It's a value
-        if ($valueName = $this->getValueName($name)) {
-            if ($this->values[$valueName] !== $value) {
-                $this->changed = true;
+        if ($name === 'id') {
+            if (!empty($this->values['id'])) {
+                throw new RuntimeException('The field "id" is read-only');
             }
 
-            return $this->values[$valueName] = $value;
+            $this->values['id'] = $value;
+
+            return $value;
+        }
+
+        //It's a value
+        if ($valueName = $this->getValueName($name)) {
+            if ($this->values[$valueName] === $value) {
+                unset($this->changes[$valueName]);
+            } else {
+                $this->changes[$valueName] = $value;
+            }
+
+            return $value;
         }
 
         throw new RuntimeException(
@@ -149,7 +165,7 @@ class Row implements JsonSerializable
     {
         $valueName = $this->getValueName($name);
 
-        return ($valueName && isset($this->values[$valueName])) || isset($this->data[$name]);
+        return ($valueName && !is_null($this->getValue($valueName))) || isset($this->data[$name]);
     }
 
     /**
@@ -167,7 +183,7 @@ class Row implements JsonSerializable
      */
     public function toArray(): array
     {
-        return $this->values;
+        return $this->changes + $this->values;
     }
 
     /**
@@ -187,15 +203,19 @@ class Row implements JsonSerializable
      */
     public function save(): self
     {
-        if ($this->changed) {
-            if (empty($this->id)) {
-                $this->id = $this->table->insert($this->values)->run();
+        if (!empty($this->changes)) {
+            $id = $this->id;
+            
+            if (empty($id)) {
+                $this->id = $this->table->insert($this->changes)->run();
             } else {
-                $this->table->update($this->values)
-                    ->where('id = ', $this->id)
-                    ->run();
+                $this->table->update($this->changes)
+                ->where('id = ', $id)
+                ->run();
             }
 
+            $this->values = $this->toArray();
+            $this->changes = [];
             $this->table->cache($this);
         }
 
@@ -207,12 +227,14 @@ class Row implements JsonSerializable
      */
     public function delete(): self
     {
-        if (!empty($this->id)) {
+        $id = $this->id;
+
+        if (!empty($id)) {
             $this->table->delete()
-                ->where('id = ', $this->id)
+                ->where('id = ', $id)
                 ->run();
 
-            $this->id = null;
+            $this->values['id'] = null;
         }
 
         return $this;
@@ -359,7 +381,7 @@ class Row implements JsonSerializable
     /**
      * Return the real field name
      */
-    private function getValueName(string $name)
+    private function getValueName(string $name): ?string
     {
         if (array_key_exists($name, $this->values)) {
             return $name;
@@ -375,5 +397,12 @@ class Row implements JsonSerializable
                 return $name;
             }
         }
+
+        return null;
+    }
+
+    private function getValue(string $name)
+    {
+        return array_key_exists($name, $this->changes) ? $this->changes[$name] : $this->values[$name];
     }
 }
