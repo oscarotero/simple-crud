@@ -21,7 +21,13 @@ class Row implements JsonSerializable
     public function __construct(Table $table, array $values)
     {
         $this->table = $table;
-        $this->values = $table->getDefaults($values);
+
+        if (empty($values['id'])) {
+            $this->values = $table->getDefaults();
+            $this->changes = $values;
+        } else {
+            $this->values = $table->getDefaults($values);
+        }
     }
 
     public function __debugInfo(): array
@@ -133,8 +139,8 @@ class Row implements JsonSerializable
     public function __set(string $name, $value)
     {
         if ($name === 'id') {
-            if (!empty($this->values['id'])) {
-                throw new RuntimeException('The field "id" is read-only');
+            if (!is_null($this->values['id']) && !is_null($value)) {
+                throw new RuntimeException('The field "id" cannot be overrided');
             }
 
             $this->values['id'] = $value;
