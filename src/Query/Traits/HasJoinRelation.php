@@ -8,7 +8,7 @@ use SimpleCrud\Table;
 
 trait HasJoinRelation
 {
-    public function joinRelation(string $type, Table $table2)
+    public function joinRelation(Table $table2): self
     {
         $table1 = $this->table;
 
