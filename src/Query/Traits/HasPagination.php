@@ -8,14 +8,19 @@ use PDO;
 trait HasPagination
 {
     private $page;
-    private $perPage;
+    private $perPage = 10;
 
-    public function page(int $page, int $perPage = 10): self
+    public function page(int $page): self
     {
         $this->page = $page;
-        $this->perPage = $perPage;
-
         $this->query->page($page);
+
+        return $this;
+    }
+
+    public function perPage(int $perPage = 10): self
+    {
+        $this->perPage = $perPage;
         $this->query->perPage($perPage);
 
         return $this;

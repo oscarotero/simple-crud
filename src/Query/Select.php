@@ -9,13 +9,29 @@ use SimpleCrud\Table;
 final class Select implements QueryInterface
 {
     use Traits\Common;
-    use Traits\HasWhere;
-    use Traits\HasOrderBy;
-    use Traits\HasGroupBy;
-    use Traits\HasLimit;
+    use Traits\HasRelatedWith;
     use Traits\HasPagination;
+    use Traits\HasJoinRelation;
 
     private $one;
+    private $allowedMethods = [
+        'from',
+        'join',
+        'catJoin',
+        'groupBy',
+        'having',
+        'orHaving',
+        'orderBy',
+        'catHaving',
+        'where',
+        'orWhere',
+        'catWhere',
+        'limit',
+        'offset',
+        'distinct',
+        'forUpdate',
+        'setFlag',
+    ];
 
     public function __construct(Table $table)
     {

@@ -211,7 +211,7 @@ class Row implements JsonSerializable
     {
         if (!empty($this->changes)) {
             $id = $this->id;
-            
+
             if (empty($id)) {
                 $this->id = $this->table->insert($this->changes)->run();
             } else {

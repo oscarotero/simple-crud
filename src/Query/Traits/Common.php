@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Query\Traits;
 
+use BadMethodCallException;
 use PDOStatement;
 use SimpleCrud\Query\QueryInterface;
 use SimpleCrud\Table;
@@ -22,6 +23,17 @@ trait Common
     {
         $this->table = $table;
         $this->builder = $table->getDatabase()->query();
+    }
+
+    public function __call(string $name, array $arguments)
+    {
+        if (!in_array($name, $this->allowedMethods)) {
+            throw new BadMethodCallException(sprintf('The method "%s" is not valid', $name));
+        }
+
+        $this->query->{$name}(...$arguments);
+
+        return $this;
     }
 
     public function __toString()

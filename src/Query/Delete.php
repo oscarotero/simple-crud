@@ -8,8 +8,17 @@ use SimpleCrud\Table;
 final class Delete implements QueryInterface
 {
     use Traits\Common;
-    use Traits\HasWhere;
-    use Traits\HasLimit;
+    use Traits\HasRelatedWith;
+
+    private $allowedMethods = [
+        'setFlag',
+        'where',
+        'orWhere',
+        'catWhere',
+        'orderBy',
+        'limit',
+        'offset',
+    ];
 
     public function __construct(Table $table)
     {

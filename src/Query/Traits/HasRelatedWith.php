@@ -9,35 +9,8 @@ use SimpleCrud\Row;
 use SimpleCrud\RowCollection;
 use SimpleCrud\Table;
 
-trait HasWhere
+trait HasRelatedWith
 {
-    use HasJoin;
-
-    public function where(string $condition, ...$values)
-    {
-        $this->query->where($condition, ...$values);
-
-        return $this;
-    }
-
-    public function orWhere(string $condition, ...$values)
-    {
-        $this->query->orWhere($condition, ...$values);
-
-        return $this;
-    }
-
-    public function whereEquals($name, $value = null)
-    {
-        if (is_array($name)) {
-            $this->query->whereEquals($name);
-        } else {
-            $this->query->whereEquals([(string) $name => $value]);
-        }
-
-        return $this;
-    }
-
     /**
      * @param Row|RowCollection|Table
      * @param mixed $related
@@ -107,7 +80,8 @@ trait HasWhere
 
         //Has one
         if ($field = $table1->getJoinField($table2)) {
-            return $this->whereEquals($field, $row->id ?: null);
+            $this->query->whereEquals([(string) $field => $row->id ?: null]);
+            return $this;
         }
 
         //Has many
@@ -119,7 +93,8 @@ trait HasWhere
                     sprintf('%s = %s', $field, $table1->id)
                 );
 
-            return $this->whereEquals($table2->id, $row->id ?: null);
+            $this->query->whereEquals([(string) $table2->id => $row->id ?: null]);
+            return $this;
         }
 
         //Has many to many
@@ -134,7 +109,8 @@ trait HasWhere
                     sprintf('%s = %s', $field1, $table1->id)
                 );
 
-            return $this->whereEquals($field2, $row->id ?: null);
+            $this->query->whereEquals([(string) $field2 => $row->id ?: null]);
+            return $this;
         }
 
         throw new RuntimeException(

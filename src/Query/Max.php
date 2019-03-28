@@ -8,6 +8,4 @@ final class Max implements QueryInterface
     const AGGREGATION_FUNCTION = 'MAX';
 
     use Traits\Aggregation;
-    use Traits\HasWhere;
-    use Traits\HasLimit;
 }

@@ -110,7 +110,8 @@ SQL
             ->one()
             ->where('title IS NOT NULL')
             ->where('id IN ', [1, 2])
-            ->page(2, 5)
+            ->page(2)
+            ->perPage(5)
             ->orderBy('title')
             ->__invoke();
 

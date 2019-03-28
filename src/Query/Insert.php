@@ -9,6 +9,11 @@ final class Insert implements QueryInterface
 {
     use Traits\Common;
 
+    private $allowedMethods = [
+        'setFlag',
+        'set',
+    ];
+
     public function __construct(Table $table, array $data = null)
     {
         $this->table = $table;

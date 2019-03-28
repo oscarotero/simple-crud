@@ -9,8 +9,29 @@ use SimpleCrud\Table;
 trait Aggregation
 {
     use Common;
+    use HasRelatedWith;
+    use HasPagination;
+    use HasJoinRelation;
 
     private $field;
+    private $allowedMethods = [
+        'from',
+        'join',
+        'catJoin',
+        'groupBy',
+        'having',
+        'orHaving',
+        'orderBy',
+        'catHaving',
+        'where',
+        'orWhere',
+        'catWhere',
+        'limit',
+        'offset',
+        'distinct',
+        'forUpdate',
+        'setFlag',
+    ];
 
     public function __construct(Table $table, string $field = 'id')
     {
@@ -28,9 +49,8 @@ trait Aggregation
         $statement = $this->__invoke();
         $statement->setFetchMode(PDO::FETCH_NUM);
 
-        $result = $statement->fetch();
         $field = $this->table->{$this->field};
 
-        return $field->format($result[0]);
+        return $field->format($statement->fetchColumn());
     }
 }

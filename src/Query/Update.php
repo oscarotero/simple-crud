@@ -8,7 +8,18 @@ use SimpleCrud\Table;
 final class Update implements QueryInterface
 {
     use Traits\Common;
-    use Traits\HasWhere;
+    use Traits\HasRelatedWith;
+
+    private $allowedMethods = [
+        'set',
+        'setFlag',
+        'where',
+        'orWhere',
+        'catWhere',
+        'orderBy',
+        'limit',
+        'offset',
+    ];
 
     public function __construct(Table $table, array $data = null)
     {

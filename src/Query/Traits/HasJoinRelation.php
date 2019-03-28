@@ -6,14 +6,9 @@ namespace SimpleCrud\Query\Traits;
 use RuntimeException;
 use SimpleCrud\Table;
 
-trait HasJoin
+trait HasJoinRelation
 {
-    public function leftJoin(Table $table, string $condition = null, ...$values)
-    {
-        return $this->join('LEFT', $table, $condition, ...$values);
-    }
-
-    public function join(string $type, Table $table2, string $condition = null, ...$values)
+    public function joinRelation(string $type, Table $table2)
     {
         $table1 = $this->table;
 
@@ -21,7 +16,7 @@ trait HasJoin
         if ($field = $table1->getJoinField($table2)) {
             $this->query
                 ->join(
-                    $type,
+                    'LEFT',
                     (string) $table2,
                     sprintf('%s = %s', $field, $table2->id)
                 );
@@ -30,7 +25,7 @@ trait HasJoin
         } elseif ($field = $table->getJoinField($table1)) {
             $this->query
                 ->join(
-                    $type,
+                    'LEFT',
                     (string) $table2,
                     sprintf('%s = %s', $field, $table1->id)
                 );
@@ -42,12 +37,12 @@ trait HasJoin
 
             $this->query
                 ->join(
-                    $type,
+                    'LEFT',
                     (string) $joinTable,
                     sprintf('%s = %s', $field1, $table1->id)
                 )
                 ->join(
-                    $type,
+                    'LEFT',
                     (string) $table2,
                     sprintf('%s = %s', $field2, $table2->id)
                 );
@@ -55,10 +50,6 @@ trait HasJoin
             throw new RuntimeException(
                 sprintf('The tables %s and %s are not related', $table1, $table2)
             );
-        }
-
-        if ($condition) {
-            $this->query->catJoin($condition, $values);
         }
 
         return $this;
