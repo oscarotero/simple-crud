@@ -24,7 +24,8 @@ class Row implements JsonSerializable
 
         if (empty($values['id'])) {
             $this->values = $table->getDefaults();
-            $this->changes = $values;
+            $this->changes = $table->getDefaults($values);
+            unset($this->changes['id']);
         } else {
             $this->values = $table->getDefaults($values);
         }

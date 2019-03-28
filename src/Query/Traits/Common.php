@@ -11,7 +11,6 @@ use SimpleCrud\Table;
 trait Common
 {
     private $table;
-    private $builder;
     private $query;
 
     public static function create(Table $table, array $arguments): QueryInterface
@@ -19,10 +18,9 @@ trait Common
         return new static($table, ...$arguments);
     }
 
-    private function init(Table $table)
+    public function getTable(): Table
     {
-        $this->table = $table;
-        $this->builder = $table->getDatabase()->query();
+        return $this->table;
     }
 
     public function __call(string $name, array $arguments)

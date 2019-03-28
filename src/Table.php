@@ -6,6 +6,7 @@ namespace SimpleCrud;
 use ArrayAccess;
 use SimpleCrud\Fields\FieldInterface;
 use SimpleCrud\Query\QueryInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Manages a database table.
@@ -19,6 +20,7 @@ class Table implements ArrayAccess
     private $cache = [];
     private $fields = [];
     private $defaults = [];
+    private $eventDispatcher;
 
     protected const ROW_CLASS = Row::class;
     protected const ROWCOLLECTION_CLASS = RowCollection::class;
@@ -50,6 +52,18 @@ class Table implements ArrayAccess
     public function __toString()
     {
         return "`{$this->name}`";
+    }
+
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): self
+    {
+        $this->eventDispatcher = $eventDispatcher;
+
+        return $this;
+    }
+
+    public function getEventDispatcher(): ?EventDispatcherInterface
+    {
+        return $this->eventDispatcher;
     }
 
     /**

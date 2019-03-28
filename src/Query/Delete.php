@@ -22,6 +22,8 @@ final class Delete implements QueryInterface
 
     public function __construct(Table $table)
     {
+        $this->table = $table;
+
         $this->query = $table->getDatabase()
             ->delete()
             ->from((string) $table);
