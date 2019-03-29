@@ -21,7 +21,7 @@ final class Update implements QueryInterface
         'offset',
     ];
 
-    public function __construct(Table $table, array $data = null)
+    public function __construct(Table $table, array $data = [])
     {
         $this->table = $table;
 
@@ -29,17 +29,8 @@ final class Update implements QueryInterface
             ->update()
             ->table((string) $table);
 
-        if ($data) {
-            $this->columns($data);
-        }
-    }
-
-    public function columns(array $data): self
-    {
         foreach ($data as $fieldName => $value) {
             $this->table->{$fieldName}->update($this->query, $value);
         }
-
-        return $this;
     }
 }

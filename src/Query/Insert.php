@@ -14,7 +14,7 @@ final class Insert implements QueryInterface
         'set',
     ];
 
-    public function __construct(Table $table, array $data = null)
+    public function __construct(Table $table, array $data = [])
     {
         $this->table = $table;
 
@@ -22,18 +22,9 @@ final class Insert implements QueryInterface
             ->insert()
             ->into((string) $table);
 
-        if ($data) {
-            $this->columns($data);
-        }
-    }
-
-    public function columns(array $data): self
-    {
         foreach ($data as $fieldName => $value) {
             $this->table->{$fieldName}->insert($this->query, $value);
         }
-
-        return $this;
     }
 
     public function run()
