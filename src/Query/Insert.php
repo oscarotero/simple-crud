@@ -3,8 +3,8 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Query;
 
-use SimpleCrud\Table;
 use SimpleCrud\Events\CreateInsertQuery;
+use SimpleCrud\Table;
 
 final class Insert implements QueryInterface
 {

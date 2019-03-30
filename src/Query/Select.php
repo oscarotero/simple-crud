@@ -4,8 +4,8 @@ declare(strict_types = 1);
 namespace SimpleCrud\Query;
 
 use PDO;
-use SimpleCrud\Table;
 use SimpleCrud\Events\CreateSelectQuery;
+use SimpleCrud\Table;
 
 final class Select implements QueryInterface
 {
@@ -49,7 +49,7 @@ final class Select implements QueryInterface
             ->select()
             ->from((string) $table)
             ->columns(...$fields);
-        
+
         $eventDispatcher = $table->getEventDispatcher();
 
         if ($eventDispatcher) {

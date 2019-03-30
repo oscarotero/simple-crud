@@ -4,8 +4,8 @@ declare(strict_types = 1);
 namespace SimpleCrud\Query\Traits;
 
 use PDO;
-use SimpleCrud\Table;
 use SimpleCrud\Events\CreateSelectQuery;
+use SimpleCrud\Table;
 
 trait Aggregation
 {
@@ -43,7 +43,7 @@ trait Aggregation
             ->select()
             ->from((string) $table)
             ->columns(sprintf('%s(%s)', self::AGGREGATION_FUNCTION, $field));
-        
+
         $eventDispatcher = $table->getEventDispatcher();
 
         if ($eventDispatcher) {

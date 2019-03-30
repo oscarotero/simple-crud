@@ -3,8 +3,8 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Query;
 
-use SimpleCrud\Table;
 use SimpleCrud\Events\CreateUpdateQuery;
+use SimpleCrud\Table;
 
 final class Update implements QueryInterface
 {
@@ -29,11 +29,11 @@ final class Update implements QueryInterface
         $this->query = $table->getDatabase()
             ->update()
             ->table((string) $table);
-            
+
         foreach ($data as $fieldName => $value) {
             $this->table->{$fieldName}->update($this->query, $value);
         }
-            
+
         $eventDispatcher = $table->getEventDispatcher();
 
         if ($eventDispatcher) {

@@ -6,8 +6,8 @@ namespace SimpleCrud;
 use BadMethodCallException;
 use JsonSerializable;
 use RuntimeException;
-use SimpleCrud\Query\Select;
 use SimpleCrud\Events\BeforeSaveRow;
+use SimpleCrud\Query\Select;
 
 /**
  * Stores the data of an table row.
@@ -213,7 +213,7 @@ class Row implements JsonSerializable
     {
         if (!empty($this->changes)) {
             $eventDispatcher = $this->table->getEventDispatcher();
-            
+
             if ($eventDispatcher) {
                 $eventDispatcher->dispatch(new BeforeSaveRow($this));
             }

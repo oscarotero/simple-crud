@@ -1,9 +1,9 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use SimpleCrud\Events\CreateSelectQuery;
-use SimpleCrud\Events\BeforeSaveRow;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use SimpleCrud\Events\BeforeSaveRow;
+use SimpleCrud\Events\CreateSelectQuery;
 
 class EventsTest extends AbstractTestCase
 {

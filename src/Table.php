@@ -4,10 +4,10 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use ArrayAccess;
-use SimpleCrud\Fields\FieldInterface;
-use SimpleCrud\Query\QueryInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use SimpleCrud\Events\BeforeCreateRow;
+use SimpleCrud\Fields\FieldInterface;
+use SimpleCrud\Query\QueryInterface;
 
 /**
  * Manages a database table.

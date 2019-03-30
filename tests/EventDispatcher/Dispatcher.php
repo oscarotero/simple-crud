@@ -21,7 +21,7 @@ class Dispatcher implements EventDispatcherInterface
     public function dispatch(object $event)
     {
         foreach ($this->provider->getListenersForEvent($event) as $listener) {
-           $listener($event);
+            $listener($event);
         }
 
         return $event;
