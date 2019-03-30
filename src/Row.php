@@ -173,7 +173,7 @@ class Row implements JsonSerializable
     {
         $valueName = $this->getValueName($name);
 
-        return ($valueName && !is_null($this->getValue($valueName))) || isset($this->data[$name]);
+        return (isset($valueName) && !is_null($this->getValue($valueName))) || isset($this->data[$name]);
     }
 
     /**

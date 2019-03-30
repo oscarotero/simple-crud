@@ -10,7 +10,7 @@ use PDO;
  */
 final class Scheme implements SchemeInterface
 {
-    private $engine;
+    private $scheme;
 
     public function __construct(PDO $pdo)
     {

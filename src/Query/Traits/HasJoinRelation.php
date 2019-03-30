@@ -22,7 +22,7 @@ trait HasJoinRelation
                 );
 
         //Has many
-        } elseif ($field = $table->getJoinField($table1)) {
+        } elseif ($field = $table2->getJoinField($table1)) {
             $this->query
                 ->join(
                     'LEFT',

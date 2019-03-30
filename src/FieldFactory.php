@@ -70,7 +70,7 @@ final class FieldFactory implements FieldFactoryInterface
             return $this;
         }
 
-        $this->fields = [$className => $values] + $this->fields;
+        $this->fields = [$className => $definition] + $this->fields;
 
         return $this;
     }
