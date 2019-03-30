@@ -2,6 +2,7 @@
 namespace SimpleCrud\Tests;
 
 use SimpleCrud\Events\CreateSelectQuery;
+use SimpleCrud\Events\BeforeSaveRow;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 class EventsTest extends AbstractTestCase
@@ -65,5 +66,28 @@ SQL
         $this->assertCount(1, $allPosts);
         $this->assertSame($db->post[1], $db->comment[1]->post);
         $this->assertNull($db->comment[2]->post);
+
+        $dispatcher->listen(BeforeSaveRow::class, function ($event) {
+            $row = $event->getRow();
+            $row->isActive = true;
+        });
+
+        $post = $db->post[2];
+        $post->title = 'Modified title';
+        $post->isActive = false;
+
+        $this->assertSame('Modified title', $post->title);
+        $this->assertSame(false, $post->isActive);
+
+        $post->save();
+
+        $this->assertSame('Modified title', $post->title);
+        $this->assertSame(true, $post->isActive);
+
+        $db->post->clearCache();
+        $post = $db->post[2];
+
+        $this->assertSame('Modified title', $post->title);
+        $this->assertSame(true, $post->isActive);
     }
 }

@@ -5,6 +5,7 @@ namespace SimpleCrud\Query\Traits;
 
 use PDO;
 use SimpleCrud\Table;
+use SimpleCrud\Events\CreateSelectQuery;
 
 trait Aggregation
 {
@@ -42,6 +43,12 @@ trait Aggregation
             ->select()
             ->from((string) $table)
             ->columns(sprintf('%s(%s)', self::AGGREGATION_FUNCTION, $field));
+        
+        $eventDispatcher = $table->getEventDispatcher();
+
+        if ($eventDispatcher) {
+            $eventDispatcher->dispatch(new CreateSelectQuery($this));
+        }
     }
 
     public function run()

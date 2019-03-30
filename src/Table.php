@@ -7,6 +7,7 @@ use ArrayAccess;
 use SimpleCrud\Fields\FieldInterface;
 use SimpleCrud\Query\QueryInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use SimpleCrud\Events\BeforeCreateRow;
 
 /**
  * Manages a database table.
@@ -313,17 +314,27 @@ class Table implements ArrayAccess
         return $this->fields;
     }
 
-    public function create(array $data = []): Row
+    public function create(array $data = [], bool $fromDatabase = false): Row
     {
         if (isset($data['id']) && ($row = $this->getCached($data['id']))) {
             return $row;
+        }
+
+        if ($fromDatabase) {
+            $eventDispatcher = $this->getEventDispatcher();
+
+            if ($eventDispatcher) {
+                $event = new BeforeCreateRow($data);
+                $eventDispatcher->dispatch($event);
+                $data = $event->getData();
+            }
         }
 
         $class = self::ROW_CLASS;
         return $this->cache(new $class($this, $data));
     }
 
-    public function createCollection(array $rows = [], $fromDatabase = false): RowCollection
+    public function createCollection(array $rows = [], bool $fromDatabase = false): RowCollection
     {
         if ($fromDatabase) {
             $rows = $this->createCollection(

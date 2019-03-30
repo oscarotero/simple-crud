@@ -24,5 +24,7 @@ class ListenerProvider implements ListenerProviderInterface
                 return $listeners;
             }
         }
+
+        return [];
     }
 }

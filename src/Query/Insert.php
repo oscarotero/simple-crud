@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace SimpleCrud\Query;
 
 use SimpleCrud\Table;
+use SimpleCrud\Events\CreateInsertQuery;
 
 final class Insert implements QueryInterface
 {
@@ -24,6 +25,12 @@ final class Insert implements QueryInterface
 
         foreach ($data as $fieldName => $value) {
             $this->table->{$fieldName}->insert($this->query, $value);
+        }
+
+        $eventDispatcher = $table->getEventDispatcher();
+
+        if ($eventDispatcher) {
+            $eventDispatcher->dispatch(new CreateInsertQuery($this));
         }
     }
 
