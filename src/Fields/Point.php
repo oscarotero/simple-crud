@@ -1,45 +1,33 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud\Fields;
 
 use Atlas\Query\Insert;
+use Atlas\Query\Select;
 use Atlas\Query\Update;
 
 final class Point extends Field
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getSelectExpression($as = null)
+    public function select(Select $query)
     {
-        $fieldName = $this->info['name'];
-
-        if ($as) {
-            return "asText({$this}) as `{$as}`";
-        }
-
-        return "asText({$this}) as `{$fieldName}`";
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getValueExpression($mark)
-    {
-        return "PointFromText($mark)";
+        $name = $this->getName();
+        $query->columns("asText({$this}) as `{$name}`");
     }
 
     public function format($value): ?array
     {
-        //POINT(X Y)
-        if ($value !== null) {
-            $points = explode(' ', substr($value, 6, -1), 2);
-
-            return [
-                floatval($points[0]),
-                floatval($points[1]),
-            ];
+        if ($value === null) {
+            return null;
         }
+
+        //POINT(X Y)
+        $points = explode(' ', substr((string) $value, 6, -1), 2);
+
+        return [
+            floatval($points[0]),
+            floatval($points[1]),
+        ];
     }
 
     public function insert(Insert $query, $value)

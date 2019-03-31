@@ -3,21 +3,31 @@ namespace SimpleCrud\Tests;
 
 use Datetime;
 use SimpleCrud\Fields\Json;
+use SimpleCrud\Fields\Serializable;
 
 class FieldsTest extends AbstractTestCase
 {
     private function createDatabase()
     {
-        return $this->createSqliteDatabase([
-            <<<'EOT'
-CREATE TABLE "post" (
-    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-    `title`       TEXT,
-    `isActive`    INTEGER,
-    `publishedAt` TEXT,
-    `data`        TEXT
-);
-EOT
+        return $this->createMysqlDatabase([
+            'DROP DATABASE IF EXISTS `simple_crud`',
+            'CREATE DATABASE `simple_crud`',
+            'USE `simple_crud`',
+            <<<'SQL'
+CREATE TABLE `post` (
+    `id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `title` varchar(100) DEFAULT '',
+    `body`  text,
+    `publishedAt` datetime DEFAULT NULL,
+    `num`   decimal(10,0) DEFAULT NULL,
+    `point` point DEFAULT NULL,
+    `data` json DEFAULT NULL,
+    `serializable` text,
+    `isActive` boolean,
+    `size`  enum('x-small', 'small', 'medium', 'large', 'x-large'),
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+SQL
         ]);
     }
 
@@ -25,6 +35,7 @@ EOT
     {
         $db = $this->createDatabase();
         $db->getFieldFactory()->defineField(Json::class, ['names' => ['data']]);
+        $db->getFieldFactory()->defineField(Serializable::class, ['names' => ['serializable']]);
 
         $this->assertInstanceOf(Json::class, $db->post->data);
 
@@ -33,9 +44,15 @@ EOT
         $db->post->insert([
             'title' => 'First post',
             'publishedAt' => $now,
+            'point' => [100, 200],
+            'num' => '34',
             'data' => [
                 'foo' => 'bar',
                 'bar' => [1, 2, 3],
+            ],
+            'serializable' => (object) [
+                'foo' => 'bar',
+                'bar' => 'foo',
             ],
         ])->run();
 
@@ -46,6 +63,7 @@ EOT
         $this->assertEquals($now->format('Y-m-d h:i:s'), $post->publishedAt->format('Y-m-d h:i:s'));
         $this->assertIsInt($post->id);
         $this->assertIsArray($post->data);
+        $this->assertIsArray($post->point);
         $this->assertIsBool($post->isActive);
     }
 }

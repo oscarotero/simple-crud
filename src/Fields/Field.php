@@ -1,8 +1,10 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud\Fields;
 
 use Atlas\Query\Insert;
+use Atlas\Query\Select;
 use Atlas\Query\Update;
 use SimpleCrud\Table;
 
@@ -28,14 +30,19 @@ class Field implements FieldInterface
         return sprintf('%s.`%s`', $this->table, $this->info['name']);
     }
 
+    public function select(Select $query)
+    {
+        $query->columns((string) $this);
+    }
+
     public function insert(Insert $query, $value)
     {
-        $query->column($this->info['name'], $this->formatToDatabase($value));
+        $query->column($this->getName(), $this->formatToDatabase($value));
     }
 
     public function update(Update $query, $value)
     {
-        $query->column($this->info['name'], $this->formatToDatabase($value));
+        $query->column($this->getName(), $this->formatToDatabase($value));
     }
 
     public function format($value)

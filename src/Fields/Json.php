@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud\Fields;
 
@@ -13,12 +14,12 @@ final class Json extends Field
         return empty($value) ? [] : json_decode($value, $this->config['assoc']);
     }
 
-    protected function formatToDatabase($value)
+    protected function formatToDatabase($value): ?string
     {
         if (!is_string($value)) {
-            return json_encode($value);
+            return json_encode($value) ?: null;
         }
 
-        return $value;
+        return $value ?: null;
     }
 }

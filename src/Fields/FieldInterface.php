@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace SimpleCrud\Fields;
 
 use Atlas\Query\Insert;
+use Atlas\Query\Select;
 use Atlas\Query\Update;
 
 /**
@@ -20,6 +21,11 @@ interface FieldInterface
      * Returns the field full name (ex: `tableName`.`fieldName`)
      */
     public function __toString();
+
+    /**
+     * Add the field in an Select query
+     */
+    public function select(Select $query);
 
     /**
      * Add the field in an Insert query

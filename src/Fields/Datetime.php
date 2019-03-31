@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud\Fields;
 
@@ -20,13 +21,5 @@ class Datetime extends Field
         $value = $this->format($value);
 
         return empty($value) ? null : $value->format($this->format);
-    }
-
-    /**
-     * Return the default value
-     */
-    public function getDefaultValue()
-    {
-        return null;
     }
 }

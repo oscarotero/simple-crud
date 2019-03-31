@@ -39,17 +39,13 @@ final class Select implements QueryInterface
     {
         $this->table = $table;
 
-        $fields = array_map(
-            function ($field) {
-                return (string) $field;
-            },
-            array_values($table->getFields())
-        );
-
         $this->query = $table->getDatabase()
             ->select()
-            ->from((string) $table)
-            ->columns(...$fields);
+            ->from((string) $table);
+
+        foreach ($table->getFields() as $field) {
+            $field->select($this->query);
+        }
 
         $eventDispatcher = $table->getEventDispatcher();
 
