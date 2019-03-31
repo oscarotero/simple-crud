@@ -27,11 +27,11 @@ $ composer require simple-crud/simple-crud
 
 SimpleCrud has the following classes:
 
-* **Database:** Manage the database connection.
-* **Query:** Creates the database queries. SimpleCrud has tested only with MySQL and SQLite but because uses [Atlas.Query](https://github.com/atlasphp/Atlas.Query) internally, in theory Postgres and Microsoft SQL should be supported too.
+* **Database:** Manage the database connection. Uses internally [Atlas.PDO](https://github.com/atlasphp/Atlas.PDO)
+* **Query:** Creates the database queries. SimpleCrud is tested with MySQL and SQLite but due uses [Atlas.Query](https://github.com/atlasphp/Atlas.Query) internally, in theory Postgres and Microsoft SQL should be supported too.
 * **Table:** Manages a database table
 * **Field:** Manages a database field. Used to format and validate values
-* **Row:** Stores/modifies a row
+* **Row:** To store and modify a row
 * **RowCollection:** Is a collection of rows
 
 ## Usage example
@@ -68,14 +68,14 @@ CREATE TABLE `post_tag` (
 );
 ```
 
-To start, create an instance of `SimpleCrud\SimpleCrud` passing the `PDO` connection.
+To start, create an instance of `SimpleCrud\Database` passing the `PDO` connection.
 
 ```php
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 
 $pdo = new PDO($dsn, $username, $password);
 
-$db = new SimpleCrud($pdo);
+$db = new Database($pdo);
 
 //To get any table, use magic properties, they will be instantiated on demand:
 $post = $db->post;
@@ -83,29 +83,28 @@ $post = $db->post;
 
 SimpleCrud load the database scheme and detects automatically all relationships between the tables using the naming conventions described above. For example the table "post" has a field called "category_id", so SimpleCrud knows that each post has one category.
 
-**Note:** In production environment, you may want to cache the scheme in order to improve the performance. You can do it in this way:
+**Note:** In production environment, you may want to cache the scheme in order to avoid execute these queries and improve the performance. You can do it in this way:
 
 ```php
 use SimpleCrud\Scheme\Cache;
-use SimpleCrud\Scheme\Scheme;
+use SimpleCrud\Scheme\Mysql;
 
 if ($cache->has('db_scheme')) {
     $array = $cache->get('db_scheme');
     $scheme = new Cache($array);
 } else {
-    $scheme = new Scheme($pdo);
-    $array = Cache::schemeToArray($scheme);
-    $cache->save('db_scheme', $array);
+    $scheme = new Mysql($pdo);
+    $cache->save('db_scheme', $scheme->toArray());
 }
 
-$db = new SimpleCrud($pdo, $scheme);
+$db = new Database($pdo, $scheme);
 ```
 
 ## Using the library
 
 ### Basic CRUD:
 
-You can work directly with the tables to insert/update/delete/select data:
+You can interact directly with the tables to insert/update/delete/select data:
 
 Use `ArrayAccess` interface to access to the data using the `id`:
 
@@ -134,7 +133,7 @@ $db->post[] = [
 
 ### Rows
 
-A `Row` object represents a database row and is used to read and modify the data:
+A `Row` object represents a database row and is used to read and modify its data:
 
 ```php
 //get a row by id
@@ -164,11 +163,10 @@ A `Query` object represents a database query. SimpleCrud uses magic methods to c
 
 ```php
 //Create an UPDATE query with the table post
-$updateQuery = $db->post->update();
+$updateQuery = $db->post->update(['title' => 'New title']);
 
-//Add data, conditions, limit, etc
+//Add conditions, limit, etc
 $updateQuery
-    ->columns(['title' => 'New title'])
     ->where('id = ', 23)
     ->limit(1);
 
@@ -176,15 +174,10 @@ $updateQuery
 echo $updateQuery; //UPDATE `post` ...
 
 //execute the query and returns a PDOStatement with the result
-$statement = $updateQuery();
-
-//Note that you can pass the new data on create the query instead use columns()
-$updateQuery = $db->post->update(['title' => 'New title'])
-    ->where('id = ', 23)
-    ->limit(1);
+$PDOStatement = $updateQuery();
 ```
 
-There's the method `run()` that executes the query but instead a `PDOStatement`, it returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
+The method `run()` executes the query and returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
 
 ```php
 //insert a new post
@@ -218,7 +211,7 @@ $total = $db->post
 $posts = $db->post
     ->select()
     ->where('id > ', 10)
-    ->orderBy('id', 'ASC')
+    ->orderBy('id ASC')
     ->limit(100)
     ->run();
 
@@ -257,12 +250,12 @@ $category = $db->category
 
 Queries use [Atlas.Query](http://atlasphp.io/cassini/query/) library to build the final queries, so you can see the documentation for all available options.
 
-#### select
+#### Select
 
 Function | Description
 ---------|------------
 `one` | Select 1 result.
-`relatedWith(Row|RowCollection|Table $relation)` | To select rows related with other rows or tables (relation added in `WHERE`).
+`relatedWith(Row / RowCollection / Table $relation)` | To select rows related with other rows or tables (relation added in `WHERE`).
 `joinRelation(Table $table)` | To add a related table as `LEFT JOIN`.
 `getPageInfo()` | Returns the info of the pagination.
 `from` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
@@ -282,11 +275,11 @@ Function | Description
 `forUpdate` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `setFlag` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 
-#### update
+#### Update
 
 Function | Description
 ---------|------------
-`relatedWith(Row|RowCollection|Table $relation)` | To update rows related with other rows or tables (relation added in `WHERE`).
+`relatedWith(Row / RowCollection / Table $relation)` | To update rows related with other rows or tables (relation added in `WHERE`).
 `set` | [Atlas.Query Update()](http://atlasphp.io/cassini/query/update.html)
 `setFlag` | [Atlas.Query Update()](http://atlasphp.io/cassini/query/update.html)
 `where` | [Atlas.Query Update()](http://atlasphp.io/cassini/query/update.html)
@@ -296,18 +289,18 @@ Function | Description
 `limit` | [Atlas.Query Update()](http://atlasphp.io/cassini/query/update.html)
 `offset` | [Atlas.Query Update()](http://atlasphp.io/cassini/query/update.html)
 
-#### insert
+#### Insert
 
 Function | Description
 ---------|------------
 `set` | [Atlas.Query Insert()](http://atlasphp.io/cassini/query/insert.html)
 `setFlag` | [Atlas.Query Insert()](http://atlasphp.io/cassini/query/insert.html)
 
-#### delete
+#### Delete
 
 Function | Description
 ---------|------------
-`relatedWith(Row|RowCollection|Table $relation)` | To delete rows related with other rows or tables (relation added in `WHERE`).
+`relatedWith(Row / RowCollection / Table $relation)` | To delete rows related with other rows or tables (relation added in `WHERE`).
 `setFlag` | [Atlas.Query Delete()](http://atlasphp.io/cassini/query/delete.html)
 `where` | [Atlas.Query Delete()](http://atlasphp.io/cassini/query/delete.html)
 `orWhere` | [Atlas.Query Delete()](http://atlasphp.io/cassini/query/delete.html)
@@ -332,6 +325,9 @@ $posts = $db->post
     ->select()
     ->relatedWith($category)
     ->run();
+
+//But the result is cached so the database query is executed only the first time
+$posts = $category->post;
 ```
 
 This allows make things like this:
@@ -392,7 +388,7 @@ $categories = $posts->category()
     ->orderBy('name DESC')
     ->run();
 
-//Link the categories with each post
+//Save the result in the cache and link the categories with each post
 $posts->link($categories);
 
 //now you can iterate with the posts
@@ -462,11 +458,64 @@ $posts = $query->run();
 //To get the page info:
 $pagination = $query->getPageInfo();
 
-echo $pagination['total']; //125
-echo $pagination['page']; //1
-echo $pagination['previous']; //NULL
-echo $pagination['next']; //2
+echo $pagination['totalRows']; //125
+echo $pagination['totalPages']; //3
+echo $pagination['currentPage']; //1
+echo $pagination['previousPage']; //NULL
+echo $pagination['nextPage']; //2
 ```
+
+### Events
+
+SimpleCrud uses [PSR-14 Event Dispatcher](https://www.php-fig.org/psr/psr-14/) to dispatch events. The events are attached to tables allowing to validate data, modify queries, etc.
+
+```php
+use SimpleCrud\Events\BeforeSaveRow;
+use SimpleCrud\Events\CreateSelectQuery;
+
+//Create an event dispatcher
+$dispatcher = new Psr14EventDispatcher();
+
+//Assign the BeforeSaveRow event listener
+$dispatcher->on(BeforeSaveRow::class, function (BeforeSaveRow $event) {
+    $row = $event->getRow();
+
+    if (!$row->createdAt) {
+        $row->createdAt = new Datetime();
+    }
+});
+
+//Assign a CreateSelectQuery
+$dispatcher->on(CreateSelectQuery::class, function (CreateSelectQuery $event) {
+    $query = $event->getQuery();
+
+    //Add automatically a where clause in all selects
+    $query->where('active = true');
+});
+
+//Assign the dispatcher to the table Post
+$db->post->setEventDispatcher($dispatcher);
+
+//Create a new post
+$post = $db->post->create(['title' => 'Hello world']);
+
+//Save the post, so BeforeSaveRow event is triggered
+$post->save();
+
+$post->createdAt; //This field was filled and saved
+
+//Select a post, so CreateSelectQuery is triggered and only active posts are selected
+$posts = $db->post->select()->run();
+```
+
+The available Events are:
+
+* `SimpleCrud\Events\BeforeSaveRow`: Executed before save a row using `$row->save()`.
+* `SimpleCrud\Events\BeforeCreateRow`: Executed before create a new row with `$table->create()`.
+* `SimpleCrud\Events\CreateDeleteQuery`: Executed on create a DELETE query with `$table->delete()`.
+* `SimpleCrud\Events\CreateInsertQuery`: Executed on create a INSERT query with `$table->insert()`.
+* `SimpleCrud\Events\CreateSelectQuery`: Executed on create a SELECT query with `$table->select()`.
+* `SimpleCrud\Events\CreateUpdateQuery`: Executed on create a UPDATE query with `$table->update()`.
 
 ### Fields
 
@@ -542,7 +591,7 @@ $post->title = 'New title in english';
 
 ## Debugging
 
-`SimpleCrud` use internally [Atlas.PDO](http://atlasphp.io/cassini/pdo/) to manage the connection and perform the queries in the database, so you can see the documentation for more details.
+`SimpleCrud` use internally [Atlas.PDO](http://atlasphp.io/cassini/pdo/) to manage the connection and perform the queries in the database. You can see the documentation for more details.
 
 ```php
 $db->getConnection()->logQueries(true);
@@ -582,9 +631,9 @@ $factory = $db->getFieldFactory();
 
 //Add a new custom field
 $factory->defineField(Year:class, [
-    'names' => ['year'],    //All fields with this name use this class
-    'regex' => ['/$year/'], //All fields with names matching this regex use this class
-    'types' => ['integer'], //All fields of this types use this class
+    'names' => ['year', '/$year/'], //All fields named "year" or matching this regex will use this class
+    'types' => ['integer'], //All fields of this types will use this class
+    'config' => ['minimum' => 2000] //You can set default config to the field
 ]);
 
 //Modify a existing field
@@ -634,38 +683,5 @@ $latests = $db->post->selectLatest()->run(); //Returns an instance of MyModels\P
 
 foreach ($latests as $post) {
     //Instances of MyModels\PostRow
-}
-
-```
-
-### Data validation
-
-Each table has two methods to convert/validate data before push to database and after pull from it. You can overwrite this methods to customize its behaviour:
-
-```php
-namespace MyModels;
-
-use SimpleCrud\Table;
-
-class Post extends Table
-{
-    public function dataToDatabase (array $data, $new)
-    {
-        $data['updatedAt'] = new \Datetime('now');
-
-        if ($new) { //it's an insert
-            $data['createdAt'] = $data['updatedAt'];
-        }
-
-        return $data;
-    }
-
-    public function dataFromDatabase (array $data)
-    {
-        //convert the date to format "2 days ago"
-        $data['updatedAt'] = convertData($data['updatedAt']);
-
-        return $data;
-    }
 }
 ```

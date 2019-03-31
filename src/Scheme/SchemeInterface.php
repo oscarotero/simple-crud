@@ -15,4 +15,6 @@ interface SchemeInterface
      * name, type, null, default, unsigned, length and values
      */
     public function getTableFields(string $table): array;
+
+    public function toArray(): array;
 }

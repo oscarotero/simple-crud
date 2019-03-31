@@ -153,7 +153,7 @@ EOT
             $this->assertEquals($fields, $scheme->getTableFields($table));
         }
 
-        $array = Cache::schemeToArray($scheme);
+        $array = $scheme->toArray();
         $this->assertEquals($expected, $array);
 
         $cacheScheme = new Cache($array);

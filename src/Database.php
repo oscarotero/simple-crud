@@ -13,7 +13,8 @@ use Exception;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
-use SimpleCrud\Scheme\Scheme;
+use SimpleCrud\Scheme\Mysql;
+use SimpleCrud\Scheme\Sqlite;
 use SimpleCrud\Scheme\SchemeInterface;
 
 final class Database
@@ -33,7 +34,24 @@ final class Database
     public function __construct(PDO $pdo, SchemeInterface $scheme = null)
     {
         $this->connection = new Connection($pdo);
-        $this->scheme = $scheme ?: new Scheme($pdo);
+        $this->scheme = $scheme;
+
+        if ($scheme) {
+            return;
+        }
+
+        $engine = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        switch ($engine) {
+            case 'mysql':
+                $this->scheme = new Mysql($pdo);
+                break;
+            case 'sqlite':
+                $this->scheme = new Sqlite($pdo);
+                break;
+            default:
+                throw new RuntimeException(sprintf('Invalid engine type: %s', $engine));
+        }
     }
 
     /**

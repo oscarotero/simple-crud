@@ -10,17 +10,6 @@ final class Cache implements SchemeInterface
 {
     private $scheme;
 
-    public static function schemeToArray(SchemeInterface $scheme): array
-    {
-        $arrayScheme = [];
-
-        foreach ($scheme->getTables() as $table) {
-            $arrayScheme[$table] = $scheme->getTableFields($table);
-        }
-
-        return $arrayScheme;
-    }
-
     public function __construct(array $scheme)
     {
         $this->scheme = $scheme;
@@ -34,5 +23,10 @@ final class Cache implements SchemeInterface
     public function getTableFields(string $table): array
     {
         return $this->scheme[$table];
+    }
+
+    public function toArray(): array
+    {
+        return $this->scheme;
     }
 }

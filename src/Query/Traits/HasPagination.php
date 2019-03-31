@@ -42,10 +42,11 @@ trait HasPagination
         $count = intval($count[0]);
 
         return [
-            'total' => $count,
-            'page' => $page,
-            'previous' => $page > 1 ? $page - 1 : null,
-            'next' => $count > ($page * $this->perPage) ? $page + 1 : null,
+            'totalRows' => $count,
+            'totalPages' => (int) ceil($count / $this->perPage),
+            'currentPage' => $count ? $page : null,
+            'previousPage' => $page > 1 ? $page - 1 : null,
+            'nextPage' => $count > ($page * $this->perPage) ? $page + 1 : null,
         ];
     }
 }

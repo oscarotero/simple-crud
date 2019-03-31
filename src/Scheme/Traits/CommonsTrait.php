@@ -18,6 +18,20 @@ trait CommonsTrait
     /**
      * @see SchemeInterface
      */
+    public function toArray(): array
+    {
+        $array = [];
+
+        foreach ($this->getTables() as $table) {
+            $array[$table] = $this->getTableFields($table);
+        }
+
+        return $array;
+    }
+
+    /**
+     * @see SchemeInterface
+     */
     public function getTables(): array
     {
         if (!is_array($this->scheme)) {

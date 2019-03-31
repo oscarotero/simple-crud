@@ -320,14 +320,12 @@ class Table implements ArrayAccess
             return $row;
         }
 
-        if ($fromDatabase) {
-            $eventDispatcher = $this->getEventDispatcher();
+        $eventDispatcher = $this->getEventDispatcher();
 
-            if ($eventDispatcher) {
-                $event = new BeforeCreateRow($data);
-                $eventDispatcher->dispatch($event);
-                $data = $event->getData();
-            }
+        if ($eventDispatcher) {
+            $event = new BeforeCreateRow($data);
+            $eventDispatcher->dispatch($event);
+            $data = $event->getData();
         }
 
         $class = self::ROW_CLASS;

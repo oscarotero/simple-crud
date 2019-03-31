@@ -21,45 +21,50 @@ final class FieldFactory implements FieldFactoryInterface
 {
     private $defaultType = Field::class;
     private $fields = [
-        Integer::class => [
-            'names' => ['id'],
-            'regex' => ['/_id$/'],
-            'types' => ['bigint', 'int', 'mediumint', 'smallint', 'tinyint', 'year'],
-        ],
         Boolean::class => [
-            'names' => ['active'],
-            'regex' => ['/^(is|has)[A-Z]/'],
+            'names' => ['active', '/^(is|has)[A-Z]/'],
             'types' => ['boolean'],
-        ],
-        Datetime::class => [
-            'names' => ['pubdate'],
-            'regex' => ['/[a-z]At$/'],
-            'types' => ['datetime'],
+            'config' => [],
         ],
         Date::class => [
             'names' => [],
-            'regex' => [],
             'types' => ['date'],
+            'config' => [],
+        ],
+        Datetime::class => [
+            'names' => ['pubdate', '/[a-z]At$/'],
+            'types' => ['datetime'],
+            'config' => [],
         ],
         Decimal::class => [
             'names' => [],
-            'regex' => [],
             'types' => ['decimal', 'float', 'real'],
+            'config' => [],
         ],
-        Set::class => [
+        Field::class => [
             'names' => [],
-            'regex' => [],
-            'types' => ['set'],
+            'types' => [],
+            'config' => [],
         ],
-        Point::class => [
-            'names' => [],
-            'regex' => [],
-            'types' => ['point'],
+        Integer::class => [
+            'names' => ['id','/_id$/'],
+            'types' => ['bigint', 'int', 'mediumint', 'smallint', 'tinyint', 'year'],
+            'config' => [],
         ],
         Json::class => [
             'names' => [],
-            'regex' => [],
             'types' => ['json'],
+            'config' => [],
+        ],
+        Point::class => [
+            'names' => [],
+            'types' => ['point'],
+            'config' => [],
+        ],
+        Set::class => [
+            'names' => [],
+            'types' => ['set'],
+            'config' => [],
         ],
     ];
 
@@ -90,7 +95,14 @@ final class FieldFactory implements FieldFactoryInterface
         $className = $this->getClassName($info['name'], $info['type']);
 
         if (class_exists($className)) {
-            return new $className($table, $info);
+            $field = new $className($table, $info);
+            $config = $this->fields[$className]['config'] ?? [];
+
+            foreach ($config as $name => $value) {
+                $field->setConfig($name, $value);
+            }
+
+            return $field;
         }
 
         throw new SimpleCrudException("No field class found for '{$className}'");
@@ -102,12 +114,8 @@ final class FieldFactory implements FieldFactoryInterface
     private function getClassName(string $name, string $type): ?string
     {
         foreach ($this->fields as $className => $definition) {
-            if (in_array($name, $definition['names'])) {
-                return $className;
-            }
-
-            foreach ($definition['regex'] as $regex) {
-                if (preg_match($regex, $name)) {
+            foreach ($definition['names'] as $defName) {
+                if ($defName === $name || ($defName[0] === '/' && preg_match($defName, $name))) {
                     return $className;
                 }
             }
