@@ -13,7 +13,7 @@ final class Serializable extends Field
         return @unserialize($value, $this->config) ?: [];
     }
 
-    protected function formatToDatabase($value, array $data = [])
+    protected function formatToDatabase($value)
     {
         return serialize($value);
     }

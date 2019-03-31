@@ -314,7 +314,7 @@ class Table implements ArrayAccess
         return $this->fields;
     }
 
-    public function create(array $data = [], bool $fromDatabase = false): Row
+    public function create(array $data = []): Row
     {
         if (isset($data['id']) && ($row = $this->getCached($data['id']))) {
             return $row;
@@ -334,16 +334,12 @@ class Table implements ArrayAccess
 
     public function createCollection(array $rows = [], bool $fromDatabase = false): RowCollection
     {
-        if ($fromDatabase) {
-            $rows = $this->createCollection(
-                array_map(
-                    function ($data): Row {
-                        return $this->create($data, true);
-                    },
-                    $rows
-                )
-            );
-        }
+        $rows = array_map(
+            function ($data): Row {
+                return is_array($data) ? $this->create($data) : $data;
+            },
+            $rows
+        );
 
         $class = self::ROWCOLLECTION_CLASS;
         return new $class($this, ...$rows);

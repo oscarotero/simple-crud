@@ -1,9 +1,6 @@
 <?php
 namespace SimpleCrud\Tests;
 
-use DateTime;
-use SimpleCrud\Row;
-
 class PaginationTest extends AbstractTestCase
 {
     private function createDatabase()
@@ -22,7 +19,7 @@ EOT
     {
         $db = $this->createDatabase();
 
-        for ($n = 0; $n < 201; $n++) {
+        for ($n = 0; $n < 201; ++$n) {
             $db->post[] = ['title' => "Post number {$n}"];
         }
 

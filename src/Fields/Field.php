@@ -61,12 +61,4 @@ class Field implements FieldInterface
     {
         return $this->format($value);
     }
-
-    /**
-     * Return the default value
-     */
-    public function getDefaultValue()
-    {
-        return $this->dataFromDatabase($this->getConfig('default'));
-    }
 }

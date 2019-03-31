@@ -47,7 +47,7 @@ final class FieldFactory implements FieldFactoryInterface
             'config' => [],
         ],
         Integer::class => [
-            'names' => ['id','/_id$/'],
+            'names' => ['id', '/_id$/'],
             'types' => ['bigint', 'int', 'mediumint', 'smallint', 'tinyint', 'year'],
             'config' => [],
         ],

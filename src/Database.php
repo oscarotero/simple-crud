@@ -14,8 +14,8 @@ use InvalidArgumentException;
 use PDO;
 use PDOStatement;
 use SimpleCrud\Scheme\Mysql;
-use SimpleCrud\Scheme\Sqlite;
 use SimpleCrud\Scheme\SchemeInterface;
+use SimpleCrud\Scheme\Sqlite;
 
 final class Database
 {
