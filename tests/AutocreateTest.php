@@ -1,18 +1,19 @@
 <?php
 
-use SimpleCrud\SimpleCrud;
+namespace SimpleCrud\Tests;
 
-class AutocreateTest extends PHPUnit_Framework_TestCase
+use SimpleCrud\Database;
+use SimpleCrud\FieldFactory;
+use SimpleCrud\Fields\Field;
+use SimpleCrud\Scheme\SchemeInterface;
+use SimpleCrud\Table;
+
+class AutocreateTest extends AbstractTestCase
 {
-    private $db;
-
-    public function setUp()
+    private function createDatabase()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
-
-        $this->db->executeTransaction(function ($db) {
-            $db->execute(
-<<<EOT
+        return $this->createSqliteDatabase([
+            <<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title`       TEXT,
@@ -24,39 +25,37 @@ CREATE TABLE "post" (
     `rating`      REAL
 );
 EOT
-            );
-        });
+        ]);
     }
 
-    public function testDatabase()
+    public function testDatabase(): Database
     {
-        $this->assertInstanceOf('SimpleCrud\\TableFactory', $this->db->getTableFactory());
-        $this->assertInstanceOf('SimpleCrud\\FieldFactory', $this->db->getFieldFactory());
-        $this->assertInstanceOf('SimpleCrud\\QueryFactory', $this->db->getQueryFactory());
-        $this->assertInternalType('array', $this->db->getScheme());
+        $db = $this->createDatabase();
 
-        $this->db->setAttribute('bar', 'foo');
+        $this->assertInstanceOf(FieldFactory::class, $db->getFieldFactory());
+        $this->assertInstanceOf(SchemeInterface::class, $db->getScheme());
 
-        $this->assertEquals('sqlite', $this->db->getAttribute(PDO::ATTR_DRIVER_NAME));
-        $this->assertEquals('foo', $this->db->getAttribute('bar'));
+        return $db;
     }
 
-    public function testTable()
+    /**
+     * @depends testDatabase
+     */
+    public function testTable(Database $db)
     {
-        $this->assertTrue(isset($this->db->post));
-        $this->assertFalse(isset($this->db->invalid));
+        $this->assertTrue(isset($db->post));
+        $this->assertFalse(isset($db->invalid));
 
-        $post = $this->db->post;
+        $post = $db->post;
 
-        $this->assertInstanceOf('SimpleCrud\\Table', $post);
-        $this->assertInstanceOf('SimpleCrud\\SimpleCrud', $post->getDatabase());
+        $this->assertInstanceOf(Table::class, $post);
+        $this->assertInstanceOf(Database::class, $post->getDatabase());
 
-        $this->assertCount(8, $post->getScheme()['fields']);
+        $this->assertCount(8, $post->getFields());
         $this->assertEquals('post', $post->getName());
-        $this->assertEquals($this->db->getScheme()['post'], $post->getScheme());
     }
 
-    public function dataProviderFields()
+    public function dataProviderFields(): array
     {
         return [
             ['id', 'Integer'],
@@ -72,35 +71,16 @@ EOT
 
     /**
      * @dataProvider dataProviderFields
+     * @depends testDatabase
      */
-    public function testFields($name, $type)
+    public function testFields(string $name, string $type, Database $db)
     {
-        $post = $this->db->post;
+        $post = $db->post;
         $field = $post->$name;
 
-        $this->assertInstanceOf('SimpleCrud\\Fields\\Field', $field);
+        $this->assertInstanceOf(Field::class, $field);
         $this->assertInstanceOf('SimpleCrud\\Fields\\'.$type, $field);
 
-        $this->assertEquals($this->db->post->getScheme()['fields'][$name], $field->getScheme());
-    }
-
-    public function testOnExecuteQuery()
-    {
-        $log = [];
-        $queries = [
-            'SELECT name FROM sqlite_master WHERE (type="table" OR type="view") AND name != "sqlite_sequence"',
-            'pragma table_info(`post`)',
-        ];
-
-        $this->db->onExecute(function ($pdo, $statement, $marks) use (&$log) {
-            $this->assertInstanceOf('PDO', $pdo);
-            $this->assertInstanceOf('PDOStatement', $statement);
-
-            $log[] = $statement->queryString;
-        });
-
-        $post = $this->db->post;
-
-        $this->assertEquals($log, $queries);
+        $this->assertEquals($name, $field->getName());
     }
 }

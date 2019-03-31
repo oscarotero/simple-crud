@@ -2,19 +2,9 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * To normalize float values.
- */
-class Decimal extends Integer
+final class Decimal extends Field
 {
-    /**
-     * Normalize a float.
-     *
-     * @param mixed $number
-     *
-     * @return float|null
-     */
-    protected static function normalize($number)
+    public function format($number): ?float
     {
         return strlen($number) ? (float) $number : null;
     }

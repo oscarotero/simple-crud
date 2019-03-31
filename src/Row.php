@@ -1,210 +1,203 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
 
-use SimpleCrud\Scheme\Scheme;
+use BadMethodCallException;
+use JsonSerializable;
+use RuntimeException;
+use SimpleCrud\Events\BeforeSaveRow;
+use SimpleCrud\Query\Select;
 
 /**
  * Stores the data of an table row.
  */
-class Row extends AbstractRow
+class Row implements JsonSerializable
 {
+    private $table;
     private $values = [];
-    private $relations = [];
-    private $changed = false;
+    private $changes = [];
+    private $data = [];
 
-    /**
-     * {@inheritdoc}
-     */
-    public function __construct(Table $table)
+    public function __construct(Table $table, array $values)
     {
-        parent::__construct($table);
+        $this->table = $table;
 
-        foreach ($table->getFields() as $name => $field) {
-            $this->values[$name] = $field->getDefaultValue();
+        if (empty($values['id'])) {
+            $this->values = $table->getDefaults();
+            $this->changes = $table->getDefaults($values);
+            unset($this->changes['id']);
+        } else {
+            $this->values = $table->getDefaults($values);
         }
     }
 
-    /**
-     * Debug info.
-     * 
-     * @return array
-     */
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         return [
-            'table' => $this->getTable()->getName(),
+            'table' => (string) $this->table,
             'values' => $this->values,
+            'changes' => $this->changes,
+            'data' => $this->data,
         ];
     }
 
-    /**
-     * Return the current cache.
-     * 
-     * @return array
-     */
-    public function getCache()
+    public function __call(string $name, array $arguments): Select
     {
-        return $this->relations;
+        $db = $this->table->getDatabase();
+
+        //Relations
+        if (isset($db->$name)) {
+            return $this->select($db->$name);
+        }
+
+        throw new BadMethodCallException(
+            sprintf('Invalid method call %s', $name)
+        );
+    }
+
+    public function setData(array $data): self
+    {
+        $this->data = $data + $this->data;
+
+        return $this;
     }
 
     /**
-     * Set a new cache.
-     * 
-     * @param array $relations
+     * @param Row|RowCollection|null $row
      */
-    public function setCache(array $relations)
+    public function link(Table $table, $row = null): self
     {
-        return $this->relations = $relations;
+        return $this->setData([$table->getName() => $row]);
     }
 
     /**
-     * Magic method to return properties or load them automatically.
-     *
-     * @param string $name
+     * @see JsonSerializable
      */
-    public function &__get($name)
+    public function jsonSerialize()
     {
-        //It's a field
-        if (array_key_exists($name, $this->values)) {
-            return $this->values[$name];
+        return $this->toArray();
+    }
+
+    /**
+     * Magic method to stringify the values.
+     */
+    public function __toString()
+    {
+        return json_encode($this, JSON_NUMERIC_CHECK);
+    }
+
+    /**
+     * Returns the table associated with this row
+     */
+    public function getTable(): Table
+    {
+        return $this->table;
+    }
+
+    /**
+     * Returns the value of:
+     * - a value field
+     * - a related table
+     */
+    public function &__get(string $name)
+    {
+        if ($name === 'id') {
+            return $this->values['id'];
         }
 
-        //It's a relation
-        if (array_key_exists($name, $this->relations)) {
-            $return = $this->relations[$name] ?: null;
-            return $return;
+        //It's a value
+        if ($valueName = $this->getValueName($name)) {
+            $value = $this->getValue($valueName);
+            return $value;
         }
 
-        //It's a localizable field
-        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+        //It's custom data
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
+        }
 
-        if (!is_null($language)) {
-            $localeName = "{$name}_{$language}";
+        $db = $this->table->getDatabase();
 
-            if (array_key_exists($localeName, $this->values)) {
-                return $this->values[$localeName];
+        if (isset($db->$name)) {
+            $this->setData([
+                $name => $this->select($db->$name)->run(),
+            ]);
+
+            return $this->data[$name];
+        }
+
+        throw new RuntimeException(
+            sprintf('Undefined property "%s" in the table %s', $name, $this->table)
+        );
+    }
+
+    /**
+     * Change the value of
+     * - a field
+     * - a localized field
+     * @param mixed $value
+     */
+    public function __set(string $name, $value)
+    {
+        if ($name === 'id') {
+            if (!is_null($this->values['id']) && !is_null($value)) {
+                throw new RuntimeException('The field "id" cannot be overrided');
             }
+
+            $this->values['id'] = $value;
+
+            return $value;
         }
 
-        //Load the relation
-        $scheme = $this->getTable()->getScheme();
+        //It's a value
+        if ($valueName = $this->getValueName($name)) {
+            if ($this->values[$valueName] === $value) {
+                unset($this->changes[$valueName]);
+            } else {
+                $this->changes[$valueName] = $value;
+            }
 
-        if (isset($scheme['relations'][$name])) {
-            $return = call_user_func([$this, $name])->run() ?: null;
-            $this->relations[$name] = $return;
-            return $return;
+            return $value;
         }
 
-        //Exists as a function
-        if (method_exists($this, $name)) {
-            $return = $this->$name();
-            return $return;
-        }
-
-        throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
+        throw new RuntimeException(
+            sprintf('The field %s does not exists', $name)
+        );
     }
 
     /**
-     * Magic method to store properties.
-     *
-     * @param string $name
-     * @param mixed  $value
+     * Check whether a value is set or not
      */
-    public function __set($name, $value)
+    public function __isset(string $name): bool
     {
-        //It's a field
-        if (array_key_exists($name, $this->values)) {
-            if ($this->values[$name] !== $value) {
-                $this->changed = true;
-            }
+        $valueName = $this->getValueName($name);
 
-            return $this->values[$name] = $value;
-        }
-
-        //It's a localizable field
-        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
-
-        if (!is_null($language)) {
-            $localeName = "{$name}_{$language}";
-
-            if (array_key_exists($localeName, $this->values)) {
-                if ($this->values[$localeName] !== $value) {
-                    $this->changed = true;
-                }
-
-                return $this->values[$localeName] = $value;
-            }
-        }
-
-        //It's a relation
-        $table = $this->getTable();
-        $scheme = $table->getScheme();
-
-        if (!isset($scheme['relations'][$name])) {
-            throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
-        }
-
-        $relation = $scheme['relations'][$name][0];
-
-        //Check types
-        if ($relation === Scheme::HAS_ONE) {
-            if ($value !== null && !($value instanceof self)) {
-                throw new SimpleCrudException(sprintf('Invalid value: %s must be a Row instance or null', $name));
-            }
-        } elseif (!($value instanceof RowCollection)) {
-            throw new SimpleCrudException(sprintf('Invalid value: %s must be a RowCollection', $name));
-        }
-
-        $this->relations[$name] = $value;
+        return (isset($valueName) && !is_null($this->getValue($valueName))) || isset($this->data[$name]);
     }
 
     /**
-     * Magic method to check if a property is defined or not.
-     *
-     * @param string $name Property name
-     *
-     * @return bool
+     * Removes the value of a field
      */
-    public function __isset($name)
+    public function __unset(string $name)
     {
-        $language = $this->getDatabase()->getAttribute(SimpleCrud::ATTR_LOCALE);
+        unset($this->data[$name]);
 
-        if (!is_null($language) && isset($this->values["{$name}_{$language}"])) {
-            return true;
-        }
-
-        return isset($this->values[$name]) || isset($this->relations[$name]);
+        $this->__set($name, null);
     }
 
     /**
-     * {@inheritdoc}
+     * Returns an array with all fields of the row
      */
-    public function toArray($recursive = true, array $bannedEntities = [])
+    public function toArray(): array
     {
-        if (!$recursive) {
-            return $this->values;
-        }
-
-        $table = $this->getTable();
-
-        if (!empty($bannedEntities) && in_array($table->getName(), $bannedEntities)) {
-            return;
-        }
-
-        $bannedEntities[] = $table->getName();
-        $data = $this->values;
-
-        foreach ($this->relations as $name => $value) {
-            if ($value !== null) {
-                $data[$name] = $value->toArray(true, $bannedEntities);
-            }
-        }
-
-        return $data;
+        return $this->changes + $this->values;
     }
 
-    public function edit(array $values)
+    /**
+     * Edit the values using an array
+     */
+    public function edit(array $values): self
     {
         foreach ($values as $name => $value) {
             $this->__set($name, $value);
@@ -214,25 +207,27 @@ class Row extends AbstractRow
     }
 
     /**
-     * Saves this row in the database.
-     *
-     * @return $this
+     * Insert/update the row in the database
      */
-    public function save()
+    public function save(): self
     {
-        if ($this->changed) {
+        if (!empty($this->changes)) {
+            $eventDispatcher = $this->table->getEventDispatcher();
+
+            if ($eventDispatcher) {
+                $eventDispatcher->dispatch(new BeforeSaveRow($this));
+            }
+
             if (empty($this->id)) {
-                $this->id = $this->table->insert()
-                    ->data($this->values, $this->values)
-                    ->run();
+                $this->id = $this->table->insert($this->changes)->run();
             } else {
-                $this->table->update()
-                    ->data($this->values, $this->values)
-                    ->byId($this->id)
-                    ->limit(1)
+                $this->table->update($this->changes)
+                    ->where('id = ', $this->id)
                     ->run();
             }
 
+            $this->values = $this->toArray();
+            $this->changes = [];
             $this->table->cache($this);
         }
 
@@ -240,232 +235,186 @@ class Row extends AbstractRow
     }
 
     /**
-     * Relate this row with other row and save the relation.
-     *
-     * @param Row ...$row
-     *
-     * @return $this
+     * Delete the row in the database
      */
-    public function relate(Row $row)
+    public function delete(): self
     {
-        $table = $this->getTable();
-        $relations = $table->getScheme()['relations'];
-        $rows = [];
+        $id = $this->id;
 
-        foreach (func_get_args() as $row) {
-            $relationTable = $row->getTable();
+        if (!empty($id)) {
+            $this->table->delete()
+                ->where('id = ', $id)
+                ->run();
 
-            if (!isset($relations[$relationTable->getName()])) {
-                throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
-            }
-
-            $relation = $relations[$relationTable->getName()];
-
-            if (!isset($relations[$relation[0]])) {
-                $relations[$relation[0]] = [];
-            }
-
-            $relations[$relation[0]][] = [
-                $relation,
-                $relationTable,
-                $row
-            ];
-        }
-
-        if (isset($relations[Scheme::HAS_ONE])) {
-            foreach ($relations[Scheme::HAS_ONE] as $r) {
-                list($relation, $relationTable, $row) = $r;
-
-                if ($row->id === null) {
-                    $row->save();
-                }
-
-                $this->{$relation[1]} = $row->id;
-                $this->relations[$relationTable->getName()] = $row;
-            }
-
-            $this->save();
-
-            foreach ($relations[Scheme::HAS_ONE] as $r) {
-                list($relation, $relationTable, $row) = $r;
-
-                if ($table->getName() !== $relationTable->getName()) {
-                    $cache = $row->getCache();
-
-                    if (isset($cache[$table->getName()])) {
-                        $cache[$table->getName()][] = $this;
-                        $row->setCache($cache);
-                    }
-                }
-            }
-        }
-
-        if (isset($relations[Scheme::HAS_MANY])) {
-            if ($this->id === null) {
-                $this->save();
-            }
-
-            foreach ($relations[Scheme::HAS_MANY] as $r) {
-                list($relation, $relationTable, $row) = $r;
-
-                $row->{$relation[1]} = $this->id;
-                $row->save();
-
-                if (isset($this->relations[$relationTable->getName()])) {
-                    $this->relations[$relationTable->getName()][] = $row;
-                }
-
-                if ($table->getName() !== $relationTable->getName()) {
-                    $cache = $row->getCache();
-                    $cache[$table->getName()] = $this;
-                    $row->setCache($cache);
-                }
-            }
-        }
-
-        if (isset($relations[Scheme::HAS_MANY_TO_MANY])) {
-            if ($this->id === null) {
-                $this->save();
-            }
-
-            foreach ($relations[Scheme::HAS_MANY_TO_MANY] as $r) {
-                list($relation, $relationTable, $row) = $r;
-
-                $bridge = $this->getDatabase()->{$relation[1]};
-
-                if ($row->id === null) {
-                    $row->save();
-                }
-
-                $bridge
-                    ->insert()
-                    ->duplications()
-                    ->data([
-                        $relation[2] => $this->id,
-                        $relation[3] => $row->id,
-                    ])
-                    ->run();
-
-                if (isset($this->relations[$relationTable->getName()])) {
-                    $this->relations[$relationTable->getName()][] = $row;
-                }
-            }
+            $this->values['id'] = null;
         }
 
         return $this;
     }
 
     /**
-     * Unrelate this row with other row and save it.
-     *
-     * @param Row $row
-     *
-     * @return $this
+     * Relate this row with other rows
      */
-    public function unrelate(Row $row)
+    public function relate(Row ...$rows): self
     {
-        $table = $this->getTable();
-        $relationTable = $row->getTable();
-        $relations = $table->getScheme()['relations'];
+        $table1 = $this->table;
 
-        if (!isset($relations[$relationTable->getName()])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
-        }
+        foreach ($rows as $row) {
+            $table2 = $row->getTable();
 
-        $relation = $relations[$relationTable->getName()];
+            //Has one
+            if ($field = $table1->getJoinField($table2)) {
+                $this->{$field->getName()} = $row->id;
+                continue;
+            }
 
-        if ($relation[0] === Scheme::HAS_ONE) {
-            $row->unrelate($this);
-
-            return $this;
-        }
-
-        if ($relation[0] === Scheme::HAS_MANY) {
-            if ($row->{$relation[1]} === $this->id) {
-                $row->{$relation[1]} = null;
+            //Has many
+            if ($field = $table2->getJoinField($table1)) {
+                $row->{$field->getName()} = $this->id;
                 $row->save();
+                continue;
             }
 
-            if (isset($this->relations[$relationTable->getName()])) {
-                unset($this->relations[$relationTable->getName()][$row->id]);
-            }
-
-            if ($table->getName() !== $relationTable->getName()) {
-                $cache = $row->getCache();
-                $cache[$table->getName()] = null;
-                $row->setCache($cache);
-            }
-
-            return $this;
-        }
-
-        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
-            $bridge = $this->getDatabase()->{$relation[1]};
-
-            $bridge
-                ->delete()
-                ->by($relation[2], $this->id)
-                ->by($relation[3], $row->id)
+            //Has many to many
+            if ($joinTable = $table1->getJoinTable($table2)) {
+                $joinTable->insert([
+                    $joinTable->getJoinField($table1)->getName() => $this->id,
+                    $joinTable->getJoinField($table2)->getName() => $row->id,
+                ])
                 ->run();
 
-            unset($this->relations[$relation[1]]);
-            unset($this->relations[$relationTable->getName()][$row->id]);
+                continue;
+            }
 
-            $cache = $row->getCache();
-            unset($cache[$relation[1]]);
-            unset($cache[$table->getName()][$this->id]);
-            $row->setCache($cache);
+            throw new RuntimeException(
+                sprintf('The tables %s and %s are not related', $table1, $table2)
+            );
         }
+
+        return $this->save();
     }
 
     /**
-     * Unrelate this row with all rows of a specific table.
-     *
-     * @param Table $relationTable
-     *
-     * @return $this
+     * Unrelate this row with other rows
      */
-    public function unrelateAll(Table $relationTable)
+    public function unrelate(Row ...$rows): self
     {
-        $table = $this->getTable();
-        $relations = $table->getScheme()['relations'];
+        $table1 = $this->table;
 
-        if (!isset($relations[$relationTable->getName()])) {
-            throw new SimpleCrudException(sprintf('Invalid relation: %s - %s', $table->getName(), $relationTable->getName()));
+        foreach ($rows as $row) {
+            $table2 = $row->getTable();
+
+            //Has one
+            if ($field = $table1->getJoinField($table2)) {
+                $this->{$field->getName()} = null;
+                continue;
+            }
+
+            //Has many
+            if ($field = $table2->getJoinField($table1)) {
+                $row->{$field->getName()} = null;
+                $row->save();
+                continue;
+            }
+
+            //Has many to many
+            if ($joinTable = $table1->getJoinTable($table2)) {
+                $joinTable->delete()
+                    ->where("{$joinTable->getJoinField($table1)} = ", $this->id)
+                    ->where("{$joinTable->getJoinField($table2)} = ", $row->id)
+                    ->run();
+
+                continue;
+            }
+
+            throw new RuntimeException(
+                sprintf('The tables %s and %s are not related', $table1, $table2)
+            );
         }
 
-        $relation = $relations[$relationTable->getName()];
+        return $this->save();
+    }
 
-        if ($relation[0] === Scheme::HAS_ONE) {
-            $this->{$relation[1]} = null;
-            $this->relations[$relationTable->getName()] = null;
+    /**
+     * Unrelate this row with all rows of other tables
+     */
+    public function unrelateAll(Table ...$tables): self
+    {
+        $table1 = $this->table;
 
-            return $this->save();
-        }
+        foreach ($tables as $table2) {
+            //Has one
+            if ($field = $table1->getJoinField($table2)) {
+                $this->{$field->getName()} = null;
+                continue;
+            }
 
-        if ($relation[0] === Scheme::HAS_MANY) {
-            $relationTable->update()
-                ->data([
-                    $relation[1] => null,
+            //Has many
+            if ($field = $table2->getJoinField($table1)) {
+                $table2->update([
+                    $field->getName() => null,
                 ])
-                ->by($relation[1], $this->id)
+                ->relatedWith($table1)
                 ->run();
+                continue;
+            }
 
-            $this->relations[$relationTable->getName()] = $relationTable->createCollection();
+            //Has many to many
+            if ($joinTable = $table1->getJoinTable($table2)) {
+                $joinTable->delete()
+                    ->where("{$joinTable->getJoinField($table1)} = ", $this->id)
+                    ->where("{$joinTable->getJoinField($table2)} IS NOT NULL")
+                    ->run();
 
-            return $this;
+                continue;
+            }
+
+            throw new RuntimeException(
+                sprintf('The tables %s and %s are not related', $table1, $table2)
+            );
         }
 
-        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
-            $bridge = $this->getDatabase()->{$relation[1]};
+        return $this->save();
+    }
 
-            $bridge
-                ->delete()
-                ->by($relation[2], $this->id)
-                ->run();
-
-            $this->relations[$bridge->getName()] = $bridge->createCollection();
-            $this->relations[$relationTable->getName()] = $relationTable->createCollection();
+    /**
+     * Creates a select query of a table related with this row
+     */
+    public function select(Table $table): Select
+    {
+        //Has one
+        if ($this->table->getJoinField($table)) {
+            return $table->select()->one()->relatedWith($this);
         }
+
+        return $table->select()->relatedWith($this);
+    }
+
+    /**
+     * Return the real field name
+     */
+    private function getValueName(string $name): ?string
+    {
+        if (array_key_exists($name, $this->values)) {
+            return $name;
+        }
+
+        //It's a localizable field
+        $language = $this->table->getDatabase()->getConfig(Database::CONFIG_LOCALE);
+
+        if (!is_null($language)) {
+            $name .= "_{$language}";
+
+            if (array_key_exists($name, $this->values)) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    private function getValue(string $name)
+    {
+        return array_key_exists($name, $this->changes) ? $this->changes[$name] : $this->values[$name];
     }
 }

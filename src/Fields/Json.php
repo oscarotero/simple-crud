@@ -2,32 +2,23 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * To stringify json values before save.
- */
-class Json extends Field
+final class Json extends Field
 {
     protected $config = [
         'assoc' => true,
     ];
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function format($value)
     {
-        if (!is_string($data)) {
-            return json_encode($data);
-        }
-
-        return $data;
+        return empty($value) ? [] : json_decode($value, $this->config['assoc']);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    protected function formatToDatabase($value)
     {
-        return empty($data) ? [] : json_decode($data, $this->config['assoc']);
+        if (!is_string($value)) {
+            return json_encode($value);
+        }
+
+        return $value;
     }
 }

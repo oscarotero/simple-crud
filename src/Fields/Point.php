@@ -2,26 +2,23 @@
 
 namespace SimpleCrud\Fields;
 
-use SimpleCrud\SimpleCrud;
+use Atlas\Query\Insert;
+use Atlas\Query\Update;
 
-/**
- * To slugify values before save.
- */
-class Point extends Field
+final class Point extends Field
 {
     /**
      * {@inheritdoc}
      */
     public function getSelectExpression($as = null)
     {
-        $tableName = $this->table->getName();
-        $fieldName = $this->name;
+        $fieldName = $this->info['name'];
 
         if ($as) {
-            return "asText(`{$tableName}`.`{$fieldName}`) as `{$as}`";
+            return "asText({$this}) as `{$as}`";
         }
 
-        return "asText(`{$tableName}`.`{$fieldName}`) as `{$fieldName}`";
+        return "asText({$this}) as `{$fieldName}`";
     }
 
     /**
@@ -32,14 +29,11 @@ class Point extends Field
         return "PointFromText($mark)";
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    public function format($value): ?array
     {
         //POINT(X Y)
-        if ($data !== null) {
-            $points = explode(' ', substr($data, 6, -1), 2);
+        if ($value !== null) {
+            $points = explode(' ', substr($value, 6, -1), 2);
 
             return [
                 floatval($points[0]),
@@ -48,24 +42,33 @@ class Point extends Field
         }
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function insert(Insert $query, $value)
     {
-        if (self::isValid($data)) {
-            return 'POINT('.implode(' ', $data).')';
+        if (self::isValid($value)) {
+            $value = sprintf('POINT(%s, %s)', $value[0], $value[1]);
+        } else {
+            $value = null;
         }
+
+        $query->set($this->info['name'], $value);
+    }
+
+    public function update(Update $query, $value)
+    {
+        if (self::isValid($value)) {
+            $value = sprintf('POINT(%s, %s)', $value[0], $value[1]);
+        } else {
+            $value = null;
+        }
+
+        $query->set($this->info['name'], $value);
     }
 
     /**
      * Check whether the value is valid before save in the database
-     *
      * @param mixed $data
-     *
-     * @return bool
      */
-    private static function isValid($data)
+    private static function isValid($data): bool
     {
         if (!is_array($data)) {
             return false;

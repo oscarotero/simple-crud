@@ -1,152 +1,350 @@
 <?php
+namespace SimpleCrud\Tests;
 
-use SimpleCrud\SimpleCrud;
+use SimpleCrud\Database;
 
-class QueriesTest extends PHPUnit_Framework_TestCase
+class QueriesTest extends AbstractTestCase
 {
-    private $db;
-
-    public function setUp()
+    private function createDatabase()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
+        return $this->createMysqlDatabase([
+            'DROP DATABASE IF EXISTS `simple_crud`',
+            'CREATE DATABASE `simple_crud`',
+            'USE `simple_crud`',
+            <<<'SQL'
+CREATE TABLE `post` (
+    `id`    int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `title` varchar(100) DEFAULT '',
+    `body`  text,
+    `num`   decimal(10,0) DEFAULT NULL,
+    `point` point DEFAULT NULL,
+    `size`  enum('x-small', 'small', 'medium', 'large', 'x-large'),
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+SQL
+        ]);
+    }
 
-        $this->db->executeTransaction(function ($db) {
-            $db->execute(
-<<<EOT
-CREATE TABLE "post" (
-    `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
-    `title`       TEXT,
-    `body`        TEXT,
-    `num`         REAL
-);
-EOT
-            );
-        });
+    public function testCreation(): Database
+    {
+        $db = $this->createDatabase();
+
+        $this->assertInstanceOf(Database::class, $db);
+
+        return $db;
     }
 
     public function dataProviderQueries()
     {
         return [
-            ['count'],
-            ['delete'],
-            ['insert'],
             ['select'],
-            ['sum'],
+            ['insert'],
             ['update'],
+            ['delete'],
+            ['count'],
+            ['sum'],
+            ['avg'],
+            ['min'],
+            ['max'],
         ];
     }
 
     /**
      * @dataProvider dataProviderQueries
+     * @depends testCreation
      */
-    public function testQueries($name)
+    public function testQueries(string $name, Database $db)
     {
-        $query = $this->db->post->$name();
+        $query = $db->post->$name();
 
-        $this->assertInstanceOf('SimpleCrud\\Queries\\Sqlite\\'.ucfirst($name), $query);
-        $this->assertInstanceOf('SimpleCrud\\Queries\\Query', $query);
+        $this->assertInstanceOf('SimpleCrud\\Query\\'.ucfirst($name), $query);
+        $this->assertInstanceOf('SimpleCrud\\Query\\QueryInterface', $query);
     }
 
-    public function testSelect()
+    /**
+     * @depends testCreation
+     */
+    public function testSelect(Database $db)
     {
-        $query = $this->db->post->select()
+        $statement = $db->post->select()
             ->one()
-            ->where('title NOT NULL')
-            ->where('id = 1 OR id = 2')
-            ->by('body', 'content')
+            ->where('title IS NOT NULL')
+            ->where('id IN ', [1, 2])
+            ->where('body = ', 'content')
             ->offset(3)
-            ->orderBy('title');
+            ->orderBy('title')
+            ->__invoke();
 
-        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num` FROM `post` WHERE (title NOT NULL) AND (id = 1 OR id = 2) AND (`post`.`body` = :body) ORDER BY title LIMIT 3, 1', (string) $query);
+        $this->assertQuery(
+            $db,
+            [1, 2, 'content'],
+<<<'SQL'
+SELECT
+    `post`.`id`,
+    `post`.`title`,
+    `post`.`body`,
+    `post`.`num`,
+    `post`.`point`,
+    `post`.`size`
+FROM
+    `post`
+WHERE
+    title IS NOT NULL
+    AND id IN (:__1__, :__2__)
+    AND body = :__3__
+ORDER BY
+    title
+LIMIT 1 OFFSET 3
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
-    public function testSelectPage()
+    /**
+     * @depends testCreation
+     */
+    public function testSelectPage(Database $db)
     {
-        $query = $this->db->post->select()
+        $statement = $db->post->select()
             ->one()
-            ->where('title NOT NULL')
-            ->where('id = 1 OR id = 2')
-            ->page(2, 5)
-            ->orderBy('title');
+            ->where('title IS NOT NULL')
+            ->where('id IN ', [1, 2])
+            ->page(2)
+            ->perPage(5)
+            ->orderBy('title')
+            ->__invoke();
 
-        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num` FROM `post` WHERE (title NOT NULL) AND (id = 1 OR id = 2) ORDER BY title LIMIT 5, 5', (string) $query);
+        $this->assertQuery(
+            $db,
+            [1, 2],
+<<<'SQL'
+SELECT
+    `post`.`id`,
+    `post`.`title`,
+    `post`.`body`,
+    `post`.`num`,
+    `post`.`point`,
+    `post`.`size`
+FROM
+    `post`
+WHERE
+    title IS NOT NULL
+    AND id IN (:__1__, :__2__)
+ORDER BY
+    title
+LIMIT 5 OFFSET 5
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
-    public function testInsert()
+    /**
+     * @depends testCreation
+     */
+    public function testInsert(Database $db)
     {
-        $query = $this->db->post->insert()
-            ->data([
+        $statement = $db->post->insert([
                 'title' => 'Title',
                 'body' => 'Body',
-            ]);
-
-        $this->assertEquals('INSERT INTO `post` (`title`, `body`) VALUES (:title, :body)', (string) $query);
-
-        $query->duplications();
-
-        $this->assertEquals('INSERT OR REPLACE INTO `post` (`title`, `body`) VALUES (:title, :body)', (string) $query);
-    }
-
-    public function testUpdate()
-    {
-        $query = $this->db->post->update()
-            ->data([
-                'title' => 'Title',
-                'body' => 'Body',
+                'point' => [222, 333],
             ])
-            ->where('id = 3');
+            ->__invoke();
 
-        $this->assertEquals('UPDATE `post` SET `title` = :__title, `body` = :__body WHERE (id = 3)', (string) $query);
+        $this->assertQuery(
+            $db,
+            ['Title', 'Body'],
+<<<'SQL'
+INSERT INTO `post` (
+    `title`,
+    `body`,
+    `point`
+) VALUES (
+    :title,
+    :body,
+    POINT(222, 333)
+)
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
-    public function testDelete()
+    /**
+     * @depends testCreation
+     */
+    public function testUpdate(Database $db)
     {
-        $query = $this->db->post->delete()
-            ->where('id = 3');
-
-        $this->assertEquals('DELETE FROM `post` WHERE (id = 3)', (string) $query);
-    }
-
-    public function testCount()
-    {
-        $query = $this->db->post->count()
-            ->where('id = 3');
-
-        $this->assertEquals('SELECT COUNT(*) FROM `post` WHERE (id = 3)', (string) $query);
-    }
-
-    public function testSum()
-    {
-        $this->db->post->insert()
-            ->data([
+        $statement = $db->post->update([
                 'title' => 'Title',
                 'body' => 'Body',
-                'num' => 0.3
+                'point' => [23, 45],
             ])
-            ->run();
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $query = $this->db->post->sum()
-            ->field('id')
-            ->where('id < 3');
+        $this->assertQuery(
+            $db,
+            ['Title', 'Body', 3],
+<<<'SQL'
+UPDATE `post`
+SET
+    `title` = :title,
+    `body` = :body,
+    `point` = POINT(23, 45)
+WHERE
+    id = :__1__
+SQL
+        );
 
-        $this->assertEquals('SELECT SUM(`id`) FROM `post` WHERE (id < 3)', (string) $query);
-        $this->assertInternalType('int', $query->run());
-
-        $query = $this->db->post->sum()
-            ->field('num');
-
-        $this->assertEquals('SELECT SUM(`num`) FROM `post`', (string) $query);
-        $this->assertInternalType('float', $query->run());
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 
-    public function testDefaultQueryModifier()
+    /**
+     * @depends testCreation
+     */
+    public function testDelete(Database $db)
     {
-        $this->db->post->addQueryModifier('select', function ($query) {
-            $query->where('title NOT NULL');
-        });
+        $statement = $db->post->delete()
+            ->where('id = ', 3)
+            ->__invoke();
 
-        $query = $this->db->post->select()->one();
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
+DELETE FROM `post`
+WHERE
+    id = :__1__
+SQL
+        );
 
-        $this->assertEquals('SELECT `post`.`id`, `post`.`title`, `post`.`body`, `post`.`num` FROM `post` WHERE (title NOT NULL) LIMIT 1', (string) $query);
+        $this->assertInstanceOf('PDOStatement', $statement);
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testCount(Database $db)
+    {
+        $statement = $db->post->count()
+            ->where('id = ', 3)
+            ->__invoke();
+
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
+SELECT
+    COUNT(id)
+FROM
+    `post`
+WHERE
+    id = :__1__
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testSum(Database $db)
+    {
+        $statement = $db->post->sum('id')
+            ->where('id = ', 3)
+            ->__invoke();
+
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
+SELECT
+    SUM(id)
+FROM
+    `post`
+WHERE
+    id = :__1__
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testMax(Database $db)
+    {
+        $statement = $db->post->max('id')
+            ->where('id = ', 3)
+            ->__invoke();
+
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
+SELECT
+    MAX(id)
+FROM
+    `post`
+WHERE
+    id = :__1__
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testMin(Database $db)
+    {
+        $statement = $db->post->min('id')
+            ->where('id = ', 3)
+            ->__invoke();
+
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
+SELECT
+    MIN(id)
+FROM
+    `post`
+WHERE
+    id = :__1__
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
+    }
+
+    /**
+     * @depends testCreation
+     */
+    public function testAvg(Database $db)
+    {
+        $statement = $db->post->avg('id')
+            ->where('id = ', 3)
+            ->__invoke();
+
+        $this->assertQuery(
+            $db,
+            [3],
+<<<'SQL'
+SELECT
+    AVG(id)
+FROM
+    `post`
+WHERE
+    id = :__1__
+SQL
+        );
+
+        $this->assertInstanceOf('PDOStatement', $statement);
     }
 }

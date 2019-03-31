@@ -1,104 +1,88 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
+
+use SimpleCrud\Fields\Boolean;
+use SimpleCrud\Fields\Date;
+use SimpleCrud\Fields\Datetime;
+use SimpleCrud\Fields\Decimal;
+use SimpleCrud\Fields\Field;
+use SimpleCrud\Fields\FieldInterface;
+use SimpleCrud\Fields\Integer;
+use SimpleCrud\Fields\Json;
+use SimpleCrud\Fields\Point;
+use SimpleCrud\Fields\Set;
 
 /**
  * Class to create instances of fields.
  */
-class FieldFactory implements FieldFactoryInterface
+final class FieldFactory implements FieldFactoryInterface
 {
-    protected $namespaces = ['SimpleCrud\\Fields\\'];
-    protected $defaultType = 'Field';
-
-    protected $nameMap = [
-        'id' => 'Integer',
-        'active' => 'Boolean',
-        'pubdate' => 'Datetime',
+    private $defaultType = Field::class;
+    private $fields = [
+        Boolean::class => [
+            'names' => ['active', '/^(is|has)[A-Z]/'],
+            'types' => ['boolean'],
+            'config' => [],
+        ],
+        Date::class => [
+            'names' => [],
+            'types' => ['date'],
+            'config' => [],
+        ],
+        Datetime::class => [
+            'names' => ['pubdate', '/[a-z]At$/'],
+            'types' => ['datetime'],
+            'config' => [],
+        ],
+        Decimal::class => [
+            'names' => [],
+            'types' => ['decimal', 'float', 'real'],
+            'config' => [],
+        ],
+        Field::class => [
+            'names' => [],
+            'types' => [],
+            'config' => [],
+        ],
+        Integer::class => [
+            'names' => ['id','/_id$/'],
+            'types' => ['bigint', 'int', 'mediumint', 'smallint', 'tinyint', 'year'],
+            'config' => [],
+        ],
+        Json::class => [
+            'names' => [],
+            'types' => ['json'],
+            'config' => [],
+        ],
+        Point::class => [
+            'names' => [],
+            'types' => ['point'],
+            'config' => [],
+        ],
+        Set::class => [
+            'names' => [],
+            'types' => ['set'],
+            'config' => [],
+        ],
     ];
 
-    protected $regexMap = [
-        //relation fields (post_id)
-        '/_id$/' => 'Integer',
-
-        //flags (isActive, inHome)
-        '/^(is|has)[A-Z]/' => 'Boolean',
-
-        //time related (createdAt, publishedAt)
-        '/[a-z]At$/' => 'Datetime',
-    ];
-
-    protected $typeMap = [
-        'bigint' => 'Integer',
-        'boolean' => 'Boolean',
-        'date' => 'Date',
-        'datetime' => 'Datetime',
-        'decimal' => 'Decimal',
-        'float' => 'Decimal',
-        'real' => 'Decimal', //sqlite
-        'int' => 'Integer',
-        'mediumint' => 'Integer',
-        'set' => 'Set',
-        'point' => 'Point',
-        'smallint' => 'Integer',
-        'tinyint' => 'Integer',
-        'year' => 'Integer',
-        'json' => 'Json',
-    ];
-
-    /**
-     * Set the namespace for the fields classes.
-     *
-     * @param string $namespace
-     *
-     * @return self
-     */
-    public function addNamespace($namespace)
+    public function defineField(string $className, array $definition): self
     {
-        array_unshift($this->namespaces, $namespace);
+        if (isset($this->fields[$className])) {
+            $this->fields[$className] = $definition;
+            return $this;
+        }
+
+        $this->fields = [$className => $definition] + $this->fields;
 
         return $this;
     }
 
-    /**
-     * Map names with field types.
-     *
-     * @param array $map
-     *
-     * @return self
-     */
-    public function mapNames(array $map)
+    public function getFieldDefinition(string $className): ?array
     {
-        $this->nameMap = $map + $this->nameMap;
-
-        return $this;
-    }
-
-    /**
-     * Map names with field types using regexp.
-     *
-     * @param array $map
-     *
-     * @return self
-     */
-    public function mapRegex(array $map)
-    {
-        $this->regexMap = $map + $this->regexMap;
-
-        return $this;
-    }
-
-    /**
-     * Map db field types with classes.
-     *
-     * @param array $map
-     *
-     * @return self
-     */
-    public function mapTypes(array $map)
-    {
-        $this->typeMap = $map + $this->typeMap;
-
-        return $this;
+        return $this->fields[$className] ?? null;
     }
 
     /**
@@ -106,22 +90,19 @@ class FieldFactory implements FieldFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function get(Table $table, $name)
+    public function get(Table $table, array $info): FieldInterface
     {
-        $scheme = $table->getScheme()['fields'];
+        $className = $this->getClassName($info['name'], $info['type']);
 
-        if (!isset($scheme[$name])) {
-            throw new SimpleCrudException(sprintf('The field "%s" does not exist in the table "%s"', $name, $table->getName()));
-        }
+        if (class_exists($className)) {
+            $field = new $className($table, $info);
+            $config = $this->fields[$className]['config'] ?? [];
 
-        $className = $this->getClassName($name, $scheme[$name]['type']) ?: $this->defaultType;
-
-        foreach ($this->namespaces as $namespace) {
-            $class = $namespace.$className;
-
-            if (class_exists($class)) {
-                return new $class($table, $name);
+            foreach ($config as $name => $value) {
+                $field->setConfig($name, $value);
             }
+
+            return $field;
         }
 
         throw new SimpleCrudException("No field class found for '{$className}'");
@@ -129,26 +110,21 @@ class FieldFactory implements FieldFactoryInterface
 
     /**
      * Get the field class name.
-     *
-     * @param string $name
-     * @param string $type
-     *
-     * @return string|null
      */
-    protected function getClassName($name, $type)
+    private function getClassName(string $name, string $type): ?string
     {
-        if (isset($this->nameMap[$name])) {
-            return $this->nameMap[$name];
-        }
+        foreach ($this->fields as $className => $definition) {
+            foreach ($definition['names'] as $defName) {
+                if ($defName === $name || ($defName[0] === '/' && preg_match($defName, $name))) {
+                    return $className;
+                }
+            }
 
-        foreach ($this->regexMap as $regex => $class) {
-            if (preg_match($regex, $name)) {
-                return $class;
+            if (in_array($type, $definition['types'])) {
+                return $className;
             }
         }
 
-        if (isset($this->typeMap[$type])) {
-            return $this->typeMap[$type];
-        }
+        return $this->defaultType;
     }
 }

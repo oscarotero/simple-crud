@@ -2,119 +2,64 @@
 
 namespace SimpleCrud\Fields;
 
+use Atlas\Query\Insert;
+use Atlas\Query\Update;
 use SimpleCrud\Table;
 
-/**
- * Generic field.
- */
-class Field
+class Field implements FieldInterface
 {
     protected $table;
-    protected $name;
+    protected $info;
     protected $config = [];
 
-    /**
-     * @param Table $table
-     * @param string $name
-     */
-    public function __construct(Table $table, $name)
+    public function __construct(Table $table, array $info)
     {
         $this->table = $table;
-        $this->name = $name;
+        $this->info = $info;
     }
 
-    /**
-     * Converts the data to save in the database
-     *
-     * @param mixed $data
-     *
-     * @return mixed
-     */
-    public function dataToDatabase($data)
+    public function getName(): string
     {
-        if ($data === '' && $this->getScheme()['null']) {
+        return $this->info['name'];
+    }
+
+    public function __toString()
+    {
+        return sprintf('%s.`%s`', $this->table, $this->info['name']);
+    }
+
+    public function insert(Insert $query, $value)
+    {
+        $query->column($this->info['name'], $this->formatToDatabase($value));
+    }
+
+    public function update(Update $query, $value)
+    {
+        $query->column($this->info['name'], $this->formatToDatabase($value));
+    }
+
+    public function format($value)
+    {
+        if ($value === '' && $this->info['null']) {
             return;
         }
 
-        return $data;
+        return $value;
     }
 
-    /**
-     * Converts the data to be used
-     *
-     * @param mixed $data
-     *
-     * @return mixed
-     */
-    public function dataFromDatabase($data)
-    {
-        return $data;
-    }
-
-    /**
-     * Returns the field scheme
-     *
-     * @return array
-     */
-    public function getScheme()
-    {
-        return $this->table->getScheme()['fields'][$this->name];
-    }
-
-    /**
-     * Returns the expression used to get the value from the database
-     *
-     * @param string|null $as
-     *
-     * @return string
-     */
-    public function getSelectExpression($as = null)
-    {
-        $tableName = $this->table->getName();
-        $fieldName = $this->name;
-
-        if ($as) {
-            return "`{$tableName}`.`{$fieldName}` as `{$as}`";
-        }
-
-        return "`{$tableName}`.`{$fieldName}`";
-    }
-
-    /**
-     * Returns the expression used to save the value in the database
-     *
-     * @param string $mark
-     *
-     * @return string
-     */
-    public function getValueExpression($mark)
-    {
-        return $mark;
-    }
-
-    /**
-     * Returns a config value
-     *
-     * @return mixed
-     */
-    public function getConfig($name)
+    public function getConfig(string $name)
     {
         return isset($this->config[$name]) ? $this->config[$name] : null;
     }
 
-    /**
-     * Edit a config value
-     *
-     * @param string $name
-     * @param mixed $value
-     *
-     * @return self
-     */
-    public function setConfig($name, $value)
+    public function setConfig(string $name, $value)
     {
         $this->config[$name] = $value;
+    }
 
-        return $this;
+    protected function formatToDatabase($value)
+    {
+        return $this->format($value);
     }
 
     /**

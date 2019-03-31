@@ -1,54 +1,48 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
 
 use ArrayAccess;
-use Closure;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use SimpleCrud\Events\BeforeCreateRow;
+use SimpleCrud\Fields\FieldInterface;
+use SimpleCrud\Query\QueryInterface;
 
 /**
  * Manages a database table.
  *
- * @property Fields\Field $id
+ * @property FieldInterface $id
  */
 class Table implements ArrayAccess
 {
     private $name;
     private $db;
-    private $row;
-    private $rowCollection;
     private $cache = [];
-    private $queriesModifiers = [];
     private $fields = [];
+    private $defaults = [];
+    private $eventDispatcher;
 
-    /**
-     * Constructor.
-     *
-     * @param SimpleCrud $db
-     * @param string     $name
-     */
-    final public function __construct(SimpleCrud $db, $name)
+    protected const ROW_CLASS = Row::class;
+    protected const ROWCOLLECTION_CLASS = RowCollection::class;
+
+    final public function __construct(Database $db, string $name)
     {
         $this->db = $db;
         $this->name = $name;
 
         $fieldFactory = $db->getFieldFactory();
-        
-        foreach (array_keys($this->getScheme()['fields']) as $name) {
-            $this->fields[$name] = $fieldFactory->get($this, $name);
+        $fields = $db->getScheme()->getTableFields($name);
+
+        foreach ($fields as $info) {
+            $field = $fieldFactory->get($this, $info);
+
+            $this->fields[$field->getName()] = $field;
+            $this->defaults[$field->getName()] = null;
         }
-
-        $this->setRow(new Row($this));
-        $this->setRowCollection(new RowCollection($this));
-
-        $this->init();
     }
 
-    /**
-     * Debug info.
-     * 
-     * @return array
-     */
-    public function __debugInfo()
+    public function __debugInfo(): array
     {
         return [
             'name' => $this->name,
@@ -56,82 +50,114 @@ class Table implements ArrayAccess
         ];
     }
 
-    /**
-     * Callback used to init the table.
-     */
-    protected function init()
+    public function __toString()
     {
+        return "`{$this->name}`";
+    }
+
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): self
+    {
+        $this->eventDispatcher = $eventDispatcher;
+
+        return $this;
+    }
+
+    public function getEventDispatcher(): ?EventDispatcherInterface
+    {
+        return $this->eventDispatcher;
+    }
+
+    /**
+     * Get the devault values used in new rows
+     */
+    public function getDefaults(array $overrides = null): array
+    {
+        if (empty($overrides)) {
+            return $this->defaults;
+        }
+
+        foreach ($overrides as $name => &$value) {
+            if (!isset($this->fields[$name])) {
+                throw new SimpleCrudException(
+                    sprintf('The field "%s" does not exist in the table %s', $name, $this)
+                );
+            }
+
+            $value = $this->fields[$name]->format($value);
+        }
+
+        return $overrides + $this->defaults;
     }
 
     /**
      * Store a row in the cache.
-     * 
-     * @param Row $row
      */
-    public function cache(Row $row)
+    public function cache(Row $row): Row
     {
-        $this->cache[$row->id] = $row;
+        if ($row->id) {
+            $this->cache[$row->id] = $row;
+        }
+
+        return $row;
     }
 
     /**
      * Clear the current cache.
      */
-    public function clearCache()
+    public function clearCache(): self
     {
         $this->cache = [];
+
+        return $this;
     }
 
     /**
-     * Register a new query modifier.
-     * 
-     * @param string   $name
-     * @param callable $modifier
+     * Returns whether the id is cached or not
+     * @param mixed $id
      */
-    public function addQueryModifier($name, callable $modifier)
+    public function isCached($id): bool
     {
-        if (!isset($this->queriesModifiers[$name])) {
-            $this->queriesModifiers[$name] = [];
+        return array_key_exists($id, $this->cache);
+    }
+
+    /**
+     * Returns a row from the cache.
+     * @param mixed $id
+     */
+    public function getCached($id): ?Row
+    {
+        if (!$this->isCached($id)) {
+            return null;
         }
 
-        $this->queriesModifiers[$name][] = $modifier;
+        $row = $this->cache[$id];
+
+        if ($row && !$row->id) {
+            return $this->cache[$id] = null;
+        }
+
+        return $row;
     }
 
     /**
      * Magic method to create queries related with this table.
-     *
-     * @param string $name
-     * @param array  $arguments
-     *
-     * @throws SimpleCrudException
-     *
-     * @return Queries\Query|null
      */
-    public function __call($name, $arguments)
+    public function __call(string $name, array $arguments): QueryInterface
     {
-        $query = $this->getDatabase()->getQueryFactory()->get($this, $name);
+        $class = sprintf('SimpleCrud\\Query\\%s', ucfirst($name));
 
-        if (isset($this->queriesModifiers[$name])) {
-            foreach ($this->queriesModifiers[$name] as $modifier) {
-                $modifier($query);
-            }
-        }
-
-        return $query;
+        return $class::create($this, $arguments);
     }
 
     /**
      * Magic method to get the Field instance of a table field
-     *
-     * @param string $name The field name
-     *
-     * @throws SimpleCrudException
-     *
-     * @return Fields\Field
      */
-    public function __get($name)
+    public function __get(string $name): FieldInterface
     {
         if (!isset($this->fields[$name])) {
-            throw new SimpleCrudException(sprintf('The field "%s" does not exist in the table "%s"', $name, $this->name));
+            throw new SimpleCrudException(
+                sprintf('The field `%s` does not exist in the table %s', $name, $this)
+            );
         }
 
         return $this->fields[$name];
@@ -139,12 +165,8 @@ class Table implements ArrayAccess
 
     /**
      * Magic method to check if a field exists or not.
-     *
-     * @param string $name
-     *
-     * @return bool
      */
-    public function __isset($name)
+    public function __isset(string $name): bool
     {
         return isset($this->fields[$name]);
     }
@@ -153,17 +175,16 @@ class Table implements ArrayAccess
      * Check if a row with a specific id exists.
      *
      * @see ArrayAccess
-     *
-     * @return bool
+     * @param mixed $offset
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
-        if (array_key_exists($offset, $this->cache)) {
-            return !empty($this->cache[$offset]);
+        if ($this->isCached($offset)) {
+            return $this->getCached($offset) !== null;
         }
 
         return $this->count()
-            ->byId($offset)
+            ->where('id = ', $offset)
             ->limit(1)
             ->run() === 1;
     }
@@ -173,17 +194,17 @@ class Table implements ArrayAccess
      *
      * @see ArrayAccess
      *
-     * @return Row|null
+     * @param mixed $offset
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): ?Row
     {
-        if (array_key_exists($offset, $this->cache)) {
-            return $this->cache[$offset];
+        if ($this->isCached($offset)) {
+            return $this->getCached($offset);
         }
 
         return $this->cache[$offset] = $this->select()
             ->one()
-            ->byId($offset)
+            ->where('id = ', $offset)
             ->run();
     }
 
@@ -191,39 +212,30 @@ class Table implements ArrayAccess
      * Store a row with a specific id.
      *
      * @see ArrayAccess
+     * @param mixed $offset
+     * @param mixed $value
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): Row
     {
         //Insert on missing offset
         if ($offset === null) {
             $value['id'] = null;
 
-            $this->insert()
-                ->data($value)
-                ->run();
-
-            return;
+            return $this->create($value)->save();
         }
 
-        //Update if the element is cached
-        if (isset($this->cache[$offset])) {
-            $row = $this->cache[$offset];
+        //Update if the element is cached and exists
+        $row = $this->getCached($offset);
 
-            foreach ($value as $name => $val) {
-                $row->$name = $val;
-            }
-
-            $row->save();
-
-            return;
+        if ($row) {
+            return $row->edit($value)->save();
         }
 
         //Update if the element it's not cached
-        if ($this->offsetExists($offset)) {
+        if (!$this->isCached($row)) {
             $this->update()
-                ->data($value)
-                ->byId($offset)
-                ->limit(1)
+                ->columns($value)
+                ->where('id = ', $offset)
                 ->run();
         }
     }
@@ -232,33 +244,62 @@ class Table implements ArrayAccess
      * Remove a row with a specific id.
      *
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetUnset($offset)
     {
-        unset($this->cache[$offset]);
+        $this->cache[$offset] = null;
 
         $this->delete()
-            ->byId($offset)
-            ->limit(1)
+            ->where('id = ', $offset)
             ->run();
     }
 
     /**
      * Returns the table name.
-     *
-     * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
     /**
-     * Returns the SimpleCrud instance associated with this table.
-     *
-     * @return SimpleCrud
+     * Returns the foreign key name.
      */
-    public function getDatabase()
+    public function getForeignKey(): string
+    {
+        return "{$this->name}_id";
+    }
+
+    /**
+     * Returns the foreign key.
+     */
+    public function getJoinField(Table $table): ?FieldInterface
+    {
+        $field = $table->getForeignKey();
+
+        return $this->fields[$field] ?? null;
+    }
+
+    public function getJoinTable(Table $table): ?Table
+    {
+        $name1 = $this->getName();
+        $name2 = $table->getName();
+        $name = $name1 < $name2 ? "{$name1}_{$name2}" : "{$name2}_{$name1}";
+
+        $joinTable = $this->db->{$name} ?? null;
+
+        if ($joinTable && $joinTable->getJoinField($this) && $joinTable->getJoinField($table)) {
+            return $joinTable;
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the Database instance associated with this table.
+     */
+    public function getDatabase(): Database
     {
         return $this->db;
     }
@@ -266,198 +307,45 @@ class Table implements ArrayAccess
     /**
      * Returns all fields.
      *
-     * @return Fields\Field[]
+     * @return FieldInterface[]
      */
     public function getFields()
     {
         return $this->fields;
     }
 
-    /**
-     * Returns the table scheme.
-     *
-     * @return array
-     */
-    public function getScheme()
+    public function create(array $data = [], bool $fromDatabase = false): Row
     {
-        return $this->db->getScheme()[$this->name];
-    }
-
-    /**
-     * Returns an attribute.
-     *
-     * @param string $name
-     *
-     * @return null|mixed
-     */
-    public function getAttribute($name)
-    {
-        return $this->db->getAttribute($name);
-    }
-
-    /**
-     * Defines the Row class used by this table.
-     *
-     * @param Row $row
-     */
-    public function setRow(Row $row)
-    {
-        $this->row = $row;
-    }
-
-    /**
-     * Register a custom method to the row.
-     *
-     * @param string  $name
-     * @param Closure $method
-     *
-     * @return self
-     */
-    public function setRowMethod($name, Closure $method)
-    {
-        $this->row->setMethod($name, $method);
-
-        return $this;
-    }
-
-    /**
-     * Defines the RowCollection class used by this table.
-     *
-     * @param RowCollection $rowCollection
-     */
-    public function setRowCollection(RowCollection $rowCollection)
-    {
-        $this->rowCollection = $rowCollection;
-    }
-
-    /**
-     * Register a custom method to the rowCollections.
-     *
-     * @param string  $name
-     * @param Closure $method
-     *
-     * @return self
-     */
-    public function setRowCollectionMethod($name, Closure $method)
-    {
-        $this->rowCollection->setMethod($name, $method);
-
-        return $this;
-    }
-
-    /**
-     * Creates a new row instance.
-     *
-     * @param array $data The values of the row
-     *
-     * @return Row
-     */
-    public function create(array $data = [])
-    {
-        if (isset($data['id']) && isset($this->cache[$data['id']]) && is_object($this->cache[$data['id']])) {
-            return $this->cache[$data['id']];
+        if (isset($data['id']) && ($row = $this->getCached($data['id']))) {
+            return $row;
         }
 
-        $row = clone $this->row;
+        $eventDispatcher = $this->getEventDispatcher();
 
-        foreach ($data as $name => $value) {
-            $row->$name = $value;
+        if ($eventDispatcher) {
+            $event = new BeforeCreateRow($data);
+            $eventDispatcher->dispatch($event);
+            $data = $event->getData();
         }
 
-        return $row;
+        $class = self::ROW_CLASS;
+        return $this->cache(new $class($this, $data));
     }
 
-    /**
-     * Creates a new rowCollection instance.
-     *
-     * @param array $data Rows added to this collection
-     *
-     * @return RowCollection
-     */
-    public function createCollection(array $data = [])
+    public function createCollection(array $rows = [], bool $fromDatabase = false): RowCollection
     {
-        $rowCollection = clone $this->rowCollection;
-
-        foreach ($data as $row) {
-            $rowCollection[] = $row;
+        if ($fromDatabase) {
+            $rows = $this->createCollection(
+                array_map(
+                    function ($data): Row {
+                        return $this->create($data, true);
+                    },
+                    $rows
+                )
+            );
         }
 
-        return $rowCollection;
-    }
-
-    /**
-     * Default data converter/validator from database.
-     *
-     * @param array $data The values before insert to database
-     * @param bool  $new  True for inserts, false for updates
-     */
-    public function dataToDatabase(array $data, $new)
-    {
-        return $data;
-    }
-
-    /**
-     * Default data converter from database.
-     *
-     * @param array $data The database format values
-     */
-    public function dataFromDatabase(array $data)
-    {
-        return $data;
-    }
-
-    /**
-     * Prepares the data from the result of a database selection.
-     *
-     * @param array $data
-     *
-     * @return Row
-     */
-    public function createFromDatabase(array $data)
-    {
-        //Get from cache
-        if (isset($this->cache[$data['id']]) && is_object(isset($this->cache[$data['id']]))) {
-            return $this->cache[$data['id']];
-        }
-
-        foreach ($this->fields as $name => $field) {
-            $data[$name] = $field->dataFromDatabase($data[$name]);
-        }
-
-        if (!is_array($data = $this->dataFromDatabase(array_intersect_key($data, $this->fields)))) {
-            throw new SimpleCrudException('Data not valid');
-        }
-
-        $row = $this->create($data);
-
-        $this->cache($row);
-
-        return $row;
-    }
-
-    /**
-     * Prepares the data before save into database (used by update and insert).
-     *
-     * @param array $data
-     * @param bool  $new
-     *
-     * @return array
-     */
-    public function prepareDataToDatabase(array $data, $new)
-    {
-        if (!is_array($data = $this->dataToDatabase($data, $new))) {
-            throw new SimpleCrudException('Data not valid');
-        }
-
-        if (array_diff_key($data, $this->fields)) {
-            throw new SimpleCrudException('Invalid fields');
-        }
-
-        //Transform data before save to database
-        foreach ($data as $key => &$value) {
-            $value = $this->fields[$key]->dataToDatabase($value);
-        }
-
-        return $data;
+        $class = self::ROWCOLLECTION_CLASS;
+        return new $class($this, ...$rows);
     }
 }

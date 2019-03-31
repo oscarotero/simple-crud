@@ -1,45 +1,94 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
 
-use SimpleCrud\Scheme\Scheme;
 use ArrayAccess;
-use Iterator;
+use BadMethodCallException;
 use Countable;
+use Iterator;
+use JsonSerializable;
+use RuntimeException;
+use SimpleCrud\Query\Select;
 
 /**
  * Stores a collection of rows.
  */
-class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Countable
+class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializable
 {
+    private $table;
     private $rows = [];
-    private $loadedRelations = [];
+    private $data = [];
 
-    /**
-     * Debug info.
-     * 
-     * @return array
-     */
-    public function __debugInfo()
+    public function __construct(Table $table, Row ...$rows)
+    {
+        $this->table = $table;
+
+        foreach ($rows as $row) {
+            $this->rows[$row->id] = $row;
+        }
+    }
+
+    public function __debugInfo(): array
     {
         return [
-            'table' => $this->getTable()->getName(),
+            'table' => (string) $this->table,
             'rows' => $this->rows,
         ];
     }
 
-    /**
-     * Magic method to get properties from all rows.
-     *
-     * @see self::get()
-     */
-    public function __get($name)
+    public function __call(string $name, array $arguments): Select
     {
-        $table = $this->getTable();
-        $scheme = $table->getScheme();
+        $db = $this->table->getDatabase();
 
+        //Relations
+        if (isset($db->$name)) {
+            return $this->select($db->$name);
+        }
+
+        throw new BadMethodCallException(
+            sprintf('Invalid method call %s', $name)
+        );
+    }
+
+    public function setData(array $data): self
+    {
+        $this->data = $data + $this->data;
+
+        return $this;
+    }
+
+    /**
+     * @see JsonSerializable
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
+    }
+
+    /**
+     * Magic method to stringify the values.
+     */
+    public function __toString()
+    {
+        return json_encode($this, JSON_NUMERIC_CHECK);
+    }
+
+    /**
+     * Returns the table associated with this row
+     */
+    public function getTable(): Table
+    {
+        return $this->table;
+    }
+
+    /**
+     * Return the value of all rows
+     */
+    public function __get(string $name)
+    {
         //It's a field
-        if (isset($scheme['fields'][$name])) {
+        if (isset($this->table->{$name})) {
             $result = [];
 
             foreach ($this->rows as $id => $row) {
@@ -49,135 +98,145 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
             return $result;
         }
 
-        if (!isset($scheme['relations'][$name])) {
-            throw new SimpleCrudException(sprintf('Undefined property "%s"', $name));
+        //It's a custom data
+        if (array_key_exists($name, $this->data)) {
+            return $this->data[$name];
         }
 
-        $relation = $scheme['relations'][$name];
-        $related = $this->getDatabase()->$name;
-        $result = $related->createCollection();
+        $db = $this->table->getDatabase();
 
-        //It's already loaded relation
-        if (in_array($name, $this->loadedRelations, true)) {
-            if ($relation[0] === Scheme::HAS_ONE) {
-                foreach ($this->rows as $row) {
-                    $result[] = $row->$name;
-                }
+        if (isset($db->$name)) {
+            $table = $db->$name;
+            $joinTable = $this->table->getJoinTable($table);
 
-                return $result;
-            }
+            //Many-to-many
+            if (!$this->count()) {
+                $result = $table->createCollection();
 
-            foreach ($this->rows as $row) {
-                foreach ($row->$name as $r) {
-                    $result[] = $r;
-                }
+                $this->link($table, $result);
+            } elseif ($joinTable) {
+                $joinRows = $this->select($joinTable)->run();
+                $result = $joinRows->select($table)->run();
+
+                $this->link($table, $result, $joinRows);
+            } else {
+                $result = $this->select($table)->run();
+                $this->link($table, $result);
             }
 
             return $result;
         }
 
-        //Load the relation
-        $select = $related->select()->relatedWith($this);
+        throw new RuntimeException(
+            sprintf('Undefined property "%s" in the table "%s"', $name, $this->table)
+        );
+    }
 
-        //Many to many
-        if ($relation[0] === Scheme::HAS_MANY_TO_MANY) {
-            $statement = $select();
-
-            foreach ($this->rows as $row) {
-                $row->{$related->getName()} = $related->createCollection();
-            }
-
-            while (($data = $statement->fetch())) {
-                $this->rows[$data[$relation[2]]]->{$related->getName()}[] = $result[] = $select->createRow($data);
-            }
-
-            return $result;
+    public function link(Table $table, RowCollection $rows, RowCollection $relations = null)
+    {
+        if ($relations) {
+            return $this->linkThrough($rows, $relations);
         }
 
-        $rows = $select->all(true)->run();
+        //Has many (inversed of Has one)
+        if ($this->table->getJoinField($table)) {
+            return $rows->link($this->table, $this);
+        }
 
-        //Join the relations and rows
-        self::join($table, $this->rows, $related, $rows, $relation);
-        $this->loadedRelations[] = $name;
+        $relations = [];
+        $foreignKey = $this->table->getForeignKey();
 
         foreach ($rows as $row) {
-            $result[] = $row;
-        }
+            $id = $row->{$foreignKey};
+            $row->link($this->table, $this[$id]);
 
-        return $result;
-    }
-
-    /**
-     * Magic method to set properties to all rows.
-     *
-     * @param string $name
-     * @param mixed  $value
-     */
-    public function __set($name, $value)
-    {
-        $table = $this->getTable();
-        $scheme = $table->getScheme();
-
-        //It's a field
-        if (isset($scheme['fields'][$name])) {
-            foreach ($this->rows as $row) {
-                $row->$name = $value;
+            if (!isset($relations[$id])) {
+                $relations[$id] = [];
             }
 
-            return;
+            $relations[$id][] = $row;
         }
 
-        //It's a relation
-        if (!isset($scheme['relations'][$name])) {
-            throw new SimpleCrudException(sprintf('Undefined property "%s"'), $name);
+        foreach ($this as $id => $row) {
+            $row->link($table, $table->createCollection($relations[$id] ?? []));
         }
 
-        $relation = $scheme['relations'][$name];
+        $this->data[$table->getName()] = $rows;
+    }
 
-        //Check types
-        if ($value === null) {
-            $value = $table->createCollection();
-        } elseif (!($value instanceof self)) {
-            throw new SimpleCrudException(sprintf('Invalid value: %s must be a RowCollection instance or null', $name));
+    private function linkThrough(RowCollection $rows, RowCollection $relations)
+    {
+        $table = $rows->getTable();
+        $relTable = $relations->getTable();
+        $this_fk = $this->table->getForeignKey();
+        $rows_fk = $table->getForeignKey();
+        $this_in_rows = [];
+        $rows_in_this = [];
+
+        foreach ($relations as $relation) {
+            $this_id = $relation->{$this_fk};
+            $rows_id = $relation->{$rows_fk};
+
+            if (!isset($rows_in_this[$this_id])) {
+                $rows_in_this[$this_id] = [];
+            }
+
+            $rows_in_this[$this_id][] = $rows[$rows_id];
+
+            if (!isset($this_in_rows[$rows_id])) {
+                $this_in_rows[$rows_id] = [];
+            }
+
+            $this_in_rows[$rows_id][] = $this[$this_id];
         }
 
-        //Join the relations and rows
-        self::join($table, $this->rows, $value->getTable(), $value, $relation);
-        $this->loadedRelations[] = $name;
+        foreach ($this as $id => $row) {
+            $row->link($table, $table->createCollection($rows_in_this[$id] ?? []));
+        }
+
+        foreach ($rows as $id => $row) {
+            $row->link($this->table, $this->table->createCollection($this_in_rows[$id] ?? []));
+        }
+
+        $this->data[$table->getName()] = $rows;
+
+        $rows->link($relTable, $relations);
+        $this->link($relTable, $relations);
     }
 
     /**
-     * Magic method to check if a property is defined or not.
-     *
-     * @param string $name Property name
-     *
-     * @return bool
+     * Change a property of all rows
+     * @param mixed $value
+     */
+    public function __set(string $name, $value)
+    {
+        foreach ($this->rows as $row) {
+            $row->$name = $value;
+        }
+    }
+
+    /**
+     * Check whether a value is set or not
+     * @param mixed $name
      */
     public function __isset($name)
     {
-        $scheme = $this->getTable()->getScheme();
-
-        return isset($scheme['fields'][$name]) || isset($this->loadedRelations[$name]);
+        return isset($this->table->{$name});
     }
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
+     * @param mixed $value
      */
     public function offsetSet($offset, $value)
     {
-        if (!($value instanceof Row)) {
-            throw new SimpleCrudException('Only instances of SimpleCrud\\Row must be added to collections');
-        }
-
-        if (empty($value->id)) {
-            throw new SimpleCrudException('Only rows with the defined id must be added to collections');
-        }
-
-        $this->rows[$value->id] = $value;
+        throw new RuntimeException('RowCollection are read-only');
     }
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetExists($offset)
     {
@@ -186,18 +245,20 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetUnset($offset)
     {
-        unset($this->rows[$offset]);
+        throw new RuntimeException('RowCollection are read-only');
     }
 
     /**
      * @see ArrayAccess
+     * @param mixed $offset
      */
     public function offsetGet($offset)
     {
-        return isset($this->rows[$offset]) ? $this->rows[$offset] : null;
+        return $this->rows[$offset] ?? null;
     }
 
     /**
@@ -249,85 +310,50 @@ class RowCollection extends AbstractRow implements ArrayAccess, Iterator, Counta
     }
 
     /**
-     * {@inheritdoc}
+     * Returns an array with all fields of all rows
      */
-    public function toArray($recursive = true, array $bannedEntities = [])
+    public function toArray(): array
     {
-        if (!$recursive) {
-            return $this->rows;
-        }
-
-        $table = $this->getTable();
-
-        if (!empty($bannedEntities) && in_array($table->getName(), $bannedEntities)) {
-            return;
-        }
-
-        $rows = [];
-
-        foreach ($this->rows as $row) {
-            $rows[] = $row->toArray($recursive, $bannedEntities);
-        }
-
-        return $rows;
+        return array_map(function ($row) {
+            return $row->toArray();
+        }, $this->rows);
     }
 
     /**
-     * Filter the rows by a value.
-     *
-     * @param callable $filter
-     *
-     * @return RowCollection
+     * Save all rows in the database
      */
-    public function filter(callable $filter)
-    {
-        return $this->table->createCollection(array_filter($this->rows, $filter));
-    }
-
-    /**
-     * Find a row by a value.
-     *
-     * @param callable $filter
-     *
-     * @return Row|null The rows found
-     */
-    public function find(callable $filter)
+    public function save(): self
     {
         foreach ($this->rows as $row) {
-            if ($filter($row) === true) {
-                return $row;
-            }
+            $row->save();
         }
+
+        return $this;
     }
 
     /**
-     * Join two related tables.
-     * 
-     * @param Table               $table1
-     * @param RowCollection|array $rows1
-     * @param Table               $table2
-     * @param RowCollection|array $rows2
-     * @param array               $relation
+     * Delete all rows in the database
      */
-    private static function join(Table $table1, $rows1, Table $table2, $rows2, array $relation)
+    public function delete(): self
     {
-        if ($relation[0] === Scheme::HAS_ONE) {
-            list($table2, $rows2, $table1, $rows1) = [$table1, $rows1, $table2, $rows2];
+        $ids = array_values($this->id);
+
+        if (count($ids)) {
+            $this->table->delete()
+                ->where('id IN ', $ids)
+                ->run();
+
+            $this->id = null;
         }
 
-        foreach ($rows1 as $row) {
-            $row->{$table2->getName()} = $table2->createCollection();
-        }
+        return $this;
+    }
 
-        foreach ($rows2 as $row) {
-            $id = $row->{$relation[1]};
-
-            if (isset($rows1[$id])) {
-                $rows1[$id]->{$table2->getName()}[] = $row;
-                $row->{$table1->getName()} = $rows1[$id];
-            } else {
-                $row->{$table1->getName()} = null;
-            }
-        }
+    /**
+     * Creates a select query of a table related with this row collection
+     */
+    public function select(Table $table): Select
+    {
+        return $table->select()->relatedWith($this);
     }
 }

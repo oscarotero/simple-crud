@@ -1,33 +1,27 @@
 <?php
+namespace SimpleCrud\Tests;
 
-use SimpleCrud\SimpleCrud;
-use SimpleCrud\Table;
+use SimpleCrud\Database;
 
-class LocaleTest extends PHPUnit_Framework_TestCase
+class LocaleTest extends AbstractTestCase
 {
-    private $db;
-
-    public function setUp()
+    private function createDatabase()
     {
-        $this->db = new SimpleCrud(new PDO('sqlite::memory:'));
-
-        $this->db->executeTransaction(function ($db) {
-            $db->execute(
-<<<EOT
+        return $this->createSqliteDatabase([
+            <<<'EOT'
 CREATE TABLE "post" (
     `id`          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title_gl`    TEXT,
     `title_es`    TEXT
 );
 EOT
-            );
-        });
+        ]);
     }
 
-    public function testRow()
+    public function testMultilanguage()
     {
-        $db = $this->db;
-        $db->setAttribute(SimpleCrud::ATTR_LOCALE, 'gl');
+        $db = $this->createDatabase();
+        $db->setConfig(Database::CONFIG_LOCALE, 'gl');
 
         $post = $db->post->create();
 
@@ -35,13 +29,14 @@ EOT
 
         $this->assertSame($post->title, $post->title_gl);
 
-        $db->setAttribute(SimpleCrud::ATTR_LOCALE, 'es');
+        $db->setConfig(Database::CONFIG_LOCALE, 'es');
+
         $this->assertNotSame($post->title, $post->title_gl);
         $this->assertSame($post->title, $post->title_es);
 
         $post->title_es = 'Español';
-        $this->assertNotSame($post->title_gl, $post->title_es);
 
+        $this->assertNotSame($post->title_gl, $post->title_es);
         $this->assertTrue(isset($post->title_es));
         $this->assertTrue(isset($post->title));
         $this->assertFalse(isset($post->title_en));

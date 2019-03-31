@@ -1,6 +1,9 @@
 <?php
+declare(strict_types = 1);
 
 namespace SimpleCrud;
+
+use SimpleCrud\Fields\FieldInterface;
 
 /**
  * Interface used by the FieldFactory class.
@@ -10,12 +13,7 @@ interface FieldFactoryInterface
     /**
      * Creates a new instance of a Field.
      *
-     * @param Table  $table
-     * @param string $name
-     *
      * @throws SimpleCrudException
-     *
-     * @return Fields\Field
      */
-    public function get(Table $table, $name);
+    public function get(Table $table, array $info): FieldInterface;
 }

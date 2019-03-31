@@ -2,24 +2,23 @@
 
 namespace SimpleCrud\Fields;
 
-/**
- * To normalize boolean values.
- */
-class Boolean extends Field
+use Atlas\Query\Insert;
+use Atlas\Query\Update;
+
+final class Boolean extends Field
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function dataToDatabase($data)
+    public function insert(Insert $query, $value)
     {
-        return (integer) filter_var($data, FILTER_VALIDATE_BOOLEAN);
+        $query->column($this->info['name'], (int) $this->format($value));
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function dataFromDatabase($data)
+    public function update(Update $query, $value)
     {
-        return (bool) $data;
+        $query->column($this->info['name'], (int) $this->format($value));
+    }
+
+    public function format($value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }
