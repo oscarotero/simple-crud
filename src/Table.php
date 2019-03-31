@@ -76,14 +76,12 @@ class Table implements ArrayAccess
             return $this->defaults;
         }
 
-        foreach ($overrides as $name => &$value) {
-            if (!isset($this->fields[$name])) {
-                throw new SimpleCrudException(
-                    sprintf('The field "%s" does not exist in the table %s', $name, $this)
-                );
-            }
+        $diff = array_diff_key($overrides, $this->fields);
 
-            $value = $this->fields[$name]->format($value);
+        if ($diff) {
+            throw new SimpleCrudException(
+                sprintf('The field %s does not exist in the table %s', implode(array_keys($diff)), $this)
+            );
         }
 
         return $overrides + $this->defaults;
@@ -332,7 +330,7 @@ class Table implements ArrayAccess
         return $this->cache(new $class($this, $data));
     }
 
-    public function createCollection(array $rows = [], bool $fromDatabase = false): RowCollection
+    public function createCollection(array $rows = []): RowCollection
     {
         $rows = array_map(
             function ($data): Row {

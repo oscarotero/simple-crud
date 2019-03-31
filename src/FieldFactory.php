@@ -70,6 +70,8 @@ final class FieldFactory implements FieldFactoryInterface
 
     public function defineField(string $className, array $definition): self
     {
+        $definition += ['names' => [], 'types' => [], 'config' => []];
+
         if (isset($this->fields[$className])) {
             $this->fields[$className] = $definition;
             return $this;

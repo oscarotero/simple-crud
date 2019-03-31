@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Query;
 
+use Closure;
 use PDO;
 use SimpleCrud\Events\CreateSelectQuery;
 use SimpleCrud\Table;
@@ -73,9 +74,20 @@ final class Select implements QueryInterface
         if ($this->one) {
             $data = $statement->fetch();
 
-            return $data ? $this->table->create($data, true) : null;
+            return $data ? $this->table->create($this->formatRow($data)) : null;
         }
 
-        return $this->table->createCollection($statement->fetchAll(), true);
+        $data = array_map(Closure::fromCallable([$this, 'formatRow']), $statement->fetchAll());
+
+        return $this->table->createCollection($data);
+    }
+
+    private function formatRow(array $data): array
+    {
+        foreach ($data as $fieldName => &$value) {
+            $value = $this->table->{$fieldName}->format($value);
+        }
+
+        return $data;
     }
 }
