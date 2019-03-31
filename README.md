@@ -633,7 +633,7 @@ $factory = $db->getFieldFactory();
 $factory->defineField(Year:class, [
     'names' => ['year', '/$year/'], //All fields named "year" or matching this regex will use this class
     'types' => ['integer'], //All fields of this types will use this class
-    'config' => ['minimum' => 2000] //You can set default config to the field
+    'config' => ['min' => 2000] //You can set default config to the field
 ]);
 
 //Modify a existing field
