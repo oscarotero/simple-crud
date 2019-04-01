@@ -5,7 +5,6 @@ namespace SimpleCrud\Query;
 
 use Closure;
 use PDO;
-use SimpleCrud\Events\CreateSelectQuery;
 use SimpleCrud\Table;
 
 final class Select implements QueryInterface
@@ -45,12 +44,6 @@ final class Select implements QueryInterface
 
         foreach ($table->getFields() as $field) {
             $field->select($this->query);
-        }
-
-        $eventDispatcher = $table->getEventDispatcher();
-
-        if ($eventDispatcher) {
-            $eventDispatcher->dispatch(new CreateSelectQuery($this));
         }
     }
 

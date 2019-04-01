@@ -4,17 +4,26 @@ declare(strict_types = 1);
 namespace SimpleCrud;
 
 use ArrayAccess;
+use Countable;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use SimpleCrud\Events\BeforeCreateRow;
+use SimpleCrud\Events\CreateDeleteQuery;
+use SimpleCrud\Events\CreateInsertQuery;
+use SimpleCrud\Events\CreateSelectQuery;
+use SimpleCrud\Events\CreateUpdateQuery;
 use SimpleCrud\Fields\FieldInterface;
-use SimpleCrud\Query\QueryInterface;
+use SimpleCrud\Query\Delete;
+use SimpleCrud\Query\Insert;
+use SimpleCrud\Query\Select;
+use SimpleCrud\Query\SelectAggregate;
+use SimpleCrud\Query\Update;
 
 /**
  * Manages a database table.
  *
  * @property FieldInterface $id
  */
-class Table implements ArrayAccess
+class Table implements ArrayAccess, Countable
 {
     private $name;
     private $db;
@@ -78,7 +87,7 @@ class Table implements ArrayAccess
 
         $diff = array_diff_key($overrides, $this->fields);
 
-        if ($diff) {
+        if (!empty($diff)) {
             throw new SimpleCrudException(
                 sprintf('The field %s does not exist in the table %s', implode(array_keys($diff)), $this)
             );
@@ -137,14 +146,59 @@ class Table implements ArrayAccess
         return $row;
     }
 
-    /**
-     * Magic method to create queries related with this table.
-     */
-    public function __call(string $name, array $arguments): QueryInterface
+    public function delete(): Delete
     {
-        $class = sprintf('SimpleCrud\\Query\\%s', ucfirst($name));
+        $query = new Delete($this);
 
-        return $class::create($this, $arguments);
+        if ($eventDispatcher = $this->getEventDispatcher()) {
+            $eventDispatcher->dispatch(new CreateDeleteQuery($query));
+        }
+
+        return $query;
+    }
+
+    public function insert(array $data = []): Insert
+    {
+        $query = new Insert($this, $data);
+
+        if ($eventDispatcher = $this->getEventDispatcher()) {
+            $eventDispatcher->dispatch(new CreateInsertQuery($query));
+        }
+
+        return $query;
+    }
+
+    public function select(): Select
+    {
+        $query = new Select($this);
+
+        if ($eventDispatcher = $this->getEventDispatcher()) {
+            $eventDispatcher->dispatch(new CreateSelectQuery($query));
+        }
+
+        return $query;
+    }
+
+    public function selectAggregate(string $function, string $field = 'id'): SelectAggregate
+    {
+        $query = new SelectAggregate($this, $function, $field);
+
+        if ($eventDispatcher = $this->getEventDispatcher()) {
+            $eventDispatcher->dispatch(new CreateSelectQuery($query));
+        }
+
+        return $query;
+    }
+
+    public function update(array $data = []): Update
+    {
+        $query = new Update($this, $data);
+
+        if ($eventDispatcher = $this->getEventDispatcher()) {
+            $eventDispatcher->dispatch(new CreateUpdateQuery($query));
+        }
+
+        return $query;
     }
 
     /**
@@ -170,6 +224,14 @@ class Table implements ArrayAccess
     }
 
     /**
+     * @see Countable
+     */
+    public function count(): int
+    {
+        return $this->selectAggregate('COUNT')->run();
+    }
+
+    /**
      * Check if a row with a specific id exists.
      *
      * @see ArrayAccess
@@ -181,7 +243,7 @@ class Table implements ArrayAccess
             return $this->getCached($offset) !== null;
         }
 
-        return $this->count()
+        return $this->selectAggregate('COUNT')
             ->where('id = ', $offset)
             ->limit(1)
             ->run() === 1;

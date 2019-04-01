@@ -129,6 +129,9 @@ $db->post[3] = [
 $db->post[] = [
     'title' => 'Hello world 2'
 ];
+
+//Tables implements the Countable interface
+$totalPost = count($db->post);
 ```
 
 ### Rows

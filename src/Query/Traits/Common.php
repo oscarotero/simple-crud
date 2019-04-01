@@ -5,18 +5,12 @@ namespace SimpleCrud\Query\Traits;
 
 use BadMethodCallException;
 use PDOStatement;
-use SimpleCrud\Query\QueryInterface;
 use SimpleCrud\Table;
 
 trait Common
 {
     private $table;
     private $query;
-
-    public static function create(Table $table, array $arguments): QueryInterface
-    {
-        return new static($table, ...$arguments);
-    }
 
     public function getTable(): Table
     {

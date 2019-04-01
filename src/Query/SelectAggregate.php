@@ -1,20 +1,27 @@
 <?php
 declare(strict_types = 1);
 
-namespace SimpleCrud\Query\Traits;
+namespace SimpleCrud\Query;
 
+use InvalidArgumentException;
 use PDO;
-use SimpleCrud\Events\CreateSelectQuery;
 use SimpleCrud\Table;
 
-trait Aggregation
+final class SelectAggregate implements QueryInterface
 {
-    use Common;
-    use HasRelatedWith;
-    use HasPagination;
-    use HasJoinRelation;
+    use Traits\Common;
+    use Traits\HasRelatedWith;
+    use Traits\HasPagination;
+    use Traits\HasJoinRelation;
 
     private $field;
+    private const AGGREGATION_FUNCTIONS = [
+        'AVG',
+        'COUNT',
+        'MAX',
+        'MIN',
+        'SUM',
+    ];
     private $allowedMethods = [
         'from',
         'join',
@@ -34,21 +41,23 @@ trait Aggregation
         'setFlag',
     ];
 
-    public function __construct(Table $table, string $field = 'id')
+    public function __construct(Table $table, string $function, string $field = 'id')
     {
         $this->table = $table;
         $this->field = $field;
 
+        $function = strtoupper($function);
+
+        if (!in_array($function, self::AGGREGATION_FUNCTIONS)) {
+            throw InvalidArgumentException(
+                sprintf('Invalid aggregation function. Must be one of the followings: %s', implode(', ', self::AGGREGATION_FUNCTIONS))
+            );
+        }
+
         $this->query = $table->getDatabase()
             ->select()
             ->from((string) $table)
-            ->columns(sprintf('%s(%s)', self::AGGREGATION_FUNCTION, $field));
-
-        $eventDispatcher = $table->getEventDispatcher();
-
-        if ($eventDispatcher) {
-            $eventDispatcher->dispatch(new CreateSelectQuery($this));
-        }
+            ->columns(sprintf('%s(%s)', $function, $field));
     }
 
     public function run()

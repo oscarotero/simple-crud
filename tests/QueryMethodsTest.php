@@ -153,7 +153,7 @@ SQL
      */
     public function testCount(Database $db)
     {
-        $query = $db->post->count()
+        $query = $db->post->selectAggregate('count')
             ->distinct()
             ->forUpdate()
             ->from('bar as b')

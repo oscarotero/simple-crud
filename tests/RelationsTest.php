@@ -50,10 +50,10 @@ EOT
         $db->comment[] = ['text' => 'Comment', 'post_id' => 1];
         $db->category_post[] = ['category_id' => 1, 'post_id' => 1];
 
-        $this->assertEquals(1, $db->post->count()->run());
-        $this->assertEquals(1, $db->category->count()->run());
-        $this->assertEquals(1, $db->comment->count()->run());
-        $this->assertEquals(1, $db->category_post->count()->run());
+        $this->assertCount(1, $db->post);
+        $this->assertCount(1, $db->category);
+        $this->assertCount(1, $db->comment);
+        $this->assertCount(1, $db->category_post);
 
         return $db;
     }

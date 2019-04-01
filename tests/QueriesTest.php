@@ -37,25 +37,26 @@ SQL
     public function dataProviderQueries()
     {
         return [
-            ['select'],
-            ['insert'],
-            ['update'],
-            ['delete'],
-            ['count'],
-            ['sum'],
-            ['avg'],
-            ['min'],
-            ['max'],
+            ['select', null],
+            ['insert', []],
+            ['update', []],
+            ['delete', null],
+            ['selectAggregate', 'count'],
+            ['selectAggregate', 'sum'],
+            ['selectAggregate', 'avg'],
+            ['selectAggregate', 'min'],
+            ['selectAggregate', 'max'],
         ];
     }
 
     /**
      * @dataProvider dataProviderQueries
      * @depends testCreation
+     * @param mixed $arg
      */
-    public function testQueries(string $name, Database $db)
+    public function testQueries(string $name, $arg, Database $db)
     {
-        $query = $db->post->$name();
+        $query = $db->post->$name($arg);
 
         $this->assertInstanceOf('SimpleCrud\\Query\\'.ucfirst($name), $query);
         $this->assertInstanceOf('SimpleCrud\\Query\\QueryInterface', $query);
@@ -84,7 +85,7 @@ SELECT
     `post`.`title`,
     `post`.`body`,
     `post`.`num`,
-    `post`.`point`,
+    asText(`post`.`point`) as `point`,
     `post`.`size`
 FROM
     `post`
@@ -124,7 +125,7 @@ SELECT
     `post`.`title`,
     `post`.`body`,
     `post`.`num`,
-    `post`.`point`,
+    asText(`post`.`point`) as `point`,
     `post`.`size`
 FROM
     `post`
@@ -228,7 +229,7 @@ SQL
      */
     public function testCount(Database $db)
     {
-        $statement = $db->post->count()
+        $statement = $db->post->selectAggregate('COUNT')
             ->where('id = ', 3)
             ->__invoke();
 
@@ -253,7 +254,7 @@ SQL
      */
     public function testSum(Database $db)
     {
-        $statement = $db->post->sum('id')
+        $statement = $db->post->selectAggregate('SUM')
             ->where('id = ', 3)
             ->__invoke();
 
@@ -278,7 +279,7 @@ SQL
      */
     public function testMax(Database $db)
     {
-        $statement = $db->post->max('id')
+        $statement = $db->post->selectAggregate('max')
             ->where('id = ', 3)
             ->__invoke();
 
@@ -303,7 +304,7 @@ SQL
      */
     public function testMin(Database $db)
     {
-        $statement = $db->post->min('id')
+        $statement = $db->post->selectAggregate('min')
             ->where('id = ', 3)
             ->__invoke();
 
@@ -328,7 +329,7 @@ SQL
      */
     public function testAvg(Database $db)
     {
-        $statement = $db->post->avg('id')
+        $statement = $db->post->selectAggregate('avg')
             ->where('id = ', 3)
             ->__invoke();
 
