@@ -394,13 +394,6 @@ class Table implements ArrayAccess, Countable
 
     public function createCollection(array $rows = []): RowCollection
     {
-        $rows = array_map(
-            function ($data): Row {
-                return is_array($data) ? $this->create($data) : $data;
-            },
-            $rows
-        );
-
         $class = self::ROWCOLLECTION_CLASS;
         return new $class($this, ...$rows);
     }

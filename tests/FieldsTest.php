@@ -21,7 +21,7 @@ CREATE TABLE `post` (
     `publishedAt` datetime DEFAULT NULL,
     `num`   decimal(10,0) DEFAULT NULL,
     `point` point DEFAULT NULL,
-    `data` json DEFAULT NULL,
+    `data` text DEFAULT NULL,
     `serializable` text,
     `isActive` boolean,
     `size`  enum('x-small', 'small', 'medium', 'large', 'x-large'),

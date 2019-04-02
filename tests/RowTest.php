@@ -57,4 +57,30 @@ EOT
         $this->assertNull($post->id);
         $this->assertFalse(isset($db->post[1]));
     }
+
+    public function testExtraData()
+    {
+        $db = $this->createDatabase();
+
+        $db->post[] = [
+            'title' => 'First post',
+            'publishedAt' => new DateTime('04-06-2017'),
+            'isActive' => true,
+        ];
+
+        $db->comment[] = [
+            'text' => 'First comment',
+            'post_id' => 1,
+        ];
+
+        $commentWithPostTitle = $db->comment->select()
+            ->one()
+            ->columns('post.title as postTitle')
+            ->joinRelation($db->post)
+            ->where('comment.id = 1')
+            ->run();
+
+        $this->assertInstanceOf(Row::class, $commentWithPostTitle);
+        $this->assertSame('First post', $commentWithPostTitle->postTitle);
+    }
 }

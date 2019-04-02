@@ -34,6 +34,7 @@ EOT
             ->distinct()
             ->forUpdate()
             ->from('bar as b')
+            ->columns('COUNT(*) as foo_count')
             ->join('LEFT', 'doom AS d', 'foo.id = d.foo_id')
             ->catJoin(' AND d.created = 1')
             ->where('foo = bar')
@@ -52,7 +53,8 @@ EOT
             (string) $query,
 <<<'SQL'
 SELECT DISTINCT HIGH_PRIORITY
-    `post`.`id`
+    `post`.`id`,
+    COUNT(*) as foo_count
 FROM
     `post`,
     bar as b

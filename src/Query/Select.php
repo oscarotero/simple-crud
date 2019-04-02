@@ -6,6 +6,7 @@ namespace SimpleCrud\Query;
 use Closure;
 use PDO;
 use SimpleCrud\Table;
+use SimpleCrud\Row;
 
 final class Select implements QueryInterface
 {
@@ -17,6 +18,7 @@ final class Select implements QueryInterface
     private $one;
     private $allowedMethods = [
         'from',
+        'columns',
         'join',
         'catJoin',
         'groupBy',
@@ -60,23 +62,33 @@ final class Select implements QueryInterface
         $statement = $this->__invoke();
         $statement->setFetchMode(PDO::FETCH_ASSOC);
 
+        $dataFields = [];
+
         if ($this->one) {
             $data = $statement->fetch();
 
-            return $data ? $this->table->create($this->formatRow($data)) : null;
+            return $data ? $this->createRow($data) : null;
         }
 
-        $data = array_map(Closure::fromCallable([$this, 'formatRow']), $statement->fetchAll());
+        $rows = array_map(Closure::fromCallable([$this, 'createRow']), $statement->fetchAll());
 
-        return $this->table->createCollection($data);
+        return $this->table->createCollection($rows);
     }
 
-    private function formatRow(array $data): array
+    private function createRow(array $data): Row
     {
-        foreach ($data as $fieldName => &$value) {
-            $value = $this->table->{$fieldName}->format($value);
+        $values = [];
+        $extraData = [];
+        $fields = $this->table->getFields();
+
+        foreach ($data as $name => $value) {
+            if (isset($fields[$name])) {
+                $values[$name] = $fields[$name]->format($value);
+            } else {
+                $extraData[$name] = $value;
+            }
         }
 
-        return $data;
+        return $this->table->create($values)->setData($extraData);
     }
 }

@@ -262,6 +262,7 @@ Function | Description
 `joinRelation(Table $table)` | To add a related table as `LEFT JOIN`.
 `getPageInfo()` | Returns the info of the pagination.
 `from` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
+`columns` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `join` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `catJoin` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `groupBy` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
