@@ -5,7 +5,7 @@ namespace SimpleCrud\Events;
 
 use SimpleCrud\Queries\Update;
 
-class CreateUpdateQuery
+final class CreateUpdateQuery
 {
     private $query;
 

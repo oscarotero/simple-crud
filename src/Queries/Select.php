@@ -8,7 +8,7 @@ use PDO;
 use SimpleCrud\Row;
 use SimpleCrud\Table;
 
-final class Select extends Query
+class Select extends Query
 {
     use Traits\HasRelatedWith;
     use Traits\HasPagination;

@@ -5,7 +5,7 @@ namespace SimpleCrud\Events;
 
 use SimpleCrud\Queries\Insert;
 
-class CreateInsertQuery
+final class CreateInsertQuery
 {
     private $query;
 

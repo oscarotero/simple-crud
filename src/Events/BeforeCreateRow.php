@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Events;
 
-class BeforeCreateRow
+final class BeforeCreateRow
 {
     private $data;
 

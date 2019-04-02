@@ -5,7 +5,7 @@ namespace SimpleCrud\Events;
 
 use SimpleCrud\Queries\Delete;
 
-class CreateDeleteQuery
+final class CreateDeleteQuery
 {
     private $query;
 

@@ -5,7 +5,7 @@ namespace SimpleCrud\Events;
 
 use SimpleCrud\Queries\Select;
 
-class CreateSelectQuery
+final class CreateSelectQuery
 {
     private $query;
 

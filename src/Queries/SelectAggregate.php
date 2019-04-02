@@ -7,12 +7,8 @@ use InvalidArgumentException;
 use PDO;
 use SimpleCrud\Table;
 
-final class SelectAggregate extends Query
+final class SelectAggregate extends Select
 {
-    use Traits\HasRelatedWith;
-    use Traits\HasPagination;
-    use Traits\HasJoinRelation;
-
     private $field;
     private const AGGREGATION_FUNCTIONS = [
         'AVG',
@@ -20,24 +16,6 @@ final class SelectAggregate extends Query
         'MAX',
         'MIN',
         'SUM',
-    ];
-    protected const ALLOWED_METHODS = [
-        'from',
-        'join',
-        'catJoin',
-        'groupBy',
-        'having',
-        'orHaving',
-        'orderBy',
-        'catHaving',
-        'where',
-        'orWhere',
-        'catWhere',
-        'limit',
-        'offset',
-        'distinct',
-        'forUpdate',
-        'setFlag',
     ];
 
     public function __construct(Table $table, string $function, string $field = 'id')

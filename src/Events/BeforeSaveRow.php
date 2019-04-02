@@ -5,7 +5,7 @@ namespace SimpleCrud\Events;
 
 use SimpleCrud\Row;
 
-class BeforeSaveRow
+final class BeforeSaveRow
 {
     private $row;
 
