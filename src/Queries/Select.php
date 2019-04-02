@@ -5,8 +5,8 @@ namespace SimpleCrud\Queries;
 
 use Closure;
 use PDO;
-use SimpleCrud\Table;
 use SimpleCrud\Row;
+use SimpleCrud\Table;
 
 final class Select extends Query
 {
