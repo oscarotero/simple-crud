@@ -1,16 +1,15 @@
 <?php
 declare(strict_types = 1);
 
-namespace SimpleCrud\Query;
+namespace SimpleCrud\Queries;
 
 use SimpleCrud\Table;
 
-final class Delete implements QueryInterface
+final class Delete extends Query
 {
-    use Traits\Common;
     use Traits\HasRelatedWith;
 
-    private $allowedMethods = [
+    protected const ALLOWED_METHODS = [
         'setFlag',
         'where',
         'orWhere',

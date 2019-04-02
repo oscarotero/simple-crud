@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Events;
 
-use SimpleCrud\Query\Update;
+use SimpleCrud\Queries\Update;
 
 class CreateUpdateQuery
 {

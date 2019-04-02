@@ -1,15 +1,14 @@
 <?php
 declare(strict_types = 1);
 
-namespace SimpleCrud\Query;
+namespace SimpleCrud\Queries;
 
 use InvalidArgumentException;
 use PDO;
 use SimpleCrud\Table;
 
-final class SelectAggregate implements QueryInterface
+final class SelectAggregate extends Query
 {
-    use Traits\Common;
     use Traits\HasRelatedWith;
     use Traits\HasPagination;
     use Traits\HasJoinRelation;
@@ -22,7 +21,7 @@ final class SelectAggregate implements QueryInterface
         'MIN',
         'SUM',
     ];
-    private $allowedMethods = [
+    protected const ALLOWED_METHODS = [
         'from',
         'join',
         'catJoin',

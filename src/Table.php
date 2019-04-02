@@ -11,17 +11,17 @@ use SimpleCrud\Events\CreateDeleteQuery;
 use SimpleCrud\Events\CreateInsertQuery;
 use SimpleCrud\Events\CreateSelectQuery;
 use SimpleCrud\Events\CreateUpdateQuery;
-use SimpleCrud\Fields\FieldInterface;
-use SimpleCrud\Query\Delete;
-use SimpleCrud\Query\Insert;
-use SimpleCrud\Query\Select;
-use SimpleCrud\Query\SelectAggregate;
-use SimpleCrud\Query\Update;
+use SimpleCrud\Fields\Field;
+use SimpleCrud\Queries\Delete;
+use SimpleCrud\Queries\Insert;
+use SimpleCrud\Queries\Select;
+use SimpleCrud\Queries\SelectAggregate;
+use SimpleCrud\Queries\Update;
 
 /**
  * Manages a database table.
  *
- * @property FieldInterface $id
+ * @property Field $id
  */
 class Table implements ArrayAccess, Countable
 {
@@ -204,7 +204,7 @@ class Table implements ArrayAccess, Countable
     /**
      * Magic method to get the Field instance of a table field
      */
-    public function __get(string $name): FieldInterface
+    public function __get(string $name): Field
     {
         if (!isset($this->fields[$name])) {
             throw new SimpleCrudException(
@@ -334,7 +334,7 @@ class Table implements ArrayAccess, Countable
     /**
      * Returns the foreign key.
      */
-    public function getJoinField(Table $table): ?FieldInterface
+    public function getJoinField(Table $table): ?Field
     {
         $field = $table->getForeignKey();
 
@@ -367,7 +367,7 @@ class Table implements ArrayAccess, Countable
     /**
      * Returns all fields.
      *
-     * @return FieldInterface[]
+     * @return Field[]
      */
     public function getFields()
     {

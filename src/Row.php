@@ -7,7 +7,7 @@ use BadMethodCallException;
 use JsonSerializable;
 use RuntimeException;
 use SimpleCrud\Events\BeforeSaveRow;
-use SimpleCrud\Query\Select;
+use SimpleCrud\Queries\Select;
 
 /**
  * Stores the data of an table row.

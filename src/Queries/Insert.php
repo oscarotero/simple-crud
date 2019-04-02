@@ -1,15 +1,13 @@
 <?php
 declare(strict_types = 1);
 
-namespace SimpleCrud\Query;
+namespace SimpleCrud\Queries;
 
 use SimpleCrud\Table;
 
-final class Insert implements QueryInterface
+final class Insert extends Query
 {
-    use Traits\Common;
-
-    private $allowedMethods = [
+    protected const ALLOWED_METHODS = [
         'setFlag',
         'set',
     ];

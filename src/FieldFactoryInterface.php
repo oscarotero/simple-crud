@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace SimpleCrud;
 
-use SimpleCrud\Fields\FieldInterface;
+use SimpleCrud\Fields\Field;
 
 /**
  * Interface used by the FieldFactory class.
@@ -15,5 +15,5 @@ interface FieldFactoryInterface
      *
      * @throws SimpleCrudException
      */
-    public function get(Table $table, array $info): FieldInterface;
+    public function get(Table $table, array $info): Field;
 }

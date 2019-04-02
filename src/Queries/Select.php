@@ -1,22 +1,21 @@
 <?php
 declare(strict_types = 1);
 
-namespace SimpleCrud\Query;
+namespace SimpleCrud\Queries;
 
 use Closure;
 use PDO;
 use SimpleCrud\Table;
 use SimpleCrud\Row;
 
-final class Select implements QueryInterface
+final class Select extends Query
 {
-    use Traits\Common;
     use Traits\HasRelatedWith;
     use Traits\HasPagination;
     use Traits\HasJoinRelation;
 
     private $one;
-    private $allowedMethods = [
+    protected const ALLOWED_METHODS = [
         'from',
         'columns',
         'join',
@@ -61,8 +60,6 @@ final class Select implements QueryInterface
     {
         $statement = $this->__invoke();
         $statement->setFetchMode(PDO::FETCH_ASSOC);
-
-        $dataFields = [];
 
         if ($this->one) {
             $data = $statement->fetch();

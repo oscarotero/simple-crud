@@ -8,7 +8,6 @@ use SimpleCrud\Fields\Date;
 use SimpleCrud\Fields\Datetime;
 use SimpleCrud\Fields\Decimal;
 use SimpleCrud\Fields\Field;
-use SimpleCrud\Fields\FieldInterface;
 use SimpleCrud\Fields\Integer;
 use SimpleCrud\Fields\Json;
 use SimpleCrud\Fields\Point;
@@ -92,7 +91,7 @@ final class FieldFactory implements FieldFactoryInterface
      *
      * {@inheritdoc}
      */
-    public function get(Table $table, array $info): FieldInterface
+    public function get(Table $table, array $info): Field
     {
         $className = $this->getClassName($info['name'], $info['type']);
 

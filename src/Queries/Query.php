@@ -1,16 +1,18 @@
 <?php
 declare(strict_types = 1);
 
-namespace SimpleCrud\Query\Traits;
+namespace SimpleCrud\Queries;
 
 use BadMethodCallException;
 use PDOStatement;
 use SimpleCrud\Table;
 
-trait Common
+abstract class Query
 {
-    private $table;
-    private $query;
+    protected const ALLOWED_METHODS = [];
+
+    protected $table;
+    protected $query;
 
     public function getTable(): Table
     {
@@ -19,7 +21,7 @@ trait Common
 
     public function __call(string $name, array $arguments)
     {
-        if (!in_array($name, $this->allowedMethods)) {
+        if (!in_array($name, static::ALLOWED_METHODS)) {
             throw new BadMethodCallException(sprintf('The method "%s" is not valid', $name));
         }
 

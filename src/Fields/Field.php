@@ -8,7 +8,7 @@ use Atlas\Query\Select;
 use Atlas\Query\Update;
 use SimpleCrud\Table;
 
-class Field implements FieldInterface
+class Field
 {
     protected $table;
     protected $info;

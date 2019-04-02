@@ -3,7 +3,7 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Events;
 
-use SimpleCrud\Query\Select;
+use SimpleCrud\Queries\Select;
 
 class CreateSelectQuery
 {

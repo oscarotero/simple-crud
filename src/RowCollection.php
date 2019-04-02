@@ -9,7 +9,7 @@ use Countable;
 use Iterator;
 use JsonSerializable;
 use RuntimeException;
-use SimpleCrud\Query\Select;
+use SimpleCrud\Queries\Select;
 
 /**
  * Stores a collection of rows.

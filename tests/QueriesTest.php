@@ -2,6 +2,12 @@
 namespace SimpleCrud\Tests;
 
 use SimpleCrud\Database;
+use SimpleCrud\Queries\Delete;
+use SimpleCrud\Queries\Insert;
+use SimpleCrud\Queries\Query;
+use SimpleCrud\Queries\Select;
+use SimpleCrud\Queries\SelectAggregate;
+use SimpleCrud\Queries\Update;
 
 class QueriesTest extends AbstractTestCase
 {
@@ -37,15 +43,15 @@ SQL
     public function dataProviderQueries()
     {
         return [
-            ['select', null],
-            ['insert', []],
-            ['update', []],
-            ['delete', null],
-            ['selectAggregate', 'count'],
-            ['selectAggregate', 'sum'],
-            ['selectAggregate', 'avg'],
-            ['selectAggregate', 'min'],
-            ['selectAggregate', 'max'],
+            [Select::class, 'select', null],
+            [Insert::class, 'insert', []],
+            [Update::class, 'update', []],
+            [Delete::class, 'delete', null],
+            [SelectAggregate::class, 'selectAggregate', 'count'],
+            [SelectAggregate::class, 'selectAggregate', 'sum'],
+            [SelectAggregate::class, 'selectAggregate', 'avg'],
+            [SelectAggregate::class, 'selectAggregate', 'min'],
+            [SelectAggregate::class, 'selectAggregate', 'max'],
         ];
     }
 
@@ -54,12 +60,12 @@ SQL
      * @depends testCreation
      * @param mixed $arg
      */
-    public function testQueries(string $name, $arg, Database $db)
+    public function testQueries(string $className, string $name, $arg, Database $db)
     {
         $query = $db->post->$name($arg);
 
-        $this->assertInstanceOf('SimpleCrud\\Query\\'.ucfirst($name), $query);
-        $this->assertInstanceOf('SimpleCrud\\Query\\QueryInterface', $query);
+        $this->assertInstanceOf($className, $query);
+        $this->assertInstanceOf(Query::class, $query);
     }
 
     /**

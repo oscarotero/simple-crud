@@ -1,7 +1,7 @@
 <?php
 declare(strict_types = 1);
 
-namespace SimpleCrud\Query\Traits;
+namespace SimpleCrud\Queries\Traits;
 
 use RuntimeException;
 use SimpleCrud\Table;
