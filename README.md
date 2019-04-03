@@ -162,7 +162,7 @@ $newPost->save();
 
 ### Queries
 
-A `Query` object represents a database query. SimpleCrud uses magic methods to create queries. For example `$db->post->select()` returns a new instance of a `Select` query in the tabe `post`. Other examples: `$db->comment->update()`, `$db->category->count()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
+A `Query` object represents a database query. SimpleCrud uses magic methods to create queries. For example `$db->post->select()` returns a new instance of a `Select` query in the tabe `post`. Other examples: `$db->comment->update()`, `$db->category->delete()`, etc... Each query has modifiers like `orderBy()`, `limit()`:
 
 ```php
 //Create an UPDATE query with the table post
@@ -180,7 +180,7 @@ echo $updateQuery; //UPDATE `post` ...
 $PDOStatement = $updateQuery();
 ```
 
-The method `run()` executes the query and returns the processed result of the query. For example, with `count()` returns an integer with the number of rows found, and with `insert()` returns the id of the new row:
+The method `run()` executes the query and returns the processed result of the query. For example, with `insert()` returns the id of the new row:
 
 ```php
 //insert a new post
@@ -199,12 +199,13 @@ $db->post
 
 //Count all posts
 $total = $db->post
-    ->count()
+    ->selectAggregate('COUNT')
     ->run();
+//note: this is the same like count($db->post)
 
 //Sum the ids of all posts
 $total = $db->post
-    ->sum('id')
+    ->selectAggregate('SUM', 'id')
     ->run();
 ```
 
@@ -253,7 +254,7 @@ $category = $db->category
 
 Queries use [Atlas.Query](http://atlasphp.io/cassini/query/) library to build the final queries, so you can see the documentation for all available options.
 
-#### Select
+#### Select / SelectAggregate
 
 Function | Description
 ---------|------------
