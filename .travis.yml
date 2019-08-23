@@ -10,3 +10,6 @@ before_install:
 
 script:
  - composer test
+
+services:
+  - mysql
