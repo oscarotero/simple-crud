@@ -13,6 +13,17 @@ use Exception;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
+use SimpleCrud\Fields\FieldFactory;
+use SimpleCrud\Fields\Field;
+use SimpleCrud\Fields\Boolean;
+use SimpleCrud\Fields\Date;
+use SimpleCrud\Fields\Datetime;
+use SimpleCrud\Fields\Decimal;
+use SimpleCrud\Fields\Integer;
+use SimpleCrud\Fields\Json;
+use SimpleCrud\Fields\Point;
+use SimpleCrud\Fields\Set;
+use SimpleCrud\Fields\Serializable;
 use SimpleCrud\Scheme\Mysql;
 use SimpleCrud\Scheme\SchemeInterface;
 use SimpleCrud\Scheme\Sqlite;
@@ -28,10 +39,9 @@ final class Database
     private $inTransaction = false;
     private $onExecute;
     private $config = [];
+    private $fieldFactories = [];
 
-    private $fieldFactory;
-
-    public function __construct(PDO $pdo, SchemeInterface $scheme = null)
+    public function __construct(PDO $pdo, SchemeInterface $scheme = null, array $fieldFactories = null)
     {
         $this->connection = new Connection($pdo);
         $this->scheme = $scheme;
@@ -52,6 +62,8 @@ final class Database
             default:
                 throw new RuntimeException(sprintf('Invalid engine type: %s', $engine));
         }
+
+        $this->fieldFactories = $fieldFactories ?: self::createDefaultFieldFactories();
     }
 
     /**
@@ -120,26 +132,21 @@ final class Database
         return new Insert($this->connection, new Bind());
     }
 
-    /**
-     * Set the FieldFactory instance used by the tables.
-     */
     public function setFieldFactory(FieldFactory $fieldFactory): self
     {
-        $this->fieldFactory = $fieldFactory;
+        $this->fieldFactories[$fieldFactory->getClassName()] = $fieldFactory;
 
         return $this;
     }
 
-    /**
-     * Returns the FieldFactory instance used by the tables.
-     */
-    public function getFieldFactory(): FieldFactory
+    public function getFieldFactory(string $className): FieldFactory
     {
-        if ($this->fieldFactory === null) {
-            return $this->fieldFactory = new FieldFactory();
-        }
+        return $this->fieldFactories[$className];
+    }
 
-        return $this->fieldFactory;
+    public function getFieldFactories(): array
+    {
+        return $this->fieldFactories;
     }
 
     /**
@@ -261,5 +268,21 @@ final class Database
     public function inTransaction()
     {
         return ($this->inTransaction === true) && ($this->connection->inTransaction() === true);
+    }
+
+    private static function createDefaultFieldFactories(): array
+    {
+        return [
+            Boolean::class => Boolean::getFactory(),
+            Date::class => Date::getFactory(),
+            Datetime::class => Datetime::getFactory(),
+            Decimal::class => Decimal::getFactory(),
+            Field::class => Field::getFactory(),
+            Integer::class => Integer::getFactory(),
+            Json::class => Json::getFactory(),
+            Point::class => Point::getFactory(),
+            Set::class => Set::getFactory(),
+            Serializable::class => Serializable::getFactory(),
+        ];
     }
 }

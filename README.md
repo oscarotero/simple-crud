@@ -627,25 +627,26 @@ $db->post; //Returns an instance of CustomPost
 
 ### FieldFactory
 
-To create field instances, SimpleCrud use the `SimpleCrud\FieldFactory` factory class that you can customize or even replace with your own factory:
+To create field instances, SimpleCrud use the `SimpleCrud\Field\FieldFactory` factory class that you can customize or even replace with your own factory:
 
 ```php
+use SimpleCrud\Fields\FieldFactory;
+use SimpleCrud\Fields\Boolean;
+
 $db = new SimpleCrud\Database($pdo);
 
-$factory = $db->getFieldFactory();
+//Create a factory for your custom field
+$factory = new FieldFactory(
+    Year::class,          //Your custom field class name
+    ['integer'],          //All fields of type integer will use this class
+    ['year', '/$year/'],  //All fields named "year" or matching this regex will use this class
+    ['min' => 2000],      //Default config
+);
 
-//Add a new custom field
-$factory->defineField(Year:class, [
-    'names' => ['year', '/$year/'], //All fields named "year" or matching this regex will use this class
-    'types' => ['integer'], //All fields of this types will use this class
-    'config' => ['min' => 2000] //You can set default config to the field
-]);
+$db->setFieldFactory($factory);
 
 //Modify a existing field
-$def = $factory->getFieldDefinition(SimpleCrud\Fields\Boolean::class);
-$def['names'][] = 'enabled';
-
-$factory->defineField(SimpleCrud\Fields\Boolean::class, $def);
+$db->getFieldFactory(Boolean::class)->addNames('enabled');
 
 //Use it:
 $db->post->fields['year']; //returns an instance of Year

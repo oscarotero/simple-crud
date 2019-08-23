@@ -7,6 +7,15 @@ class Datetime extends Field
 {
     protected $format = 'Y-m-d H:i:s';
 
+    public static function getFactory(): FieldFactory
+    {
+        return new FieldFactory(
+            self::class,
+            ['datetime'],
+            ['pubdate', '/[a-z]At$/']
+        );
+    }
+
     public function format($value): ?\Datetime
     {
         if ($value instanceof \Datetime) {

@@ -34,8 +34,8 @@ SQL
     public function testFields()
     {
         $db = $this->createDatabase();
-        $db->getFieldFactory()->defineField(Json::class, ['names' => ['data']]);
-        $db->getFieldFactory()->defineField(Serializable::class, ['names' => ['serializable']]);
+        $db->getFieldFactory(Json::class)->addNames('data');
+        $db->getFieldFactory(Serializable::class)->addNames('serializable');
 
         $this->assertInstanceOf(Json::class, $db->post->data);
 

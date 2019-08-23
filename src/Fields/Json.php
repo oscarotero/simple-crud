@@ -9,6 +9,14 @@ final class Json extends Field
         'assoc' => true,
     ];
 
+    public static function getFactory(): FieldFactory
+    {
+        return new FieldFactory(
+            self::class,
+            ['json']
+        );
+    }
+
     public function format($value)
     {
         return empty($value) ? [] : json_decode($value, $this->config['assoc']);

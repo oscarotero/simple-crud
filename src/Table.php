@@ -31,6 +31,7 @@ class Table implements ArrayAccess, Countable
     private $fields = [];
     private $defaults = [];
     private $eventDispatcher;
+    private $fieldFactories;
 
     protected const ROW_CLASS = Row::class;
     protected const ROWCOLLECTION_CLASS = RowCollection::class;
@@ -40,11 +41,11 @@ class Table implements ArrayAccess, Countable
         $this->db = $db;
         $this->name = $name;
 
-        $fieldFactory = $db->getFieldFactory();
+        $this->fieldFactories = $db->getFieldFactories();
         $fields = $db->getScheme()->getTableFields($name);
 
         foreach ($fields as $info) {
-            $field = $fieldFactory->get($this, $info);
+            $field = $this->createField($info);
 
             $this->fields[$field->getName()] = $field;
             $this->defaults[$field->getName()] = null;
@@ -396,5 +397,16 @@ class Table implements ArrayAccess, Countable
     {
         $class = self::ROWCOLLECTION_CLASS;
         return new $class($this, ...$rows);
+    }
+
+    public function createField(array $info): Field
+    {
+        foreach ($this->fieldFactories as $fieldFactory) {
+            if ($field = $fieldFactory->create($this, $info)) {
+                return $field;
+            }
+        }
+
+        return new Field($this, $info);
     }
 }

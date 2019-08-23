@@ -5,6 +5,11 @@ namespace SimpleCrud\Fields;
 
 final class Serializable extends Field
 {
+    public static function getFactory(): FieldFactory
+    {
+        return new FieldFactory(self::class);
+    }
+
     protected $config = [
         'unserialize' => ['allowed_classes' => false],
     ];

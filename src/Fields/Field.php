@@ -14,6 +14,11 @@ class Field
     protected $info;
     protected $config = [];
 
+    public static function getFactory(): FieldFactory
+    {
+        return new FieldFactory(self::class);
+    }
+
     public function __construct(Table $table, array $info)
     {
         $this->table = $table;

@@ -9,6 +9,14 @@ use Atlas\Query\Update;
 
 final class Point extends Field
 {
+    public static function getFactory(): FieldFactory
+    {
+        return new FieldFactory(
+            self::class,
+            ['point']
+        );
+    }
+
     public function select(Select $query)
     {
         $name = $this->getName();

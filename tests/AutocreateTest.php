@@ -3,8 +3,9 @@
 namespace SimpleCrud\Tests;
 
 use SimpleCrud\Database;
-use SimpleCrud\FieldFactory;
+use SimpleCrud\Fields\FieldFactory;
 use SimpleCrud\Fields\Field;
+use SimpleCrud\Fields\Json;
 use SimpleCrud\Scheme\SchemeInterface;
 use SimpleCrud\Table;
 
@@ -32,7 +33,7 @@ EOT
     {
         $db = $this->createDatabase();
 
-        $this->assertInstanceOf(FieldFactory::class, $db->getFieldFactory());
+        $this->assertInstanceOf(FieldFactory::class, $db->getFieldFactory(Json::class));
         $this->assertInstanceOf(SchemeInterface::class, $db->getScheme());
 
         return $db;
