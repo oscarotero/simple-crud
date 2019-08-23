@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.1.0] - 2019-08-23
+### Changed
+- The way to define custom fields has changed in order to make it more easy and less verbose.
+
 ## 7.0.0 - 2019-04-03
 This library was rewritten and a lot of breaking changes were included.
 
@@ -18,3 +22,5 @@ This library was rewritten and a lot of breaking changes were included.
 - Added `Atlas.Query` as a dependency to create the queries and adopt its API
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
+
+[7.1.0]: https://github.com/oscarotero/simple-crud/compare/v7.0.0...v7.1.0
