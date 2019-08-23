@@ -3,8 +3,8 @@
 namespace SimpleCrud\Tests;
 
 use SimpleCrud\Database;
-use SimpleCrud\Fields\FieldFactory;
 use SimpleCrud\Fields\Field;
+use SimpleCrud\Fields\FieldFactory;
 use SimpleCrud\Fields\Json;
 use SimpleCrud\Scheme\SchemeInterface;
 use SimpleCrud\Table;

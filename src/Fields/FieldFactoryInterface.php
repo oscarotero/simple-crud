@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace SimpleCrud\Fields;
 
-use SimpleCrud\Fields\Field;
 use SimpleCrud\Table;
 
 /**
