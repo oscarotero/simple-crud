@@ -74,17 +74,10 @@ class Select extends Query
 
     private function createRow(array $data): Row
     {
-        $values = [];
-        $extraData = [];
+        $data = $this->table->format($data);
         $fields = $this->table->getFields();
-
-        foreach ($data as $name => $value) {
-            if (isset($fields[$name])) {
-                $values[$name] = $fields[$name]->format($value);
-            } else {
-                $extraData[$name] = $value;
-            }
-        }
+        $extraData = array_diff_key($data, $fields);
+        $values = array_intersect_key($data, $fields);
 
         return $this->table->create($values)->setData($extraData);
     }

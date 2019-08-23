@@ -187,6 +187,22 @@ class Row implements JsonSerializable
     }
 
     /**
+     * Reload the data from the database
+     */
+    public function reload($keepChanges = false): self
+    {
+        $select = $this->table->select()->where('id = ', $this->id);
+        $values = $select()->fetch(\PDO::FETCH_ASSOC);
+        $this->values = $this->table->format($values);
+
+        if (!$keepChanges) {
+            $this->changes = [];
+        }
+
+        return $this;
+    }
+
+    /**
      * Returns an array with all fields of the row
      */
     public function toArray(): array

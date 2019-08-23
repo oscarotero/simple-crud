@@ -97,6 +97,20 @@ class Table implements ArrayAccess, Countable
         return $overrides + $this->defaults;
     }
 
+    /** 
+     * Format selected data from the database
+    */
+    public function format(array $values): array
+    {
+        foreach ($this->fields as $name => $field) {
+            if (array_key_exists($name, $values)) {
+                $values[$name] = $field->format($values[$name]);
+            }
+        }
+
+        return $values;
+    }
+
     /**
      * Store a row in the cache.
      */

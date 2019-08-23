@@ -65,5 +65,11 @@ SQL
         $this->assertIsArray($post->data);
         $this->assertIsArray($post->point);
         $this->assertIsBool($post->isActive);
+
+        $this->assertFalse($post->isActive);
+        $post->isActive = true;
+        $this->assertTrue($post->isActive);
+        $post->reload();
+        $this->assertFalse($post->isActive);
     }
 }
