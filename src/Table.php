@@ -55,7 +55,7 @@ class Table implements ArrayAccess, Countable
         $this->init();
     }
 
-    protected function init()
+    protected function init(): void
     {
 
     }
