@@ -236,6 +236,8 @@ class Row implements JsonSerializable
 
             if (empty($this->id)) {
                 $this->id = $this->table->insert($this->toArray())->run();
+            } elseif (!$this->changes) {
+                return $this;
             } else {
                 $this->table->update($this->changes)
                     ->where('id = ', $this->id)

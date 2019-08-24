@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Field `Serialize` returns `NULL` if the value is not a string.
 - `NULL` values on insert.
+- Update a row with no changes.
 
 ## [7.1.0] - 2019-08-23
 ### Changed
