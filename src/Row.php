@@ -189,7 +189,7 @@ class Row implements JsonSerializable
     /**
      * Reload the data from the database
      */
-    public function reload($keepChanges = false): self
+    public function reload(bool $keepChanges = false): self
     {
         $select = $this->table->select()->where('id = ', $this->id);
         $values = $select()->fetch(\PDO::FETCH_ASSOC);

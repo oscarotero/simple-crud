@@ -57,7 +57,6 @@ class Table implements ArrayAccess, Countable
 
     protected function init(): void
     {
-
     }
 
     public function __debugInfo(): array
@@ -109,7 +108,7 @@ class Table implements ArrayAccess, Countable
         return $overrides + $this->defaults;
     }
 
-    /** 
+    /**
      * Format selected data from the database
     */
     public function format(array $values): array

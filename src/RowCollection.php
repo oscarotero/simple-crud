@@ -313,7 +313,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      * Returns an array with all fields of all rows
      * By default, the rows are not converted to arrays
      */
-    public function toArray($convertRows = false): array
+    public function toArray(bool $convertRows = false): array
     {
         if (!$convertRows) {
             return $this->rows;
