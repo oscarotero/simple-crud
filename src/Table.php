@@ -51,6 +51,13 @@ class Table implements ArrayAccess, Countable
             $this->fields[$field->getName()] = $field;
             $this->defaults[$field->getName()] = null;
         }
+
+        $this->init();
+    }
+
+    protected function init()
+    {
+
     }
 
     public function __debugInfo(): array

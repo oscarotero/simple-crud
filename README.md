@@ -672,6 +672,11 @@ class Post extends Table
     protected const ROW_CLASS = PostRow::class;
     protected const ROWCOLLECTION_CLASS = PostRowCollection::class;
 
+    protected function init()
+    {
+        //Insert code to be executed after the instantion
+    }
+
     public function selectLatest()
     {
         return $this->select()

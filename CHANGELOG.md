@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - New method `Row::reload()` to reload the data from the database and, optionally, discard changes.
 - New argument to `RowCollection::toArray()` to convert only the collection but not the rows
 - Provided a basic event dispatcher
+- Added the `init()` method to tables.
 
 ### Fixed
 - Field `Serialize` returns `NULL` if the value is not a string.
