@@ -30,13 +30,12 @@ EOT
 
     public function testTable()
     {
-        $dispatcher = new EventDispatcher\Dispatcher();
-
+        
         $db = $this->createDatabase();
-        $db->post->setEventDispatcher($dispatcher);
-
+        
         $this->assertInstanceOf(EventDispatcherInterface::class, $db->post->getEventDispatcher());
-
+        
+        $dispatcher = $db->post->getEventDispatcher();
         $dispatcher->listen(CreateSelectQuery::class, function ($event) {
             $event->getQuery()->where('isActive = 1');
         });

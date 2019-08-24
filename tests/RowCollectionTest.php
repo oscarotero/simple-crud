@@ -100,7 +100,7 @@ EOT
             3 => ['id' => 3, 'title' => 'Same title'],
         ];
 
-        $this->assertEquals($array, $posts->toArray());
+        $this->assertEquals($array, $posts->toArray(true));
 
         $this->assertSame(
             'First post',
