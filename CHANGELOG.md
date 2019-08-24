@@ -5,9 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [7.2.0] - 2019-08-23
+## [7.2.0] - Unreleased
 ### Added
 - New method `Row::reload()` to reload the data from the database and, optionally, discard changes.
+- New argument to `RowCollection::toArray()` to convert only the collection but not the rows
+- Provided a basic event dispatcher
+
+### Fixed
+- Field `Serialize` returns `NULL` if the value is not a string.
 
 ## [7.1.0] - 2019-08-23
 ### Changed
@@ -27,5 +32,5 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
-[7.2.0]: https://github.com/oscarotero/simple-crud/compare/v7.1.0...v7.2.0
+[7.2.0]: https://github.com/oscarotero/simple-crud/compare/v7.1.0...HEAD
 [7.1.0]: https://github.com/oscarotero/simple-crud/compare/v7.0.0...v7.1.0

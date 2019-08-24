@@ -1,6 +1,6 @@
 <?php
 
-namespace SimpleCrud\Tests\EventDispatcher;
+namespace SimpleCrud\EventDispatcher;
 
 use Psr\EventDispatcher\ListenerProviderInterface;
 

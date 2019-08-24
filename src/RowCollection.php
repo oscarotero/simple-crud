@@ -311,12 +311,28 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
 
     /**
      * Returns an array with all fields of all rows
+     * By default, the rows are not converted to arrays
      */
-    public function toArray(): array
+    public function toArray($convertRows = false): array
     {
+        if (!$convertRows) {
+            return $this->rows;
+        }
+
         return array_map(function ($row) {
             return $row->toArray();
         }, $this->rows);
+    }
+
+    /**
+     * Apply a array_map to the rows and returns the result.
+     * By default, the keys are not preserved
+     */
+    public function map(callable $function, bool $preserveKeys = false): array
+    {
+        $result = array_map($function, $this->rows);
+
+        return $preserveKeys ? $result : array_values($result);
     }
 
     /**

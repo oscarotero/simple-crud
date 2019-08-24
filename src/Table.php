@@ -6,6 +6,7 @@ namespace SimpleCrud;
 use ArrayAccess;
 use Countable;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use SimpleCrud\EventDispatcher\Dispatcher;
 use SimpleCrud\Events\BeforeCreateRow;
 use SimpleCrud\Events\CreateDeleteQuery;
 use SimpleCrud\Events\CreateInsertQuery;
@@ -72,8 +73,12 @@ class Table implements ArrayAccess, Countable
         return $this;
     }
 
-    public function getEventDispatcher(): ?EventDispatcherInterface
+    public function getEventDispatcher(): EventDispatcherInterface
     {
+        if ($this->eventDispatcher === null) {
+            $this->eventDispatcher = new Dispatcher();
+        }
+
         return $this->eventDispatcher;
     }
 

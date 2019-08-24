@@ -16,6 +16,10 @@ final class Serializable extends Field
 
     public function format($value)
     {
+        if (!is_string($value)) {
+            return null;
+        }
+
         return @unserialize($value, $this->config['unserialize']) ?: [];
     }
 

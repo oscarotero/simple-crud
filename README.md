@@ -478,11 +478,11 @@ SimpleCrud uses [PSR-14 Event Dispatcher](https://www.php-fig.org/psr/psr-14/) t
 use SimpleCrud\Events\BeforeSaveRow;
 use SimpleCrud\Events\CreateSelectQuery;
 
-//Create an event dispatcher
-$dispatcher = new Psr14EventDispatcher();
+//Get the event dispatcher
+$dispatcher = $db->post->getEventDispatcher();
 
 //Assign the BeforeSaveRow event listener
-$dispatcher->on(BeforeSaveRow::class, function (BeforeSaveRow $event) {
+$dispatcher->listen(BeforeSaveRow::class, function (BeforeSaveRow $event) {
     $row = $event->getRow();
 
     if (!$row->createdAt) {
@@ -491,15 +491,12 @@ $dispatcher->on(BeforeSaveRow::class, function (BeforeSaveRow $event) {
 });
 
 //Assign a CreateSelectQuery
-$dispatcher->on(CreateSelectQuery::class, function (CreateSelectQuery $event) {
+$dispatcher->listen(CreateSelectQuery::class, function (CreateSelectQuery $event) {
     $query = $event->getQuery();
 
     //Add automatically a where clause in all selects
     $query->where('active = true');
 });
-
-//Assign the dispatcher to the table Post
-$db->post->setEventDispatcher($dispatcher);
 
 //Create a new post
 $post = $db->post->create(['title' => 'Hello world']);
@@ -511,6 +508,14 @@ $post->createdAt; //This field was filled and saved
 
 //Select a post, so CreateSelectQuery is triggered and only active posts are selected
 $posts = $db->post->select()->run();
+```
+
+You can provide your own event dispatcher:
+
+```php
+$myDispatcher = new Psr14EventDispatcher();
+
+$db->post->setEventDispatcher($myDispatcher);
 ```
 
 The available Events are:
