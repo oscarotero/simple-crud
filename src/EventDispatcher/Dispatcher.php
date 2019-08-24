@@ -6,6 +6,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 
 class Dispatcher implements EventDispatcherInterface
 {
+    private $provider;
+
     public function __construct(ListenerProviderInterface $provider = null)
     {
         $this->provider = $provider ?: new ListenerProvider();
