@@ -45,6 +45,7 @@ final class Database
     {
         $this->connection = new Connection($pdo);
         $this->scheme = $scheme;
+        $this->fieldFactories = $fieldFactories ?: self::createDefaultFieldFactories();
 
         if ($scheme) {
             return;
@@ -63,7 +64,6 @@ final class Database
                 throw new RuntimeException(sprintf('Invalid engine type: %s', $engine));
         }
 
-        $this->fieldFactories = $fieldFactories ?: self::createDefaultFieldFactories();
     }
 
     /**

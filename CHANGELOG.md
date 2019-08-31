@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.2.1] - 2019-08-31
+### Fixed
+- FieldFactories are not initialized in the database constructor.
+
 ## [7.2.0] - 2019-08-25
 ### Added
 - New method `Row::reload()` refresh the data from the database and, optionally, discard changes.
@@ -35,5 +39,6 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.2.1]: https://github.com/oscarotero/simple-crud/compare/v7.2.0...v7.2.1
 [7.2.0]: https://github.com/oscarotero/simple-crud/compare/v7.1.0...v7.2.0
 [7.1.0]: https://github.com/oscarotero/simple-crud/compare/v7.0.0...v7.1.0
