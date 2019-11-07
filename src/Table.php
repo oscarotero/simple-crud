@@ -414,13 +414,13 @@ class Table implements ArrayAccess, Countable
             $data = $event->getData();
         }
 
-        $class = self::ROW_CLASS;
+        $class = static::ROW_CLASS;
         return $this->cache(new $class($this, $data));
     }
 
     public function createCollection(array $rows = []): RowCollection
     {
-        $class = self::ROWCOLLECTION_CLASS;
+        $class = static::ROWCOLLECTION_CLASS;
         return new $class($this, ...$rows);
     }
 
