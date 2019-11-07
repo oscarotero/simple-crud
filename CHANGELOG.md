@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.2.3] - 2019-11-07
+### Fixed
+- Allow to assign names to the field `Field` factory
+
 ## [7.2.2] - 2019-11-07
 ### Fixed
 - Allow to override the default constants `Table::ROW_CLASS` and `Table::ROWCOLLECTION_CLASS`
@@ -43,6 +47,7 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.2.3]: https://github.com/oscarotero/simple-crud/compare/v7.2.2...v7.2.3
 [7.2.2]: https://github.com/oscarotero/simple-crud/compare/v7.2.1...v7.2.2
 [7.2.1]: https://github.com/oscarotero/simple-crud/compare/v7.2.0...v7.2.1
 [7.2.0]: https://github.com/oscarotero/simple-crud/compare/v7.1.0...v7.2.0

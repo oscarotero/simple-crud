@@ -273,11 +273,12 @@ final class Database
     private static function createDefaultFieldFactories(): array
     {
         return [
+            Field::class => Field::getFactory(),
+
             Boolean::class => Boolean::getFactory(),
             Date::class => Date::getFactory(),
             Datetime::class => Datetime::getFactory(),
             Decimal::class => Decimal::getFactory(),
-            Field::class => Field::getFactory(),
             Integer::class => Integer::getFactory(),
             Json::class => Json::getFactory(),
             Point::class => Point::getFactory(),
