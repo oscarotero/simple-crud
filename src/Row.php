@@ -223,6 +223,20 @@ class Row implements JsonSerializable
     }
 
     /**
+     * Returns the id of the row.
+     * If it does not exist (because it is not saved in the database yet),
+     * execute a save() first
+     */
+    public function id(): int
+    {
+        if (empty($this->id)) {
+            $this->save();
+        }
+
+        return $this->id;
+    }
+
+    /**
      * Insert/update the row in the database
      */
     public function save(): self
@@ -282,22 +296,28 @@ class Row implements JsonSerializable
 
             //Has one
             if ($field = $table1->getJoinField($table2)) {
-                $this->{$field->getName()} = $row->id;
+                $this->{$field->getName()} = $row->id();
                 continue;
             }
 
             //Has many
             if ($field = $table2->getJoinField($table1)) {
-                $row->{$field->getName()} = $this->id;
+                $row->{$field->getName()} = $this->id();
                 $row->save();
                 continue;
             }
 
             //Has many to many
             if ($joinTable = $table1->getJoinTable($table2)) {
+                if (empty($row->id)) {
+                    $row->save();
+                }
+                if (empty($this->id)) {
+                    $this->save();
+                }
                 $joinTable->insert([
-                    $joinTable->getJoinField($table1)->getName() => $this->id,
-                    $joinTable->getJoinField($table2)->getName() => $row->id,
+                    $joinTable->getJoinField($table1)->getName() => $this->id(),
+                    $joinTable->getJoinField($table2)->getName() => $row->id(),
                 ])
                 ->run();
 

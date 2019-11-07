@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.2.4] - 2019-11-07
+### Added
+- Row::id() to return the id of the row (and generate one if it's empty)
+
+### Fixed
+- Execute Row::relate() when the row is not saved (and does not have an id)
+
 ## [7.2.3] - 2019-11-07
 ### Fixed
 - Allow to assign names to the field `Field` factory
@@ -47,6 +54,7 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.2.4]: https://github.com/oscarotero/simple-crud/compare/v7.2.3...v7.2.4
 [7.2.3]: https://github.com/oscarotero/simple-crud/compare/v7.2.2...v7.2.3
 [7.2.2]: https://github.com/oscarotero/simple-crud/compare/v7.2.1...v7.2.2
 [7.2.1]: https://github.com/oscarotero/simple-crud/compare/v7.2.0...v7.2.1
