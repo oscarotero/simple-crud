@@ -309,12 +309,6 @@ class Row implements JsonSerializable
 
             //Has many to many
             if ($joinTable = $table1->getJoinTable($table2)) {
-                if (empty($row->id)) {
-                    $row->save();
-                }
-                if (empty($this->id)) {
-                    $this->save();
-                }
                 $joinTable->insert([
                     $joinTable->getJoinField($table1)->getName() => $this->id(),
                     $joinTable->getJoinField($table2)->getName() => $row->id(),
