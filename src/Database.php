@@ -63,7 +63,6 @@ final class Database
             default:
                 throw new RuntimeException(sprintf('Invalid engine type: %s', $engine));
         }
-
     }
 
     /**

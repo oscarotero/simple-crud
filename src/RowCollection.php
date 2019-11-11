@@ -177,6 +177,10 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
             $this_id = $relation->{$this_fk};
             $rows_id = $relation->{$rows_fk};
 
+            if (empty($rows[$rows_id]) || empty($this[$this_id])) {
+                continue;
+            }
+
             if (!isset($rows_in_this[$this_id])) {
                 $rows_in_this[$this_id] = [];
             }
