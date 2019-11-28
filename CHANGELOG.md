@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [7.3.0] - Unreleased
 ### Added
 - Queries have the method `get` as an alias of `run`.
+- New method `Table::getOrCreate()`.
+- Magic methods to select a row by other unique keys than id. For example `$db->post->slug('post-slug')`.
 
 ## [7.2.5] - 2019-11-11
 ### Fixed

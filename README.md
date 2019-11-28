@@ -134,6 +134,22 @@ $db->post[] = [
 $totalPost = count($db->post);
 ```
 
+### Select by other unique keys
+
+If you want to select a row by other key than `id`, just use a method with the field name:
+
+```php
+$post = $db->post->slug('post-slug');
+```
+
+### Select or create
+
+Sometimes, you want to get a row or create it if it does not exist. You can do it easily with `getOrCreate` method:
+
+```php
+$post = $db->post->getOrCreate(['slug' => 'post-slug']);
+```
+
 ### Rows
 
 A `Row` object represents a database row and is used to read and modify its data:
