@@ -2,8 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/) 
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## [7.3.0] - Unreleased
+### Added
+- Queries have the method `get` as an alias of `run`.
 
 ## [7.2.5] - 2019-11-11
 ### Fixed
@@ -58,6 +62,7 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.3.0]: https://github.com/oscarotero/simple-crud/compare/v7.2.5...HEAD
 [7.2.5]: https://github.com/oscarotero/simple-crud/compare/v7.2.4...v7.2.5
 [7.2.4]: https://github.com/oscarotero/simple-crud/compare/v7.2.3...v7.2.4
 [7.2.3]: https://github.com/oscarotero/simple-crud/compare/v7.2.2...v7.2.3

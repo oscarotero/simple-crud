@@ -23,7 +23,7 @@ This package is installable and autoloadable via Composer as [simple-crud/simple
 $ composer require simple-crud/simple-crud
 ```
 
-## Components
+## Classes
 
 SimpleCrud has the following classes:
 
@@ -180,7 +180,7 @@ echo $updateQuery; //UPDATE `post` ...
 $PDOStatement = $updateQuery();
 ```
 
-The method `run()` executes the query and returns the processed result of the query. For example, with `insert()` returns the id of the new row:
+The method `get()` executes the query and returns the processed result of the query. For example, with `insert()` returns the id of the new row:
 
 ```php
 //insert a new post
@@ -189,27 +189,27 @@ $id = $db->post
         'title' => 'My first post',
         'text' => 'This is the text of the post'
     ])
-    ->run();
+    ->get();
 
 //Delete a post
 $db->post
     ->delete()
     ->where('id = ', 23)
-    ->run();
+    ->get();
 
 //Count all posts
 $total = $db->post
     ->selectAggregate('COUNT')
-    ->run();
+    ->get();
 //note: this is the same like count($db->post)
 
 //Sum the ids of all posts
 $total = $db->post
     ->selectAggregate('SUM', 'id')
-    ->run();
+    ->get();
 ```
 
-`select()->run()` returns an instance of `RowCollection` with the result:
+`select()->get()` returns an instance of `RowCollection` with the result:
 
 ```php
 $posts = $db->post
@@ -217,7 +217,7 @@ $posts = $db->post
     ->where('id > ', 10)
     ->orderBy('id ASC')
     ->limit(100)
-    ->run();
+    ->get();
 
 foreach ($posts as $post) {
     echo $post->title;
@@ -231,7 +231,7 @@ $post = $db->post
     ->select()
     ->one()
     ->where('id = ', 23)
-    ->run();
+    ->get();
 
 echo $post->title;
 ```
@@ -247,7 +247,7 @@ $category = $db->category
     ->select()
     ->relatedWith($post)
     ->one()
-    ->run();
+    ->get();
 ```
 
 ### Query API:
@@ -329,7 +329,7 @@ $posts = $category->post;
 $posts = $db->post
     ->select()
     ->relatedWith($category)
-    ->run();
+    ->get();
 
 //But the result is cached so the database query is executed only the first time
 $posts = $category->post;
@@ -354,11 +354,11 @@ $category = $db->category[34];
 //Magic property: Returns all posts of this category:
 $posts = $category->post;
 
-//Magic method: Returns the query before run it
+//Magic method: Returns the query instead the result
 $posts = $category->post()
     ->where('pubdate > ', date('Y-m-d'))
     ->limit(10)
-    ->run();
+    ->get();
 ```
 
 ### Solving the n+1 problem
@@ -369,7 +369,7 @@ The [n+1 problem](http://stackoverflow.com/questions/97197/what-is-the-n1-select
 //Get some posts
 $posts = $db->post
     ->select()
-    ->run();
+    ->get();
 
 //preload all categories
 $posts->category;
@@ -386,12 +386,12 @@ You can perform the select by yourself to include modifiers:
 //Get some posts
 $posts = $db->post
     ->select()
-    ->run();
+    ->get();
 
 //Select the categories but ordered alphabetically descendent
 $categories = $posts->category()
     ->orderBy('name DESC')
-    ->run();
+    ->get();
 
 //Save the result in the cache and link the categories with each post
 $posts->link($categories);
@@ -408,15 +408,15 @@ For many-to-many relations, you need to do one more step:
 //Get some posts
 $posts = $db->post
     ->select()
-    ->run();
+    ->get();
 
 //Select the post_tag relations
-$tagRelations = $posts->post_tag()->run();
+$tagRelations = $posts->post_tag()->get();
 
 //And now the tags of these relations
 $tags = $tagRelations->tag()
     ->orderBy('name DESC')
-    ->run();
+    ->get();
 
 //Link the tags with posts using the relations
 $posts->link($tags, $tagRelations);
@@ -458,7 +458,7 @@ $query = $db->post->select()
     ->page(1)
     ->perPage(50);
 
-$posts = $query->run();
+$posts = $query->get();
 
 //To get the page info:
 $pagination = $query->getPageInfo();
@@ -507,7 +507,7 @@ $post->save();
 $post->createdAt; //This field was filled and saved
 
 //Select a post, so CreateSelectQuery is triggered and only active posts are selected
-$posts = $db->post->select()->run();
+$posts = $db->post->select()->get();
 ```
 
 You can provide your own event dispatcher:
@@ -695,7 +695,7 @@ $db->setTableClasses([
 ]);
 
 
-$latests = $db->post->selectLatest()->run(); //Returns an instance of MyModels\PostRowCollection
+$latests = $db->post->selectLatest()->get(); //Returns an instance of MyModels\PostRowCollection
 
 foreach ($latests as $post) {
     //Instances of MyModels\PostRow

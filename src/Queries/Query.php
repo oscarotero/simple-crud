@@ -41,6 +41,11 @@ abstract class Query
         return array_column($values, 0);
     }
 
+    public function get()
+    {
+        return $this->run();
+    }
+
     public function run()
     {
         $this->__invoke();
