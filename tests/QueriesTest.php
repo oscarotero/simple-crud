@@ -78,13 +78,14 @@ SQL
             ->where('title IS NOT NULL')
             ->where('id IN ', [1, 2])
             ->where('body = ', 'content')
+            ->whereEquals(['size' => 'small'])
             ->offset(3)
             ->orderBy('title')
             ->__invoke();
 
         $this->assertQuery(
             $db,
-            [1, 2, 'content'],
+            [1, 2, 'content', 'small'],
 <<<'SQL'
 SELECT
     `post`.`id`,
@@ -99,6 +100,7 @@ WHERE
     title IS NOT NULL
     AND id IN (:__1__, :__2__)
     AND body = :__3__
+    AND size = :__4__
 ORDER BY
     title
 LIMIT 1 OFFSET 3

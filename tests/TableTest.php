@@ -58,4 +58,27 @@ EOT
         $this->assertFalse(isset($db->post[1]));
         $this->assertCount(0, $db->post);
     }
+
+    public function testSelectShortcuts()
+    {
+        $db = $this->createDatabase();
+
+        $db->post[] = ['title' => 'First post', 'isActive' => 1];
+        $post = $db->post[1];
+
+        $this->assertSame($post, $db->post->title('First post'));
+        $this->assertNull($db->post->title('Other post'));
+
+        $this->assertSame($post, $db->post->getOrCreate(['title' => 'First post']));
+        $post2 = $db->post->getOrCreate(['title' => 'Second post']);
+
+        $this->assertInstanceOf(Row::class, $post2);
+        $this->assertNotSame($post, $post2);
+        $this->assertSame('Second post', $post2->title);
+        $this->assertNull($post2->id);
+
+        $this->assertCount(1, $db->post);
+        $post2->save();
+        $this->assertCount(2, $db->post);
+    }
 }

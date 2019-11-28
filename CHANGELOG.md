@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Queries have the method `get` as an alias of `run`.
 - New method `Table::getOrCreate()`.
 - Magic methods to select a row by other unique keys than id. For example `$db->post->slug('post-slug')`.
+- New method `whereEquals` to SELECT queries.
 
 ### Fixed
 - Do not include `NULL` values on insert, in order to generate defaults values in the database (for example for TIMESTAMP)

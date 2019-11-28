@@ -290,6 +290,7 @@ Function | Description
 `where` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `orWhere` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `catWhere` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
+`whereEquals` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `limit` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `offset` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `distinct` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)

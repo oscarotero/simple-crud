@@ -26,6 +26,7 @@ class Select extends Query
         'orderBy',
         'catHaving',
         'where',
+        'whereEquals',
         'orWhere',
         'catWhere',
         'limit',
