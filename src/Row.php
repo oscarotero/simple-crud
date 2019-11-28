@@ -320,6 +320,7 @@ class Row implements JsonSerializable
                     $joinTable->getJoinField($table1)->getName() => $this->id(),
                     $joinTable->getJoinField($table2)->getName() => $row->id(),
                 ])
+                ->orIgnore()
                 ->run();
 
                 continue;

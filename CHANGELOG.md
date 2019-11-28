@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.3.1] - 2019-11-28
+### Added
+- New method `orIgnore()` to INSERT queries, to ignore the insert on duplicate keys
+
+### Fixed
+- Ignore duplications on insert many-to-many relations, instead throw an exception
+
 ## [7.3.0] - 2019-11-28
 ### Added
 - Queries have the method `get` as an alias of `run`.
@@ -68,6 +75,7 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.3.1]: https://github.com/oscarotero/simple-crud/compare/v7.3.0...v7.3.1
 [7.3.0]: https://github.com/oscarotero/simple-crud/compare/v7.2.5...v7.3.0
 [7.2.5]: https://github.com/oscarotero/simple-crud/compare/v7.2.4...v7.2.5
 [7.2.4]: https://github.com/oscarotero/simple-crud/compare/v7.2.3...v7.2.4

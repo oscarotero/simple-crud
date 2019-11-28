@@ -315,6 +315,7 @@ Function | Description
 
 Function | Description
 ---------|------------
+`orIgnore()` | To ignore silently the insertion on duplicated keys, instead throw an exception.
 `set` | [Atlas.Query Insert()](http://atlasphp.io/cassini/query/insert.html)
 `setFlag` | [Atlas.Query Insert()](http://atlasphp.io/cassini/query/insert.html)
 

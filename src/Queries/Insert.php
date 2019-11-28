@@ -25,6 +25,22 @@ final class Insert extends Query
         }
     }
 
+    public function orIgnore(): self
+    {
+        $engine = $this->table->getDatabase()->getConnection()->getDriverName();
+
+        switch ($engine) {
+            case 'mysql':
+                $this->query->setFlag('IGNORE');
+                break;
+            case 'sqlite':
+                $this->query->setFlag('OR IGNORE');
+                break;
+        }
+
+        return $this;
+    }
+
     public function run()
     {
         $this->__invoke();

@@ -51,7 +51,7 @@ final class Database
             return;
         }
 
-        $engine = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $engine = $this->connection->getDriverName();
 
         switch ($engine) {
             case 'mysql':
