@@ -249,7 +249,14 @@ class Row implements JsonSerializable
             }
 
             if (empty($this->id)) {
-                $this->id = $this->table->insert($this->toArray())->run();
+                $values = array_filter(
+                    $this->toArray(),
+                    function ($value) {
+                        return $value !== null;
+                    }
+                );
+
+                $this->id = $this->table->insert($values)->run();
             } elseif (empty($this->changes)) {
                 return $this;
             } else {

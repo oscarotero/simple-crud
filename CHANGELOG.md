@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - New method `Table::getOrCreate()`.
 - Magic methods to select a row by other unique keys than id. For example `$db->post->slug('post-slug')`.
 
+### Fixed
+- Do not include `NULL` values on insert, in order to generate defaults values in the database (for example for TIMESTAMP)
+
 ## [7.2.5] - 2019-11-11
 ### Fixed
 - Exception thrown on load relations including NULL values
