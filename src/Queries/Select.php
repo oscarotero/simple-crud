@@ -34,6 +34,7 @@ class Select extends Query
         'distinct',
         'forUpdate',
         'setFlag',
+        'bindValue',
     ];
 
     public function __construct(Table $table)

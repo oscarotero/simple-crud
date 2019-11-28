@@ -296,6 +296,7 @@ Function | Description
 `distinct` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `forUpdate` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `setFlag` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
+`bindValue` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 
 #### Update
 
