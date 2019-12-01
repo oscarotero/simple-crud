@@ -92,7 +92,7 @@ SELECT
     `post`.`title`,
     `post`.`body`,
     `post`.`num`,
-    asText(`post`.`point`) as `point`,
+    ST_AsText(`post`.`point`) as `point`,
     `post`.`size`
 FROM
     `post`
@@ -133,7 +133,7 @@ SELECT
     `post`.`title`,
     `post`.`body`,
     `post`.`num`,
-    asText(`post`.`point`) as `point`,
+    ST_AsText(`post`.`point`) as `point`,
     `post`.`size`
 FROM
     `post`
