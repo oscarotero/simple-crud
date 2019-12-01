@@ -20,7 +20,7 @@ final class Point extends Field
     public function select(Select $query)
     {
         $name = $this->getName();
-        $query->columns("asText({$this}) as `{$name}`");
+        $query->columns("ST_AsText({$this}) as `{$name}`");
     }
 
     public function format($value): ?array
