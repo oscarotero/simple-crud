@@ -17,7 +17,7 @@ final class Point extends Field
         );
     }
 
-    public function select(Select $query)
+    public function select(Select $query): void
     {
         $name = $this->getName();
         $query->columns("ST_AsText({$this}) as `{$name}`");
@@ -38,7 +38,7 @@ final class Point extends Field
         ];
     }
 
-    public function insert(Insert $query, $value)
+    public function insert(Insert $query, $value): void
     {
         if (self::isValid($value)) {
             $value = sprintf('POINT(%s, %s)', $value[0], $value[1]);
@@ -49,7 +49,7 @@ final class Point extends Field
         $query->set($this->info['name'], $value);
     }
 
-    public function update(Update $query, $value)
+    public function update(Update $query, $value): void
     {
         if (self::isValid($value)) {
             $value = sprintf('POINT(%s, %s)', $value[0], $value[1]);
