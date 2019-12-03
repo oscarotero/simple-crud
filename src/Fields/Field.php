@@ -35,17 +35,21 @@ class Field
         return sprintf('%s.`%s`', $this->table, $this->info['name']);
     }
 
-    public function select(Select $query)
+    public function select(Select $query): void
     {
         $query->columns((string) $this);
     }
 
-    public function insert(Insert $query, $value)
+    public function insert(Insert $query, $value): void
     {
-        $query->column($this->getName(), $this->formatToDatabase($value));
+        $dbValue = $this->formatToDatabase($value);
+
+        if ($dbValue !== null) {
+            $query->column($this->getName(), $this->formatToDatabase($value));
+        }
     }
 
-    public function update(Update $query, $value)
+    public function update(Update $query, $value): void
     {
         $query->column($this->getName(), $this->formatToDatabase($value));
     }
@@ -64,7 +68,7 @@ class Field
         return isset($this->config[$name]) ? $this->config[$name] : null;
     }
 
-    public function setConfig(string $name, $value)
+    public function setConfig(string $name, $value): void
     {
         $this->config[$name] = $value;
     }

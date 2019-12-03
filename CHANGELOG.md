@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.3.4] - 2019-12-03
+### Fixed
+- Revert the bugfix added in v7.3.0 about not including `NULL` values on insert and fixed in a different way.
+- Added `void` return types to some methods of `Field` class.
+
 ## [7.3.3] - 2019-12-01
 ### Fixed
 - The field `Point` now use the function `ST_AsText` instead `asText` (that was deprecated and removed in MySql 8)
@@ -83,6 +88,7 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.3.4]: https://github.com/oscarotero/simple-crud/compare/v7.3.3...v7.3.4
 [7.3.3]: https://github.com/oscarotero/simple-crud/compare/v7.3.2...v7.3.3
 [7.3.2]: https://github.com/oscarotero/simple-crud/compare/v7.3.1...v7.3.2
 [7.3.1]: https://github.com/oscarotero/simple-crud/compare/v7.3.0...v7.3.1
