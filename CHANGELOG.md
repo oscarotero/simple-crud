@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Added
+- New function `getArray()` to SELECT queries, to return an array with data instead a `Row` or `RowCollection`.
+
 ## [7.3.4] - 2019-12-03
 ### Fixed
 - Revert the bugfix added in v7.3.0 about not including `NULL` values on insert and fixed in a different way.

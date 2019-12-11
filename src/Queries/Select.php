@@ -60,18 +60,27 @@ class Select extends Query
 
     public function run()
     {
+        $data = $this->getArray();
+
+        if ($this->one) {
+            return $data ? $this->createRow($data) : null;
+        }
+
+        $rows = array_map(Closure::fromCallable([$this, 'createRow']), $data);
+
+        return $this->table->createCollection($rows);
+    }
+
+    public function getArray(): ?array
+    {
         $statement = $this->__invoke();
         $statement->setFetchMode(PDO::FETCH_ASSOC);
 
         if ($this->one) {
-            $data = $statement->fetch();
-
-            return $data ? $this->createRow($data) : null;
+            return $statement->fetch() ?: null;
         }
 
-        $rows = array_map(Closure::fromCallable([$this, 'createRow']), $statement->fetchAll());
-
-        return $this->table->createCollection($rows);
+        return $statement->fetchAll();
     }
 
     private function createRow(array $data): Row

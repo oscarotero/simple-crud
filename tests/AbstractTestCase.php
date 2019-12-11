@@ -25,7 +25,8 @@ abstract class AbstractTestCase extends TestCase
 
     protected function createMysqlDatabase(array $scheme)
     {
-        $db = new Database(new PDO('mysql:host=127.0.0.1;charset=utf8', 'root', ''));
+        $pass = getenv('MYSQL_PASS') ?: '';
+        $db = new Database(new PDO('mysql:host=127.0.0.1;charset=utf8', 'root', $pass));
 
         $db->executeTransaction(function ($db) use ($scheme) {
             foreach ($scheme as $command) {
