@@ -5,9 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## [7.3.5] - 2019-12-12
 ### Added
 - New function `getArray()` to SELECT queries, to return an array with data instead a `Row` or `RowCollection`.
+
+### Fixed
+- `NULL` values in `Json` and `Serializable` fields
 
 ## [7.3.4] - 2019-12-03
 ### Fixed
@@ -92,6 +95,7 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.3.5]: https://github.com/oscarotero/simple-crud/compare/v7.3.4...v7.3.5
 [7.3.4]: https://github.com/oscarotero/simple-crud/compare/v7.3.3...v7.3.4
 [7.3.3]: https://github.com/oscarotero/simple-crud/compare/v7.3.2...v7.3.3
 [7.3.2]: https://github.com/oscarotero/simple-crud/compare/v7.3.1...v7.3.2

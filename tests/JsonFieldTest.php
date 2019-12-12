@@ -34,9 +34,5 @@ SQL
         $post = $db->post[1];
 
         $this->assertNull($post->info);
-
-        $array = $db->post->select()->one()->getArray();
-
-        print_r($array);
     }
 }

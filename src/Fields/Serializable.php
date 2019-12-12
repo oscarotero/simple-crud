@@ -25,6 +25,10 @@ final class Serializable extends Field
 
     protected function formatToDatabase($value): string
     {
+        if ($value === null) {
+            return $value;
+        }
+
         return serialize($value);
     }
 }

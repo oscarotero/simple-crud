@@ -24,6 +24,10 @@ final class Json extends Field
 
     protected function formatToDatabase($value): ?string
     {
+        if ($value === null) {
+            return $value;
+        }
+
         if (!is_string($value)) {
             return json_encode($value) ?: null;
         }
