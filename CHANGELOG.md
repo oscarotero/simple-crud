@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.3.6] - 2019-12-25
+### Added
+- New function `Database::clearCache()` to clear the cache of all tables
+
 ## [7.3.5] - 2019-12-12
 ### Added
 - New function `getArray()` to SELECT queries, to return an array with data instead a `Row` or `RowCollection`.
@@ -95,6 +99,7 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[7.3.6]: https://github.com/oscarotero/simple-crud/compare/v7.3.5...v7.3.6
 [7.3.5]: https://github.com/oscarotero/simple-crud/compare/v7.3.4...v7.3.5
 [7.3.4]: https://github.com/oscarotero/simple-crud/compare/v7.3.3...v7.3.4
 [7.3.3]: https://github.com/oscarotero/simple-crud/compare/v7.3.2...v7.3.3

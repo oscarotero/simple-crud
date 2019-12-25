@@ -149,6 +149,18 @@ final class Database
     }
 
     /**
+     * Clear the cache of all tables
+     */
+    public function clearCache(): self
+    {
+        foreach ($this->tables as $table) {
+            $table->clearCache();
+        }
+
+        return $this;
+    }
+
+    /**
      * Magic method to initialize the tables in lazy mode.
      *
      * @throws SimpleCrudException If the table cannot be instantiated
