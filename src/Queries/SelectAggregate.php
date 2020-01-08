@@ -18,7 +18,7 @@ final class SelectAggregate extends Select
         'SUM',
     ];
 
-    public function __construct(Table $table, string $function, string $field = 'id')
+    public function __construct(Table $table, string $function, string $field = 'id', string $as = null)
     {
         $this->table = $table;
         $this->field = $field;
@@ -31,19 +31,26 @@ final class SelectAggregate extends Select
             );
         }
 
+        if ($as) {
+            $columns = sprintf('%s(%s) AS `%s`', $function, $field, $as);
+        } else {
+            $columns = sprintf('%s(%s)', $function, $field);
+        }
+
         $this->query = $table->getDatabase()
             ->select()
             ->from((string) $table)
-            ->columns(sprintf('%s(%s)', $function, $field));
+            ->columns($columns);
     }
 
     public function run()
     {
         $statement = $this->__invoke();
         $statement->setFetchMode(PDO::FETCH_NUM);
+        $result = $statement->fetchColumn();
 
-        $field = $this->table->{$this->field};
+        $field = $this->table->{$this->field} ?? null;
 
-        return $field->format($statement->fetchColumn());
+        return $field ? $field->format($result) : $result;
     }
 }

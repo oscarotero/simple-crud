@@ -198,4 +198,22 @@ FOR UPDATE
 SQL
         );
     }
+
+    /**
+     * @depends testDatabase
+     */
+    public function testSum(Database $db)
+    {
+        $query = $db->post->selectAggregate('sum', 'qty * sale_price', 'total_stock');
+
+        $this->assertEquals(
+            (string) $query,
+<<<'SQL'
+SELECT
+    SUM(qty * sale_price) AS `total_stock`
+FROM
+    `post`
+SQL
+        );
+    }
 }

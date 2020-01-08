@@ -205,9 +205,9 @@ class Table implements ArrayAccess, Countable
         return $query;
     }
 
-    public function selectAggregate(string $function, string $field = 'id'): SelectAggregate
+    public function selectAggregate(string $function, string $field = 'id', string $as = null): SelectAggregate
     {
-        $query = new SelectAggregate($this, $function, $field);
+        $query = new SelectAggregate($this, $function, $field, $as);
 
         if ($eventDispatcher = $this->getEventDispatcher()) {
             $eventDispatcher->dispatch(new CreateSelectQuery($query));
