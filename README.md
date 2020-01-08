@@ -134,12 +134,12 @@ $db->post[] = [
 $totalPost = count($db->post);
 ```
 
-### Select by other unique keys
+### Select by other fields
 
-If you want to select a row by other key than `id`, just use a method with the field name:
+If you want to select a row by other key than `id`, just use the method `get`:
 
 ```php
-$post = $db->post->slug('post-slug');
+$post = $db->post->get(['slug' => 'post-slug']);
 ```
 
 ### Select or create
@@ -288,8 +288,10 @@ Function | Description
 `orderBy` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `catHaving` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `where` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
-`orWhere` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
+`whereSprintf` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `catWhere` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
+`orWhere` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
+`orWhereSprintf` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `whereEquals` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `limit` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)
 `offset` | [Atlas.Query Select()](http://atlasphp.io/cassini/query/select.html)

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [7.4.0] - Unreleased
 ### Added
 - `SelectAggregate` query allows to set not only fields but anything (math operations, for instance) and save the result as a column
+- `Select` query has the `whereSprintf` and `orWhereSprintf` modifiers.
+- New method `Table::get` To return a row from a table
+
+### Deprecated
+- Magic method to return rows from a table using a field. Use `$table->get(['slug' => 'value'])` instead `$table->slug('value')`.
 
 ## [7.3.6] - 2019-12-25
 ### Added

@@ -400,17 +400,18 @@ class Table implements ArrayAccess, Countable
         return $this->fields;
     }
 
+    /**
+     * @deprecated
+     */
     public function __call(string $name, array $args): ?Row
     {
-        $field = $this->__get($name);
-
-        return $this->select()->one()->where("{$field} = ", $args[0])->run();
+        return $this->get([$name => $args[0]]);
     }
 
     /**
-     * Search a row with some values or create one if it does not exist
+     * Search a row with some values
      */
-    public function getOrCreate(array $data): Row
+    public function get(array $data): ?Row
     {
         $query = $this->select()->one();
 
@@ -420,13 +421,15 @@ class Table implements ArrayAccess, Countable
             $query->where("{$field} = ", $value);
         }
 
-        $row = $query->run();
+        return $query->run();
+    }
 
-        if ($row) {
-            return $row;
-        }
-
-        return $this->create($data);
+    /**
+     * Search a row with some values or create one if it does not exist
+     */
+    public function getOrCreate(array $data): Row
+    {
+        return $this->get($data) ?: $this->create($data);
     }
 
     public function create(array $data = []): Row
