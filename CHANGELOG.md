@@ -5,9 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [7.4.0] - Unreleased
+## [7.4.0] - 2020-01-10
 ### Added
-- `SelectAggregate` query allows to set not only fields but anything (math operations, for instance) and save the result as a column
+- `SelectAggregate` query allows to set not only fields but anything (math operations, for instance) and save the result as a column [#36]
 - `Select` query has the `whereSprintf` and `orWhereSprintf` modifiers.
 - New method `Table::get` To return a row from a table
 
@@ -108,6 +108,9 @@ This library was rewritten and a lot of breaking changes were included.
 - The pagination info is returned with `$selectQuery->getPageInfo()` function.
 - Many other changes. See the docs.
 
+[#36]: https://github.com/oscarotero/simple-crud/issues/36
+
+[7.4.0]: https://github.com/oscarotero/simple-crud/compare/v7.3.6...v7.4.0
 [7.3.6]: https://github.com/oscarotero/simple-crud/compare/v7.3.5...v7.3.6
 [7.3.5]: https://github.com/oscarotero/simple-crud/compare/v7.3.4...v7.3.5
 [7.3.4]: https://github.com/oscarotero/simple-crud/compare/v7.3.3...v7.3.4
