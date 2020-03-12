@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.4.1] - 2020-03-12
+### Fixed
+- Support for PHP 7.2 [#37]
+
 ## [7.4.0] - 2020-01-10
 ### Added
 - `SelectAggregate` query allows to set not only fields but anything (math operations, for instance) and save the result as a column [#36]
@@ -109,7 +113,9 @@ This library was rewritten and a lot of breaking changes were included.
 - Many other changes. See the docs.
 
 [#36]: https://github.com/oscarotero/simple-crud/issues/36
+[#37]: https://github.com/oscarotero/simple-crud/issues/37
 
+[7.4.1]: https://github.com/oscarotero/simple-crud/compare/v7.4.0...v7.4.1
 [7.4.0]: https://github.com/oscarotero/simple-crud/compare/v7.3.6...v7.4.0
 [7.3.6]: https://github.com/oscarotero/simple-crud/compare/v7.3.5...v7.3.6
 [7.3.5]: https://github.com/oscarotero/simple-crud/compare/v7.3.4...v7.3.5
