@@ -38,9 +38,10 @@ EOT
 
         //Insert
         $db->post[] = ['title' => 'First post', 'isActive' => 1];
+        $db->post->insert(['title' => 'Second post', 'isActive' => 1])->run();
 
         $this->assertTrue(isset($db->post[1]));
-        $this->assertSame(1, $db->post->count());
+        $this->assertSame(2, $db->post->count());
 
         //Select
         $post = $db->post[1];
@@ -49,14 +50,16 @@ EOT
 
         //Update
         $db->post[1] = ['title' => 'First post edited'];
+        $db->post[2] = ['title' => 'Second post edited'];
 
         $this->assertEquals('First post edited', $post->title);
+        $this->assertEquals('Second post edited', $db->post[2]->title);
 
         //Delete
         unset($db->post[1]);
 
         $this->assertFalse(isset($db->post[1]));
-        $this->assertCount(0, $db->post);
+        $this->assertCount(1, $db->post);
     }
 
     public function testSelectShortcuts()

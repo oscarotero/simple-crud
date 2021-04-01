@@ -301,26 +301,27 @@ class Table implements ArrayAccess, Countable
      * @param mixed $offset
      * @param mixed $value
      */
-    public function offsetSet($offset, $value): Row
+    public function offsetSet($offset, $value): void
     {
         //Insert on missing offset
         if ($offset === null) {
             $value['id'] = null;
 
-            return $this->create($value)->save();
+            $this->create($value)->save();
+            return;
         }
 
         //Update if the element is cached and exists
         $row = $this->getCached($offset);
 
         if ($row) {
-            return $row->edit($value)->save();
+            $row->edit($value)->save();
+            return;
         }
 
         //Update if the element it's not cached
         if (!$this->isCached($row)) {
-            $this->update()
-                ->columns($value)
+            $this->update($value)
                 ->where('id = ', $offset)
                 ->run();
         }
