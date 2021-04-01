@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.4.2] - 2021-04-01
+### Fixed
+- The array syntax to update a table row (Like `$db->post[2] = ['title' => 'New title']; `) didn't work in all cases. This fix changed the return type of `Table::offsetSet` to `void` (previously it was `Row`). [#41]
+
 ## [7.4.1] - 2020-03-12
 ### Fixed
 - Support for PHP 7.2 [#37]
@@ -114,7 +118,9 @@ This library was rewritten and a lot of breaking changes were included.
 
 [#36]: https://github.com/oscarotero/simple-crud/issues/36
 [#37]: https://github.com/oscarotero/simple-crud/issues/37
+[#41]: https://github.com/oscarotero/simple-crud/issues/41
 
+[7.4.2]: https://github.com/oscarotero/simple-crud/compare/v7.4.1...v7.4.2
 [7.4.1]: https://github.com/oscarotero/simple-crud/compare/v7.4.0...v7.4.1
 [7.4.0]: https://github.com/oscarotero/simple-crud/compare/v7.3.6...v7.4.0
 [7.3.6]: https://github.com/oscarotero/simple-crud/compare/v7.3.5...v7.3.6
