@@ -173,7 +173,29 @@ class Row implements JsonSerializable
     {
         $valueName = $this->getValueName($name);
 
-        return (isset($valueName) && !is_null($this->getValue($valueName))) || isset($this->data[$name]);
+        if ((isset($valueName) && !is_null($this->getValue($valueName))) || isset($this->data[$name])) {
+            return true;
+        }
+
+        // It's a relation
+        $db = $this->table->getDatabase();
+
+        if (isset($db->$name)) {
+            $table = $db->$name;
+
+            // Has one
+            if ($field = $this->table->getJoinField($table)) {
+                return !is_null($this->getValue($field->getName()));
+            }
+
+            // Has many or many-to-many always return true
+            // because even if it's empty, it returns always a RowCollection
+            if ($table->getJoinField($this->table) || $this->table->getJoinTable($table)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

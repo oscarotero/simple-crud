@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.5.0] - 2021-04-24
+### Changed
+- `isset($row->fieldname)` returns `true` in the following cases:
+  - If `fieldname` is direct related table with a value. For example: `isset($comment->post)` returns `true` if `isset($comment->post_id)`.
+  - If `fieldname` is a related table with many values. For example: `isset($post->comment)` always return true even if the post has zero comments.
+
 ## [7.4.2] - 2021-04-01
 ### Fixed
 - The array syntax to update a table row (Like `$db->post[2] = ['title' => 'New title']; `) didn't work in all cases. This fix changed the return type of `Table::offsetSet` to `void` (previously it was `Row`). [#41]
@@ -120,6 +126,7 @@ This library was rewritten and a lot of breaking changes were included.
 [#37]: https://github.com/oscarotero/simple-crud/issues/37
 [#41]: https://github.com/oscarotero/simple-crud/issues/41
 
+[7.5.0]: https://github.com/oscarotero/simple-crud/compare/v7.4.2...v7.5.0
 [7.4.2]: https://github.com/oscarotero/simple-crud/compare/v7.4.1...v7.4.2
 [7.4.1]: https://github.com/oscarotero/simple-crud/compare/v7.4.0...v7.4.1
 [7.4.0]: https://github.com/oscarotero/simple-crud/compare/v7.3.6...v7.4.0
