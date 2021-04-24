@@ -8,6 +8,10 @@ use PDO;
 use SimpleCrud\Row;
 use SimpleCrud\Table;
 
+/**
+ * @method self where(string $condition, ...$bindInline)
+ * @method self limit(int $limit)
+ */
 class Select extends Query
 {
     use Traits\HasRelatedWith;

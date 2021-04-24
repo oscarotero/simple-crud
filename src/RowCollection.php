@@ -16,6 +16,7 @@ use SimpleCrud\Queries\Select;
  */
 class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializable
 {
+    public $id;
     private $table;
     private $rows = [];
     private $data = [];
@@ -270,7 +271,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      */
     public function rewind()
     {
-        return reset($this->rows);
+        reset($this->rows);
     }
 
     /**
@@ -294,7 +295,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      */
     public function next()
     {
-        return next($this->rows);
+        next($this->rows);
     }
 
     /**

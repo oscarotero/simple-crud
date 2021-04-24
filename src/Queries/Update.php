@@ -5,6 +5,9 @@ namespace SimpleCrud\Queries;
 
 use SimpleCrud\Table;
 
+/**
+ * @method self where(string $condition, ...$bindInline)
+ */
 final class Update extends Query
 {
     use Traits\HasRelatedWith;

@@ -13,6 +13,7 @@ use Exception;
 use InvalidArgumentException;
 use PDO;
 use PDOStatement;
+use RuntimeException;
 use SimpleCrud\Fields\Boolean;
 use SimpleCrud\Fields\Date;
 use SimpleCrud\Fields\Datetime;
@@ -219,7 +220,7 @@ final class Database
                 $this->commit();
             }
         } catch (Exception $exception) {
-            if ($transaction) {
+            if (isset($transaction) && $transaction) {
                 $this->rollBack();
             }
 

@@ -14,6 +14,7 @@ use SimpleCrud\Queries\Select;
  */
 class Row implements JsonSerializable
 {
+    public $id;
     private $table;
     private $values = [];
     private $changes = [];
