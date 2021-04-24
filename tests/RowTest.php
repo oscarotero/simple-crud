@@ -50,6 +50,7 @@ EOT
         $post->save();
 
         $this->assertSame(1, $post->id);
+        $this->assertTrue(isset($post->comment));
         $this->assertTrue(isset($db->post[1]));
         $this->assertSame($post, $db->post[1]);
 
