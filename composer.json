@@ -34,12 +34,16 @@
 		}
 	},
 	"require-dev": {
-		"phpunit/phpunit": "^8.0",
+		"phpunit/phpunit": "^8.0|^9.0",
 		"friendsofphp/php-cs-fixer": "^2.11",
-		"oscarotero/php-cs-fixer-config": "^1.0"
+		"oscarotero/php-cs-fixer-config": "^1.0",
+		"phpstan/phpstan": "^0.12.84"
 	},
     "scripts": {
-        "test": "phpunit",
+        "test": [
+					"phpunit",
+					"phpstan analyse src tests"
+				],
         "cs-fix": "php-cs-fixer fix ."
     }
 }

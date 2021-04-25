@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.5.1] - 2021-04-25
+### Fixed
+- Some phpstan errors [#42], [#43]
+
 ## [7.5.0] - 2021-04-24
 ### Changed
 - `isset($row->fieldname)` returns `true` in the following cases:
@@ -125,7 +129,10 @@ This library was rewritten and a lot of breaking changes were included.
 [#36]: https://github.com/oscarotero/simple-crud/issues/36
 [#37]: https://github.com/oscarotero/simple-crud/issues/37
 [#41]: https://github.com/oscarotero/simple-crud/issues/41
+[#42]: https://github.com/oscarotero/simple-crud/issues/42
+[#43]: https://github.com/oscarotero/simple-crud/issues/43
 
+[7.5.1]: https://github.com/oscarotero/simple-crud/compare/v7.5.0...v7.5.1
 [7.5.0]: https://github.com/oscarotero/simple-crud/compare/v7.4.2...v7.5.0
 [7.4.2]: https://github.com/oscarotero/simple-crud/compare/v7.4.1...v7.4.2
 [7.4.1]: https://github.com/oscarotero/simple-crud/compare/v7.4.0...v7.4.1
