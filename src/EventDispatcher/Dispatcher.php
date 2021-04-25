@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace SimpleCrud\EventDispatcher;
 
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\EventDispatcher\ListenerProviderInterface;
 
 class Dispatcher implements EventDispatcherInterface
 {

@@ -12,8 +12,7 @@ use SimpleCrud\Table;
 trait HasRelatedWith
 {
     /**
-     * @param Row|RowCollection|Table
-     * @param mixed $related
+     * @param Row|RowCollection|Table $related
      */
     public function relatedWith($related): self
     {

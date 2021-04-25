@@ -26,7 +26,7 @@ final class SelectAggregate extends Select
         $function = strtoupper($function);
 
         if (!in_array($function, self::AGGREGATION_FUNCTIONS)) {
-            throw InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf('Invalid aggregation function. Must be one of the followings: %s', implode(', ', self::AGGREGATION_FUNCTIONS))
             );
         }
