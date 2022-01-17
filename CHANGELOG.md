@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [7.5.2] - 2022-01-17
+### Fixed
+- PHP 8.1 support [#44]
+
 ## [7.5.1] - 2021-04-25
 ### Fixed
 - Some phpstan errors [#42], [#43]
@@ -112,7 +116,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - BREAKING: The way to define custom fields has changed in order to make it more easy and less verbose.
 
-## 7.0.0 - 2019-04-03
+## [7.0.0] - 2019-04-03
 This library was rewritten and a lot of breaking changes were included.
 
 ### Added
@@ -131,7 +135,9 @@ This library was rewritten and a lot of breaking changes were included.
 [#41]: https://github.com/oscarotero/simple-crud/issues/41
 [#42]: https://github.com/oscarotero/simple-crud/issues/42
 [#43]: https://github.com/oscarotero/simple-crud/issues/43
+[#44]: https://github.com/oscarotero/simple-crud/issues/44
 
+[7.5.2]: https://github.com/oscarotero/simple-crud/compare/v7.5.1...v7.5.2
 [7.5.1]: https://github.com/oscarotero/simple-crud/compare/v7.5.0...v7.5.1
 [7.5.0]: https://github.com/oscarotero/simple-crud/compare/v7.4.2...v7.5.0
 [7.4.2]: https://github.com/oscarotero/simple-crud/compare/v7.4.1...v7.4.2
@@ -151,3 +157,4 @@ This library was rewritten and a lot of breaking changes were included.
 [7.2.1]: https://github.com/oscarotero/simple-crud/compare/v7.2.0...v7.2.1
 [7.2.0]: https://github.com/oscarotero/simple-crud/compare/v7.1.0...v7.2.0
 [7.1.0]: https://github.com/oscarotero/simple-crud/compare/v7.0.0...v7.1.0
+[7.0.0]: https://github.com/oscarotero/simple-crud/releases/tag/v7.0.0
