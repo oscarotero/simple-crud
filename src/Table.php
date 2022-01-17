@@ -18,6 +18,7 @@ use SimpleCrud\Queries\Insert;
 use SimpleCrud\Queries\Select;
 use SimpleCrud\Queries\SelectAggregate;
 use SimpleCrud\Queries\Update;
+use ReturnTypeWillChange;
 
 /**
  * Manages a database table.
@@ -333,6 +334,7 @@ class Table implements ArrayAccess, Countable
      * @see ArrayAccess
      * @param mixed $offset
      */
+    #[ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         $this->cache[$offset] = null;

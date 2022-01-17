@@ -10,6 +10,7 @@ use Iterator;
 use JsonSerializable;
 use RuntimeException;
 use SimpleCrud\Queries\Select;
+use ReturnTypeWillChange;
 
 /**
  * Stores a collection of rows.
@@ -61,6 +62,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     /**
      * @see JsonSerializable
      */
+    #[ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return $this->toArray();
@@ -233,6 +235,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      * @param mixed $offset
      * @param mixed $value
      */
+    #[ReturnTypeWillChange]
     public function offsetSet($offset, $value)
     {
         throw new RuntimeException('RowCollection are read-only');
@@ -242,6 +245,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      * @see ArrayAccess
      * @param mixed $offset
      */
+    #[ReturnTypeWillChange]
     public function offsetExists($offset)
     {
         return isset($this->rows[$offset]);
@@ -251,6 +255,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      * @see ArrayAccess
      * @param mixed $offset
      */
+    #[ReturnTypeWillChange]
     public function offsetUnset($offset)
     {
         throw new RuntimeException('RowCollection are read-only');
@@ -260,6 +265,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
      * @see ArrayAccess
      * @param mixed $offset
      */
+    #[ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->rows[$offset] ?? null;
@@ -268,6 +274,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     /**
      * @see Iterator
      */
+    #[ReturnTypeWillChange]
     public function rewind()
     {
         return reset($this->rows);
@@ -276,6 +283,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     /**
      * @see Iterator
      */
+    #[ReturnTypeWillChange]
     public function current()
     {
         return current($this->rows);
@@ -284,6 +292,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     /**
      * @see Iterator
      */
+    #[ReturnTypeWillChange]
     public function key()
     {
         return key($this->rows);
@@ -292,6 +301,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     /**
      * @see Iterator
      */
+    #[ReturnTypeWillChange]
     public function next()
     {
         return next($this->rows);
@@ -300,6 +310,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     /**
      * @see Iterator
      */
+    #[ReturnTypeWillChange]
     public function valid()
     {
         return key($this->rows) !== null;
@@ -308,6 +319,7 @@ class RowCollection implements ArrayAccess, Iterator, Countable, JsonSerializabl
     /**
      * @see Countable
      */
+    #[ReturnTypeWillChange]
     public function count()
     {
         return count($this->rows);

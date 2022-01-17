@@ -8,6 +8,7 @@ use JsonSerializable;
 use RuntimeException;
 use SimpleCrud\Events\BeforeSaveRow;
 use SimpleCrud\Queries\Select;
+use ReturnTypeWillChange;
 
 /**
  * Stores the data of an table row.
@@ -74,6 +75,7 @@ class Row implements JsonSerializable
     /**
      * @see JsonSerializable
      */
+    #[ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return $this->toArray();
