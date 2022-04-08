@@ -29,7 +29,7 @@ class Select extends Query
         'whereSprintf',
         'whereEquals',
         'orWhere',
-        'orWhereSprinf',
+        'orWhereSprintf',
         'catWhere',
         'limit',
         'offset',
